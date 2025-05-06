@@ -1,4 +1,9 @@
 @import "tailwindcss";
+@import "katex/dist/katex.min.css";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 
 :root {
   --background: #ffffff;
@@ -23,4 +28,35 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+}
+
+.note {
+  padding: 1rem;
+  border-radius: 8px;
+  margin: 1rem 0;
+  font-size: 1rem;
+}
+
+.note-info {
+  background-color: #e0f7fa;
+  border: 1px solid #4dd0e1;
+  color: #004d40;
+}
+
+.note-success {
+  background-color: #e6f4ea;
+  border: 1px solid #66bb6a;
+  color: #1b5e20;
+}
+
+.note-warning {
+  background-color: #fff8e1;
+  border: 1px solid #ffb74d;
+  color: #5d4037;
+}
+
+.note-error {
+  background-color: #ffebee;
+  border: 1px solid #ef5350;
+  color: #b71c1c;
 }

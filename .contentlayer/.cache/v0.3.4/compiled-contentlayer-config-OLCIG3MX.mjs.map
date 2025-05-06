@@ -1,0 +1,7 @@
+{
+  "version": 3,
+  "sources": ["../../../contentlayer.config.ts"],
+  "sourcesContent": ["import { defineDocumentType, makeSource } from 'contentlayer/source-files'\nimport remarkMath from 'remark-math'\nimport rehypeKatex from 'rehype-katex'\n\nexport const Post = defineDocumentType(() => ({\n  name: 'Post',\n  filePathPattern: `posts/**/*.mdx`,\n  contentType: 'mdx',\n  fields: {\n    title: { type: 'string', required: true },\n    date: { type: 'date', required: true },\n    sticky: { type: 'number', required: false },\n    tags: { type: 'list', of: { type: 'string' }, required: false },\n    category: { type: 'string', required: false },\n  },\n}))\n\nexport default makeSource({\n  contentDirPath: 'content',\n  documentTypes: [Post],\n  mdx: {\n    remarkPlugins: [remarkMath],\n    rehypePlugins: [[rehypeKatex, { strict: false }]],\n  },\n})\n"],
+  "mappings": ";AAAA,SAAS,oBAAoB,kBAAkB;AAC/C,OAAO,gBAAgB;AACvB,OAAO,iBAAiB;AAEjB,IAAM,OAAO,mBAAmB,OAAO;AAAA,EAC5C,MAAM;AAAA,EACN,iBAAiB;AAAA,EACjB,aAAa;AAAA,EACb,QAAQ;AAAA,IACN,OAAO,EAAE,MAAM,UAAU,UAAU,KAAK;AAAA,IACxC,MAAM,EAAE,MAAM,QAAQ,UAAU,KAAK;AAAA,IACrC,QAAQ,EAAE,MAAM,UAAU,UAAU,MAAM;AAAA,IAC1C,MAAM,EAAE,MAAM,QAAQ,IAAI,EAAE,MAAM,SAAS,GAAG,UAAU,MAAM;AAAA,IAC9D,UAAU,EAAE,MAAM,UAAU,UAAU,MAAM;AAAA,EAC9C;AACF,EAAE;AAEF,IAAO,8BAAQ,WAAW;AAAA,EACxB,gBAAgB;AAAA,EAChB,eAAe,CAAC,IAAI;AAAA,EACpB,KAAK;AAAA,IACH,eAAe,CAAC,UAAU;AAAA,IAC1B,eAAe,CAAC,CAAC,aAAa,EAAE,QAAQ,MAAM,CAAC,CAAC;AAAA,EAClD;AACF,CAAC;",
+  "names": []
+}

@@ -1,0 +1,171 @@
+---
+title: "[題解]TIOJ 1211 最小生成樹"
+date: 2021-1-10
+tags: 
+    - 資訊之芽
+    - 題解
+category: 資芽題解
+---
+
+### 最小生成樹
+
+{/* more */}
+
+[題目連結NEOJ](https://neoj.sprout.tw/problem/734/)
+[題目連結TIOJ](https://tioj.ck.tp.edu.tw/problems/1211)
+[實作講義](https://reurl.cc/ze8Qr6)
+[資芽講義](https://www.csie.ntu.edu.tw/~sprout/algo2021/ppt_pdf/week11/Minimum_spanning_tree.pdf)
+
+這一題手刻最小生成樹，感覺蠻好的，都是利用一些性質來實作最小生成樹
+
+#### 性質一：樹
+
+最小生成圖一定會是一棵樹，不具備環，且一共有n-1條邊
+如果這張圖不是樹，則必定有環，即代表可以再拔掉一條邊使權重和更小
+
+#### 性質二：Cycle Property
+
+C是圖上的一個環，e是C上權重最大一條邊，則e必不在MST一部分（證明：反證，假設e在MST，則加入另一邊比e權重更小形成環，此時把e拔掉可以形成更小的權重和，因此矛盾）
+
+#### 性質三：Cut Property
+
+把圖上的點集分割成兩半，則cut上面的邊集合中最小權重的邊e會在MST裡面（證明：反證，假設e不在MST，則加入e會形成連接兩半節點的環，此時拔掉另一比e權重大的邊，會形成更小權重和，因此矛盾）
+
+利用性質二、性質三，就可以利用Kruskal演算法：利用到併查集的維護搭配路徑壓縮，可以快速判斷一個元素是否與另一個元素同屬一個集合（複雜度幾乎可以$O(1)$，更準確來說是[$O(\alpha)$](https://zh.wikipedia.org/wiki/%E9%98%BF%E5%85%8B%E6%9B%BC%E5%87%BD%E6%95%B8)），Kruskal總複雜度為 $O(ElogE)$
+另外還有一種實作方式**Prim's algorithm**，等等再看
+
+<Note type="info">
+**實作步驟**
+
+**1. 初始化設定：** 設定好boss以及集合大小等參數
+
+**2. 對所有的邊依照權重排序：** 利用$O(m\log m)$的時間排序，將邊依照權重由小到大加入MST中
+
+**3. 依序加入邊：** 以下會有兩種情況，可以用並查集+路徑壓縮（優化）判斷是否會形成環
+
+* Case 1: 如果加了這條邊形成環（查到有一樣的boss）
+  * 那這條邊會是這個環上的最大邊
+  * 根據 Cycle property，<font color="#f00">這條邊不會是MST的一部分</font>
+* Case 2: 加了這條邊不會形成環
+  * 那這條邊是條橋，連接左右兩棵樹
+  * 根據 Cut Property，因為這條邊是這個 cut 上最小的邊
+  * 所以<font color="#f00">這條邊會是 MST 的一部分</font>
+
+**4. 判斷是否合法：** n個點所形成的樹會有n-1條邊，最小生成樹是一棵樹就必須滿足條件。
+</Note>
+
+#### KRUSKAL'S ALGORITHM
+
+![](https://i.imgur.com/sDAXXKI.png)
+
+```cpp=
+#include <bits/stdc++.h>
+#define int long long
+#define N 200005
+#define ios ios::sync_with_stdio(0),cin.tie(0)
+using namespace std;
+int n,m,num[N],boss[N];
+struct Node{
+    int x,y,w;
+}edge[N];
+
+bool cmp(Node a, Node b){
+    return a.w < b.w;
+}
+int findboss(int a){                    //尋找集合的老大（代表整個集合）
+    if(a==boss[a])return a;
+    return boss[a]=findboss(boss[a]);   //遞迴搭配路徑壓縮
+}
+
+signed main(){
+    ios;
+    cin>>n>>m;
+    for(int i=0;i<m;i++){
+        cin>>edge[i].x>>edge[i].y>>edge[i].w;
+    }
+    for(int i=0;i<n;i++){
+        num[i] = 1;
+        boss[i] = i;
+    }
+    sort(edge,edge+m,cmp);                 //依照權重大小放入MST
+    int result = 0,num_edge = 0;
+    for(int i=0;i<m && num_edge<n;i++){    //樹必須滿足小於n-1條邊
+        int a = findboss(edge[i].x),b = findboss(edge[i].y);
+        if(a!=b){                          //boss不同可以放入MST（加入不會形成環by Cut Property）
+            if(num[a]>=num[b]){            //執行啟發式合併
+                boss[b] = a;
+                num[a]+=num[b];
+            }
+            else{
+                boss[a] = b;
+                num[b]+=num[a];
+            }
+            result+=edge[i].w;
+            num_edge++;
+        }
+    }
+    cout<<result<<endl;
+    //這邊可以判斷num_edge==n-1有沒有成立，不過題目是輸入都可以形成MST
+}
+```
+
+### Prim's Algorithm
+
+是一種貪婪演算法，首先取任一點加入最小生成樹中，接著將連到的邊加入heap中，每一次取出heap中邊權重最小的邊，如果這一條邊連到的點尚未被走訪，則加入這一條邊為最小生成數。正確性證明則可用cut proprity證明每次都加入權重最小的邊即為最小生成數。
+
+![](https://i.imgur.com/ZFELWZq.png)
+
+```cpp=
+#include <bits/stdc++.h>
+#define Orz ios::sync_with_stdio(0),cin.tie(0)
+#define rep(i,a,b) for(int i=a;i<=b;i++)
+#define pii pair<int,int>
+#define pdd pair<double,double>
+#define int long long
+#define ll long long
+#define ld long double
+#define N 200005
+#define eps 1e-9
+#define x first
+#define y second
+using namespace std;
+int n,m;
+bool visit[N];
+
+struct node{
+    int to,w;
+};
+vector<node> edge[N];
+
+struct cmp{
+    bool operator()(node a,node b){
+        return a.w > b.w;
+    }
+};
+
+signed main(){
+    Orz;
+    memset(visit,0,sizeof(visit));
+    cin>>n>>m;
+    rep(i,0,m-1){
+        int a,b,w;cin>>a>>b>>w;
+        edge[a].push_back({b,w});
+        edge[b].push_back({a,w});
+    }
+    priority_queue<node,vector<node>,cmp> pq;
+    visit[1] = 1;
+    for(auto i : edge[1])pq.push(i);
+    int num_edge = 0,ans = 0;
+    while(num_edge < n-1){
+        node x = pq.top();pq.pop();
+        if(visit[x.to])continue;
+        visit[x.to] = 1;
+        num_edge += 1;
+        ans += x.w;
+        for(auto i : edge[x.to]){
+            pq.push(i);
+        }
+    }
+    cout<<ans<<endl;
+}
+```

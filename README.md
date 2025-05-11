@@ -54,20 +54,15 @@
 
 在開發過程中，我們一起解決了幾個有趣的問題：
 
-1.  **Contentlayer 與 MDX 解析錯誤 (`TypeError: Cannot read properties of undefined (reading 'inTable')`)：**
-    * **初步排查：** 最初懷疑是 frontmatter YAML 語法中的註解位置問題。
-    * **深入定位：** 後來發現錯誤明確指向特定 `.mdx` 檔案 (`posts/sprout9.mdx`)，即使其 frontmatter 語法正確。
-    * **解決方式：** 透過逐步簡化該 `.mdx` 檔案內容，最終定位到可能是 MDX 內文的某個部分與 Contentlayer 的 GFM 表格處理插件或其他 Rehype 插件產生衝突。*(如果使用者有明確找到是哪個部分，可以寫得更具體)*。目前透過內容調整或簡化已解決此錯誤，使得 `npm run dev` 可以正常執行。
-
-2.  **`Module not found` (例如 `Note` 元件)：**
+1.  **`Module not found` (例如 `Note` 元件)：**
     * **原因：** 嘗試引入一個尚未建立或路徑不正確的元件。
     * **解決：** 建立了 `src/components/Note.tsx` 元件，並確保了引入路徑 (相對路徑或路徑別名 `@/`) 的正確性。同時討論了如何設定 `tsconfig.json` 中的路徑別名。
 
-3.  **圖片路徑問題：**
+2.  **圖片路徑問題：**
     * **原因：** 在 Next.js `<Image />` 元件中，對於 `public` 資料夾下的靜態資源，`src` 路徑應以 `/` 開頭。
     * **解決：** 修正了圖片路徑，例如從 `public/images/avatar.jpeg` 改為在程式碼中使用 `/images/avatar.jpeg`。
 
-4.  **程式碼區塊語法高亮：**
+3.  **程式碼區塊語法高亮：**
     * **挑戰：** 初步設定 `rehype-pretty-code` 後，高亮顏色未套用，或行號未出現。
     * **解決：**
         * 確認安裝了 `rehype-pretty-code` 和 `shiki`。
@@ -76,7 +71,7 @@
         * 清除 Contentlayer 和 Next.js 的快取 (`.contentlayer`, `.next` 資料夾)。
         * 檢查 HTML 結構，確認 Shiki 產生的帶有顏色 style 的 `<span>` 元素確實存在。*(目前行號功能暫緩)*
 
-5.  **Git 推送問題 (`Workspace first`, `divergent branches`)：**
+4.  **Git 推送問題 (`Workspace first`, `divergent branches`)：**
     * **原因：** 本地分支落後於遠端分支，或本地與遠端有分叉的提交。
     * **解決：** 使用 `git pull origin main` (或 `git pull origin main --no-rebase`) 將遠端變更合併到本地，解決衝突 (如果有的話)，然後再 `git push`。
 

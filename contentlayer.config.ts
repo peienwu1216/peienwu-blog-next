@@ -4,7 +4,6 @@ import remarkGfm from 'remark-gfm' // GitHub Flavored Markdown (表格、刪除�
 import remarkMath from 'remark-math' // 讓 remark 理解 LaTeX 數學語法
 import rehypeKatex from 'rehype-katex' // 將 remarkMath 產生的數學 AST 渲染成 KaTeX HTML
 import rehypePrettyCode from 'rehype-pretty-code' // 程式碼高亮
-import type { Element } from 'hast'; // 引入 Element 型別
 
 // 處理 TypeScript 型別問題，rehype-pretty-code 的預設匯出可能與 rehype 插件型別不完全匹配
 const rehypePrettyCodePlugin = rehypePrettyCode as unknown as any // 這樣處理通常是OK的
@@ -43,37 +42,13 @@ export default makeSource({
       // 把它放在前面，先處理數學公式。
       [rehypeKatex, { strict: false }], // strict: false 可以容忍一些輕微的 KaTeX 錯誤
       [
-        /*
-        rehypePrettyCodePlugin, // 使用你上面定义的 typed 變數
-        {
-          // theme: 'one-dark-pro', // 預設主題，效果很好
-          // 你也可以為淺色和深色模式設定不同主題：
-          theme: {
-            light: 'github-light', // 或 'light-plus'
-            dark: 'github-dark',   // 或 'one-dark-pro', 'material-theme-palenight'
-          },
-          keepBackground: false, // 通常設為 false，讓主題的背景色生效或由你的 CSS 控制
-          onVisitLine(node: Element) {
-            // 防止第一行為空時被插件移除
-            if (node.children.length === 0) {
-              node.children = [{ type: 'text', value: ' ' }];
-            }
-          },
-          onVisitHighlightedLine(node: Element) {
-            // 為高亮行添加自訂 class (可選)
-            node.properties.className = ['line--highlighted'];
-          },
-          onVisitHighlightedChars(node: Element) {
-            // 為高亮字符添加自訂 class (可選)
-            node.properties.className = ['word--highlighted'];
-          },
-        },
-        */
         rehypePrettyCodePlugin,
         {
           theme: 'one-dark-pro', // 或你的主題設定
           keepBackground: false,
-          grid: false, // <--- 嘗試加入這個
+          showLineNumbers: true,
+          defaultShowLineNumbers: true,
+          grid: true,
         },
       ],
       // 其他 rehype 插件，例如處理 slug 和自動連結標題的，通常建議放在 pretty-code 之後

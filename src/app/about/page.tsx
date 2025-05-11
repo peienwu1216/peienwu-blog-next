@@ -3,7 +3,6 @@ import Image from 'next/image'; // 如果你想放個人圖片
 
 export default function AboutPage() {
   const blogTitle = "Peienwu's Code Lab";
-  const blogSubtitle = "這裡沒有魔法，只有還沒讀懂的 Source Code";
 
   return (
     <div className="container mx-auto px-4 py-8 sm:px-6 lg:px-8 max-w-3xl">
@@ -11,16 +10,13 @@ export default function AboutPage() {
         <h1 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-slate-900 dark:text-slate-50 mb-4">
           關於 {blogTitle}
         </h1>
-        <p className="text-lg sm:text-xl text-slate-600 dark:text-slate-400">
-          {blogSubtitle}
-        </p>
       </header>
 
       <article className="prose prose-slate dark:prose-invert lg:prose-lg mx-auto">
-        {/* 如果你想放圖片，可以取消下面這段註解並替換圖片路徑 
+        {
           <div className="flex justify-center my-8">
             <Image
-              src="/images/peienwu-avatar.jpg" // 將此替換為你的圖片路徑，放在 public/images/ 下
+              src="/images/avatar.jpeg" // 將此替換為你的圖片路徑，放在 public/images/ 下
               alt="Peien Wu"
               width={150}
               height={150}
@@ -28,7 +24,7 @@ export default function AboutPage() {
               priority
             />
           </div>
-        */}
+        }
         
         <h2>我是誰？</h2>
         <p>

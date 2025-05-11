@@ -6,8 +6,8 @@ import { compareDesc, format, parseISO } from 'date-fns'; // 確保已安裝 dat
 
 // 作者資訊可以保留，因為側邊欄會用到
 const authorInfo = {
-  name: 'PeiEn Wu',
-  avatar: '/images/avatar.png', // 確認這個圖片路徑在 public/images/ 下存在
+  name: 'Pei-En Wu',
+  avatar: '/images/avatar.jpeg', // 確認這個圖片路徑在 public/images/ 下存在
   bio: '歡迎來到我的部落格！在這裡我會分享關於技術、生活和學習的點滴。',
 };
 

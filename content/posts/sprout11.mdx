@@ -15,7 +15,7 @@ tags: ["資芽筆記", "圖論"]
 ### SCC強連通元件
 
 LCA（最低共同祖先）
-{/* more */}
+
 
 ## 上機作業
 
@@ -37,7 +37,7 @@ LCA（最低共同祖先）
 
 必須要注意的是，割點判斷時要把root的特例獨立判斷。其實root反而比較簡單，如果root有超過一個子樹，代表拔掉root以後會分裂成以每個子樹為單位的連通塊
 
-```cpp=
+```cpp
 #include <bits/stdc++.h>
 #define ios ios::sync_with_stdio(0),cin.tie(0);
 #define int long long
@@ -96,7 +96,7 @@ signed main(){
 [題目連結](https://neoj.sprout.tw/problem/179)
 跟上一題（高棕櫚傳遞鏈）蠻類似的，一樣找到割點，不同的是要在DFS過程中同時紀錄子樹節點的數量。如果碰到割點，維護拔掉它之後分裂出去那些子樹的節點個數，到時候透過節點總數-拔掉後分裂個數即可推算有幾個人會知道謠言，取min即可
 
-```cpp=
+```cpp
 #include <bits/stdc++.h>
 #define ios ios::sync_with_stdio(0),cin.tie(0);
 #define int long long
@@ -163,7 +163,7 @@ signed main(){
 前兩題找割點，這一題是找橋，跟找割點的方法幾乎一樣，而且對於邊還不需要討論root的情況（root變成不是特例），然後判斷割點的 >= 變成 >，原因可以透過畫圖理解（把點拔掉跟把邊拔掉的差別），就可以實作了！
 題目有一個特別的要求，按照給邊的順序進行輸出，那可以搭配set來快速查看某一元素是否在集合內$O(logN)$，接著就按照給定的條件來輸出
 
-```cpp=
+```cpp
 #include <bits/stdc++.h>
 #define ios ios::sync_with_stdio(0),cin.tie(0);
 #define int long long
@@ -225,7 +225,7 @@ signed main(){
 有向無環圖的 case → DAG 最長路徑!
 將每個強連通元件縮成點後，因為內部的點可以一直亂走全部走到，所以只要將新點的點權更新成內部所有點的點權總和，得到一張新的有向無環圖，就可以直接做 DAG 最長路徑得到答案。
 
-```cpp=
+```cpp
 #include <bits/stdc++.h>
 #define int long long
 #define ios ios::sync_with_stdio(0),cin.tie(0);

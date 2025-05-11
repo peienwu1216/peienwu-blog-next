@@ -6,12 +6,12 @@ tags: ["資芽筆記", "題解"]
 ---
 
 ### 芽芽逛大街
-{/* more */}
+
 [題目連結](https://neoj.sprout.tw/problem/739/)
 有向無環圖的 case → DAG 最長路徑!
 將每個強連通元件縮成點後，因為內部的點可以一直亂走全部走到，所以只要將新點的點權更新成內部所有點的點權總和，得到一張新的有向無環圖，就可以直接做 DAG 最長路徑得到答案。
 
-```cpp=
+```cpp
 #include <bits/stdc++.h>
 #define int long long
 #define ios ios::sync_with_stdio(0),cin.tie(0);

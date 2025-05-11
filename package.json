@@ -18,12 +18,14 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "rehype-katex": "^5.0.0",
-    "remark-math": "^5.1.1"
+    "remark-math": "^5.1.1",
+    "shiki": "^3.4.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",
     "@next/mdx": "^15.3.1",
     "@tailwindcss/typography": "^0.5.16",
+    "@types/hast": "^3.0.4",
     "@types/node": "^20.17.41",
     "@types/react": "^19",
     "@types/react-dom": "^19",

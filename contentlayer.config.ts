@@ -1,34 +1,32 @@
 // contentlayer.config.ts
 import { defineDocumentType, makeSource } from 'contentlayer/source-files'
-import remarkGfm from 'remark-gfm'
-import remarkMath from 'remark-math'
-import rehypeKatex from 'rehype-katex'
-import rehypePrettyCode from 'rehype-pretty-code'
+import remarkGfm from 'remark-gfm' // GitHub Flavored Markdown (表格、刪除線等)
+import remarkMath from 'remark-math' // 讓 remark 理解 LaTeX 數學語法
+import rehypeKatex from 'rehype-katex' // 將 remarkMath 產生的數學 AST 渲染成 KaTeX HTML
+import rehypePrettyCode from 'rehype-pretty-code' // 程式碼高亮
+import type { Element } from 'hast'; // 引入 Element 型別
 
-const rehypePrettyCodePlugin = rehypePrettyCode as unknown as any
+// 處理 TypeScript 型別問題，rehype-pretty-code 的預設匯出可能與 rehype 插件型別不完全匹配
+const rehypePrettyCodePlugin = rehypePrettyCode as unknown as any // 這樣處理通常是OK的
 
 export const Post = defineDocumentType(() => ({
   name: 'Post',
-  // 保持這個 filePathPattern，如果你希望 .mdx 檔案仍在 content/posts/ 目錄下
-  filePathPattern: `posts/**/*.mdx`,
+  filePathPattern: `posts/**/*.mdx`, // 你的文章在 content/posts/ 目錄下
   contentType: 'mdx',
   fields: {
     title: { type: 'string', required: true },
     date: { type: 'date', required: true },
-    sticky: { type: 'number' },
+    sticky: { type: 'number' }, // 置頂權重，不錯！
     tags: { type: 'list', of: { type: 'string' } },
     category: { type: 'string' },
   },
   computedFields: {
     url: {
       type: 'string',
-      // 這裡的 resolve 函數確保 url 是 /your-slug 的格式
-      // 它會移除 _raw.flattenedPath 中 'posts/' 這個前綴
       resolve: (post) => `/${post._raw.flattenedPath.replace(/^posts\/?/, '')}`,
     },
     slug: {
       type: 'string',
-      // 同樣，slug 也是移除 'posts/' 前綴後的檔名部分
       resolve: (post) => post._raw.flattenedPath.replace(/^posts\/?/, ''),
     }
   }
@@ -38,16 +36,51 @@ export default makeSource({
   contentDirPath: 'content',
   documentTypes: [Post],
   mdx: {
-    remarkPlugins: [remarkGfm, remarkMath],
+    remarkPlugins: [remarkGfm, remarkMath], // remark 插件順序通常 GFM 在前
     rehypePlugins: [
-      [rehypeKatex, { strict: false }],
+      // rehypeKatex 應該在 rehypePrettyCode 之前或之後都可以，
+      // 通常數學公式和程式碼塊是獨立處理的。
+      // 把它放在前面，先處理數學公式。
+      [rehypeKatex, { strict: false }], // strict: false 可以容忍一些輕微的 KaTeX 錯誤
       [
+        /*
+        rehypePrettyCodePlugin, // 使用你上面定义的 typed 變數
+        {
+          // theme: 'one-dark-pro', // 預設主題，效果很好
+          // 你也可以為淺色和深色模式設定不同主題：
+          theme: {
+            light: 'github-light', // 或 'light-plus'
+            dark: 'github-dark',   // 或 'one-dark-pro', 'material-theme-palenight'
+          },
+          keepBackground: false, // 通常設為 false，讓主題的背景色生效或由你的 CSS 控制
+          onVisitLine(node: Element) {
+            // 防止第一行為空時被插件移除
+            if (node.children.length === 0) {
+              node.children = [{ type: 'text', value: ' ' }];
+            }
+          },
+          onVisitHighlightedLine(node: Element) {
+            // 為高亮行添加自訂 class (可選)
+            node.properties.className = ['line--highlighted'];
+          },
+          onVisitHighlightedChars(node: Element) {
+            // 為高亮字符添加自訂 class (可選)
+            node.properties.className = ['word--highlighted'];
+          },
+        },
+        */
         rehypePrettyCodePlugin,
         {
-          theme: 'one-dark-pro',
+          theme: 'one-dark-pro', // 或你的主題設定
           keepBackground: false,
+          grid: false, // <--- 嘗試加入這個
         },
       ],
+      // 其他 rehype 插件，例如處理 slug 和自動連結標題的，通常建議放在 pretty-code 之後
+      // import rehypeSlug from 'rehype-slug'
+      // import rehypeAutolinkHeadings from 'rehype-autolink-headings'
+      // rehypeSlug,
+      // [rehypeAutolinkHeadings, { properties: { className: ['anchor'] } }],
     ],
   },
 })

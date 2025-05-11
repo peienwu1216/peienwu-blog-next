@@ -117,3 +117,25 @@ samp /* sample output */ {
   border-color: #f87171;
   color: #fef2f2;
 }
+
+/* 針對 rehype-pretty-code 產生的 pre 元素 */
+pre[data-theme] { /* rehype-pretty-code 會為 pre 標籤加上 data-theme 屬性 */
+  padding: 1rem;      /* 內邊距 */
+  border-radius: 8px; /* 圓角 */
+  overflow-x: auto;   /* 內容過長時顯示水平捲動條 */
+  margin-top: 1.5em;
+  margin-bottom: 1.5em;
+  /* 主題通常會自帶背景色，但你也可以在這裡覆蓋或設定一個預設的 */
+  /* background-color: #282c34; (這是 one-dark-pro 的背景色之一) */
+}
+
+/* 如果你想在淺色模式下有不同的 pre 背景色，而主題本身沒有完全處理好 */
+html:not(.dark) pre[data-theme] {
+  /* background-color: #f5f5f5; */ /* 範例淺色背景 */
+}
+
+/* 程式碼字體我們之前已經設定過了，會繼承 */
+pre[data-theme] code {
+  font-family: theme('fontFamily.mono'); /* 再次確認，雖然通常會繼承 */
+  /* line-height: 1.6; */ /* 可調整行高 */
+}

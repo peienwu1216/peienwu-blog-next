@@ -12,8 +12,8 @@ tags: ["資芽筆記", "圖論"]
 目標：快速判斷兩個元素是否同屬一個集合
 功能：詢問元素隸屬的集合、合併兩個集合，在圖論中，集合通常表示連通快，並查集可以查詢任兩點是否連通。在實作MST的時候，當我們要檢查兩個點連接成的邊是否會跟其他已經加入的邊形成環，就會使用並查集幫助我們判斷！
 複雜度：非常優秀，可以說是O(1)
-{/* more */}
-```cpp=
+
+```cpp
 #include <bits/stdc++.h>
 #define N 100001
 using namespace std;
@@ -115,7 +115,7 @@ C是圖上的一個環，e是C上權重最大一條邊，則e必不在MST一部�
 
 ![](https://i.imgur.com/sDAXXKI.png)
 
-```cpp=
+```cpp
 #include <bits/stdc++.h>
 #define int long long
 #define N 200005
@@ -172,7 +172,7 @@ signed main(){
 
 ![](https://i.imgur.com/ZFELWZq.png)
 
-```cpp=
+```cpp
 #include <bits/stdc++.h>
 #define Orz ios::sync_with_stdio(0),cin.tie(0)
 #define rep(i,a,b) for(int i=a;i<=b;i++)
@@ -252,7 +252,7 @@ signed main(){
 **4. 否則輸出順序即為一組解**
 </Note>
 
-```cpp=
+```cpp
 #include <bits/stdc++.h>
 #define N 501
 using namespace std;
@@ -301,7 +301,7 @@ signed main(){
 這一題是把入度為0的節點先push進priority_queue（按照字典序），當一個點處理過之後，入度變成0的所有它指向的點在push進queue裡面
 拓墣排序可以用在DAG的判定以及解決具有依賴關係的問題
 
-```cpp=
+```cpp
 #include <bits/stdc++.h>
 #define N 100001
 using namespace std;

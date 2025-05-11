@@ -1,74 +1,136 @@
 # 🚧 peienwu-blog-next: 我的新一代個人部落格 🚧
 
+> Peienwu's Code Lab - Next.js 個人部落格
+
+歡迎來到 "Peienwu's Code Lab"！這是一個使用 Next.js、Contentlayer 和 Tailwind CSS 打造的現代化個人部落格。
 這是我的個人部落格 ([peienwu.com](https://peienwu.com/)) 的下一代版本，目前正在積極開發中。我使用 Next.js 和 React 這對現代網頁技術組合來建構這個專案，目標是打造一個效能更好、功能更豐富、更具現代感的部落格平台，同時藉此機會深入學習這些令人興奮的技術！
 
-## ✨ 專案目標與學習重點
+**線上預覽:** [https://peienwu-blog-next.vercel.app/](https://peienwu-blog-next.vercel.app/)
 
-* **深入學習 Next.js**：探索 Next.js 的強大功能，例如 App Router、Server Components、路由機制、資料獲取策略等。
-* **掌握 MDX**：利用 MDX (Markdown + JSX) 的能力，讓我可以用 Markdown 的簡潔語法撰寫文章，同時能無縫嵌入 React 元件，實現更豐富的內容呈現。
-* **提升前端技能**：透過實戰，加強我在 React、TypeScript (如果有的話)、CSS Modules/Tailwind CSS (如果計畫使用) 等前端技術棧的應用能力。
-* **打造現代化部落格**：計畫實現一個具有良好使用者體驗、快速載入速度以及易於維護的部落格。
+![部落格首頁概覽](https://github.com/user-attachments/assets/58a2d7c9-67eb-4e29-9989-b700b833a64a)
 
-## 🚀 目前進度
+## ✨ 專案特色 (Features)
 
-* **MDX 內容渲染**：已成功在本機開發環境中渲染 `.mdx` 格式的部落格文章。
-* **單篇文章顯示**：目前能夠在本機伺服器上成功運行並顯示至少一篇完整的 MDX 文章。
-* **基礎專案架構**：已使用 `create-next-app` 完成基礎專案的搭建。
+* **現代化技術棧:**
+    * **Next.js (App Router):** 使用最新的 React Server Components 和 App Router 架構。
+    * **Contentlayer:** 型別安全的內容管理，將 Markdown/MDX 檔案轉換為易於使用的資料。
+    * **Tailwind CSS:** Utility-first 的 CSS 框架，用於快速建構美觀的介面。
+    * **TypeScript:** 增強程式碼的健壯性和可維護性。
+* **Markdown/MDX 支援:** 方便撰寫技術文章和筆記，支援嵌入 React 元件。
+* **響應式設計:** 適應不同裝置的螢幕尺寸。
+* **語法高亮:** 使用 `rehype-pretty-code` 和 Shiki 為程式碼區塊提供美觀的語法高亮。
+* **主要頁面:**
+    * 首頁 (展示個人簡介和最新文章)
+    * 關於我頁面
+    * 分類列表頁面
+    * 標籤列表頁面
+    * 單篇文章頁面
+    * 404 找不到頁面
+* **部署於 Vercel:** 實現 CI/CD，輕鬆部署和更新。
 
-## 🛠️ 主要技術棧
+## 🚀 目前進度 (截至 2025-05-11)
 
-* **框架 (Framework)**: [Next.js](https://nextjs.org/)
-* **UI 函式庫 (UI Library)**: [React](https://reactjs.org/)
-* **內容格式 (Content Format)**: [MDX](https://mdxjs.com/)
-* **字型 (Font)**: [next/font](https://nextjs.org/docs/basic-features/font-optimization) 與 Geist (Vercel 新字型)
+* **基礎架構搭建：**
+    * 成功初始化 Next.js 專案 (App Router)。
+    * 整合 Contentlayer 管理 `.mdx` 格式的文章內容。
+    * 設定 Tailwind CSS 進行樣式設計。
+* **核心頁面實作：**
+    * **全站佈局 (`layout.tsx`)：** 包含共享的頁首 (部落格標題、副標題、導覽列) 和頁尾。頁首已調整為較窄的固定樣式。
+    * **首頁 (`page.tsx`)：** 展示個人簡介和最新文章列表，移除了與全站標題重複的頁面級 H1 標題。
+    * **關於我頁面 (`about/page.tsx`)：** 介紹部落格主旨和作者。
+    * **分類列表頁 (`categories/page.tsx`)：** 動態生成所有文章分類列表，並顯示各分類下的文章數量。
+    * **標籤列表頁 (`tags/page.tsx`)：** 動態生成所有文章標籤列表，並顯示各標籤的使用次數。
+    * **單篇文章頁面 (`[slug]/page.tsx`)：** 能夠正確渲染 MDX 文章內容，包含標題、日期、分類、標籤等元數據。
+    * **404 頁面 (`not-found.tsx`)：** 提供使用者友善的「找不到頁面」提示。
+* **內容與樣式：**
+    * 實現了 MDX 文章中圖片的正確顯示 (例如個人頭像)。
+    * 為 `.mdx` 中的程式碼區塊成功整合了 `rehype-pretty-code` 進行語法高亮 (例如使用 `github-dark` 主題)。
+    * 初步完成了 Note 元件 (`Note.tsx`) 的建立與使用。
+    * 選用並套用了新的全站字體 (Noto Sans TC 和 JetBrains Mono) 以提升閱讀體驗。
+* **部署：**
+    * 專案已成功部署到 Vercel，可透過上述連結公開訪問。
 
-## 🏃 如何在本機啟動 (Getting Started)
+## 🛠️ 開發與除錯歷程摘要 (Highlights)
 
-如果你想在本機運行這個專案的目前版本：
+在開發過程中，我們一起解決了幾個有趣的問題：
 
-1.  **複製儲存庫 (Clone the repository):**
+1.  **Contentlayer 與 MDX 解析錯誤 (`TypeError: Cannot read properties of undefined (reading 'inTable')`)：**
+    * **初步排查：** 最初懷疑是 frontmatter YAML 語法中的註解位置問題。
+    * **深入定位：** 後來發現錯誤明確指向特定 `.mdx` 檔案 (`posts/sprout9.mdx`)，即使其 frontmatter 語法正確。
+    * **解決方式：** 透過逐步簡化該 `.mdx` 檔案內容，最終定位到可能是 MDX 內文的某個部分與 Contentlayer 的 GFM 表格處理插件或其他 Rehype 插件產生衝突。*(如果使用者有明確找到是哪個部分，可以寫得更具體)*。目前透過內容調整或簡化已解決此錯誤，使得 `npm run dev` 可以正常執行。
+
+2.  **`Module not found` (例如 `Note` 元件)：**
+    * **原因：** 嘗試引入一個尚未建立或路徑不正確的元件。
+    * **解決：** 建立了 `src/components/Note.tsx` 元件，並確保了引入路徑 (相對路徑或路徑別名 `@/`) 的正確性。同時討論了如何設定 `tsconfig.json` 中的路徑別名。
+
+3.  **圖片路徑問題：**
+    * **原因：** 在 Next.js `<Image />` 元件中，對於 `public` 資料夾下的靜態資源，`src` 路徑應以 `/` 開頭。
+    * **解決：** 修正了圖片路徑，例如從 `public/images/avatar.jpeg` 改為在程式碼中使用 `/images/avatar.jpeg`。
+
+4.  **程式碼區塊語法高亮：**
+    * **挑戰：** 初步設定 `rehype-pretty-code` 後，高亮顏色未套用，或行號未出現。
+    * **解決：**
+        * 確認安裝了 `rehype-pretty-code` 和 `shiki`。
+        * 在 `contentlayer.config.ts` 中正確設定 `rehypePrettyCode` 選項，包括選擇合適的 Shiki 主題 (例如 `github-dark`) 並設定 `keepBackground: false`。
+        * 確保 MDX 程式碼區塊使用了正確的語言標識符 (例如 ` ```cpp `)。
+        * 清除 Contentlayer 和 Next.js 的快取 (`.contentlayer`, `.next` 資料夾)。
+        * 檢查 HTML 結構，確認 Shiki 產生的帶有顏色 style 的 `<span>` 元素確實存在。*(目前行號功能暫緩)*
+
+5.  **Git 推送問題 (`Workspace first`, `divergent branches`)：**
+    * **原因：** 本地分支落後於遠端分支，或本地與遠端有分叉的提交。
+    * **解決：** 使用 `git pull origin main` (或 `git pull origin main --no-rebase`) 將遠端變更合併到本地，解決衝突 (如果有的話)，然後再 `git push`。
+
+這個除錯歷程對於理解專案的演進和學習過程非常有價值。
+
+## 🚀 如何在本機運行 (Setup and Run Locally)
+
+1.  **複製專案 (Clone the repository):**
     ```bash
-    git clone [https://github.com/peienwu1216/peienwu-blog-next.git](https://github.com/peienwu1216/peienwu-blog-next.git)
+    git clone https://github.com/peienwu1216/peienwu-blog-next.git
     cd peienwu-blog-next
     ```
 
 2.  **安裝依賴 (Install dependencies):**
     ```bash
     npm install
-    # 或者 yarn install / pnpm install / bun install
+    # 或者 yarn install / pnpm install
     ```
 
-3.  **啟動開發伺服器 (Run the development server):**
+3.  **啟動開發伺服器 (Start the development server):**
     ```bash
     npm run dev
-    # 或者 yarn dev / pnpm dev / bun dev
+    ```
+    打開瀏覽器訪問 [http://localhost:3000](http://localhost:3000)。
+
+4.  **建置生產版本 (Build for production):**
+    ```bash
+    npm run build
     ```
 
-4.  **在瀏覽器中開啟 (Open your browser):**
-    開啟 [http://localhost:3000](http://localhost:3000) 查看結果。
+5.  **在本機運行生產版本 (Start production server locally):**
+    ```bash
+    npm run start
+    ```
 
-你可以開始透過修改 `app/page.tsx` (或其他相關檔案) 來編輯頁面。檔案修改後，頁面會自動更新。
+## 🛠️ 主要技術棧 (Tech Stack)
 
-## 🔮 未來計畫與展望
+* [Next.js](https://nextjs.org/) - React 框架
+* [React](https://reactjs.org/) - UI 函式庫
+* [TypeScript](https://www.typescriptlang.org/) - JavaScript 的超集
+* [Contentlayer](https://www.contentlayer.dev/) - 內容 SDK (MDX 管理)
+* [Tailwind CSS](https://tailwindcss.com/) - Utility-first CSS 框架
+* [MDX](https://mdxjs.com/) - Markdown 與 JSX 的結合
+* [rehype-pretty-code](https://rehype-pretty-code.netlify.app/) & [Shiki](https://shiki.style/) - 伺服器端語法高亮
+* [Vercel](https://vercel.com/) - 部署平台
 
-* **完整部落格功能**：
-    * 文章列表與分頁
-    * 分類與標籤系統
-    * 站內搜尋功能
-    * 留言系統整合
-* **UI/UX 優化**：設計更美觀、更易用的使用者介面與互動體驗。
-* **效能調校**：確保部落格載入快速，達到生產環境標準。
-* **部署上線**：將部落格部署到線上平台 (例如 Vercel, Netlify)。
-* **SEO 優化**：提升部落格在搜尋引擎的能見度。
+## 🔮 未來展望 (Future Plans - 可選)
 
-## 📝 筆記與學習資源
-
-在開發過程中，我參考了以下資源：
-
-* [Next.js Documentation](https://nextjs.org/docs) - Next.js 的官方文件。
-* [Learn Next.js](https://nextjs.org/learn) - Next.js 的互動式教學。
-* [MDX Documentation](https://mdxjs.com/) - MDX 的官方文件。
+* [ ] 實作程式碼區塊行號顯示功能。
+* [ ] 完成「分類」和「標籤」的動態內頁 (`/categories/[categoryName]` 和 `/tags/[tagName]`)。
+* [ ] 加入搜尋文章功能。
+* [ ] 搬運我的舊網站文章，優化並改成新格式。
+* [ ] 優化圖片載入與處理。
+* [ ] 完善 SEO 設定。
+* [ ] 持續學習與創作。
 
 ---
-
-這個專案對我來說是一個很棒的學習旅程，我會持續更新進度。如果你有任何建議或想法，也歡迎隨時提出！

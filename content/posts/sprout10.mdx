@@ -1,0 +1,353 @@
+---
+title: 資芽第十週：進階圖論（一）
+date: 2021-5-15
+tags: 
+    - 資芽筆記
+    - 圖論
+categories: 資訊之芽筆記
+mathjax: true
+#password: sprout2022
+---
+
+## 上課內容
+
+### 並查集 Disjoint Set
+
+目標：快速判斷兩個元素是否同屬一個集合
+功能：詢問元素隸屬的集合、合併兩個集合，在圖論中，集合通常表示連通快，並查集可以查詢任兩點是否連通。在實作MST的時候，當我們要檢查兩個點連接成的邊是否會跟其他已經加入的邊形成環，就會使用並查集幫助我們判斷！
+複雜度：非常優秀，可以說是O(1)
+<!--more-->
+```cpp=
+#include <bits/stdc++.h>
+#define N 100001
+using namespace std;
+int n,boss[N],num[N];
+
+int find_boss(int a){        //使用路徑壓縮
+    if(a==boss[a])return a;
+    else return boss[a] = find_boss(boss[a]);
+}
+
+void merge(int a,int b){    //啟發式合併
+    if(num[a]>=num[b]){     //較小的集合合併到較大的集合
+        num[a] += num[b];
+        boss[b] = a;
+    }
+    else{
+        num[b] += num[a];
+        boss[a] = b;
+    }
+}
+signed main(){
+    cin>>n;
+    for(int i=1;i<=n;i++){
+        boss[i] = i;
+        num[i] = 1;
+    }
+    while(1){
+        int a,b;cin>>a>>b;                    //要查詢兩個元素
+        a = find_boss(a),b = find_boss(b);    //判斷是否同屬一個集合
+        if(a!=b){                             //老大不同屬不同集合
+            cout<<"不同集合"<<endl;
+            merge(a, b);
+        }
+        else cout<<"同集合"<<endl;
+        for(int i=1;i<=n;i++)cout<<boss[i]<<" ";
+        cout<<endl;
+    }
+}
+```
+
+{% note success %}
+**路徑壓縮**
+在回傳過程中順便利用遞迴把所經過的boss指向最上面的boss，由左圖變成右圖，效率更高（實測其實差不多，可能logn已經夠小加上遞迴本來就比較慢）
+![](https://i.imgur.com/z5TnoRv.png)
+用遞迴實現的特性實現，遞迴拉上來的時候順便更新boss[x]：
+![](https://i.imgur.com/k8FPb0U.png)
+
+路徑壓縮搭配啟發式合併，複雜度：$O(α(N))$等同常數
+{% endnote %}
+
+## 上機作業
+
+### 最小生成樹
+
+[題目連結NEOJ](https://neoj.sprout.tw/problem/734/)
+[題目連結TIOJ](https://tioj.ck.tp.edu.tw/problems/1211)
+[實作講義](https://reurl.cc/ze8Qr6)
+[資芽講義](https://www.csie.ntu.edu.tw/~sprout/algo2021/ppt_pdf/week11/Minimum_spanning_tree.pdf)
+
+這一題手刻最小生成樹，感覺蠻好的，都是利用一些性質來實作最小生成樹
+
+#### 性質一：樹
+
+最小生成圖一定會是一棵樹，不具備環，且一共有n-1條邊
+如果這張圖不是樹，則必定有環，即代表可以再拔掉一條邊使權重和更小
+
+#### 性質二：Cycle Property
+
+C是圖上的一個環，e是C上權重最大一條邊，則e必不在MST一部分（證明：反證，假設e在MST，則加入另一邊比e權重更小形成環，此時把e拔掉可以形成更小的權重和，因此矛盾）
+
+#### 性質三：Cut Property
+
+把圖上的點集分割成兩半，則cut上面的邊集合中最小權重的邊e會在MST裡面（證明：反證，假設e不在MST，則加入e會形成連接兩半節點的環，此時拔掉另一比e權重大的邊，會形成更小權重和，因此矛盾）
+
+利用性質二、性質三，就可以利用Kruskal演算法：利用到併查集的維護搭配路徑壓縮，可以快速判斷一個元素是否與另一個元素同屬一個集合（複雜度幾乎可以$O(1)$，更準確來說是[$O(\alpha)$](https://zh.wikipedia.org/wiki/%E9%98%BF%E5%85%8B%E6%9B%BC%E5%87%BD%E6%95%B8)），Kruskal總複雜度為 $O(ElogE)$
+另外還有一種實作方式**Prim's algorithm**，等等再看
+
+{% note info %}
+**實作步驟**
+
+**1. 初始化設定：** 設定好boss以及集合大小等參數
+
+**2. 對所有的邊依照權重排序：** 利用$O(m\log m)$的時間排序，將邊依照權重由小到大加入MST中
+
+**3. 依序加入邊：** 以下會有兩種情況，可以用並查集+路徑壓縮（優化）判斷是否會形成環
+
+* Case 1: 如果加了這條邊形成環（查到有一樣的boss）
+  * 那這條邊會是這個環上的最大邊
+  * 根據 Cycle property，<font color="#f00">這條邊不會是MST的一部分</font>
+* Case 2: 加了這條邊不會形成環
+  * 那這條邊是條橋，連接左右兩棵樹
+  * 根據 Cut Property，因為這條邊是這個 cut 上最小的邊
+  * 所以<font color="#f00">這條邊會是 MST 的一部分</font>
+
+**4. 判斷是否合法：** n個點所形成的樹會有n-1條邊，最小生成樹是一棵樹就必須滿足條件。
+{% endnote %}
+
+#### KRUSKAL'S ALGORITHM
+
+![](https://i.imgur.com/sDAXXKI.png)
+
+```cpp=
+#include <bits/stdc++.h>
+#define int long long
+#define N 200005
+#define ios ios::sync_with_stdio(0),cin.tie(0)
+using namespace std;
+int n,m,num[N],boss[N];
+struct Node{
+    int x,y,w;
+}edge[N];
+
+bool cmp(Node a, Node b){
+    return a.w < b.w;
+}
+int findboss(int a){                    //尋找集合的老大（代表整個集合）
+    if(a==boss[a])return a;
+    return boss[a]=findboss(boss[a]);   //遞迴搭配路徑壓縮
+}
+
+signed main(){
+    ios;
+    cin>>n>>m;
+    for(int i=0;i<m;i++){
+        cin>>edge[i].x>>edge[i].y>>edge[i].w;
+    }
+    for(int i=0;i<n;i++){
+        num[i] = 1;
+        boss[i] = i;
+    }
+    sort(edge,edge+m,cmp);                 //依照權重大小放入MST
+    int result = 0,num_edge = 0;
+    for(int i=0;i<m && num_edge<n;i++){    //樹必須滿足小於n-1條邊
+        int a = findboss(edge[i].x),b = findboss(edge[i].y);
+        if(a!=b){                          //boss不同可以放入MST（加入不會形成環by Cut Property）
+            if(num[a]>=num[b]){            //執行啟發式合併
+                boss[b] = a;
+                num[a]+=num[b];
+            }
+            else{
+                boss[a] = b;
+                num[b]+=num[a];
+            }
+            result+=edge[i].w;
+            num_edge++;
+        }
+    }
+    cout<<result<<endl;
+    //這邊可以判斷num_edge==n-1有沒有成立，不過題目是輸入都可以形成MST
+}
+```
+
+### Prim's Algorithm
+
+是一種貪婪演算法，首先取任一點加入最小生成樹中，接著將連到的邊加入heap中，每一次取出heap中邊權重最小的邊，如果這一條邊連到的點尚未被走訪，則加入這一條邊為最小生成數。正確性證明則可用cut proprity證明每次都加入權重最小的邊即為最小生成數。
+
+![](https://i.imgur.com/ZFELWZq.png)
+
+```cpp=
+#include <bits/stdc++.h>
+#define Orz ios::sync_with_stdio(0),cin.tie(0)
+#define rep(i,a,b) for(int i=a;i<=b;i++)
+#define pii pair<int,int>
+#define pdd pair<double,double>
+#define int long long
+#define ll long long
+#define ld long double
+#define N 200005
+#define eps 1e-9
+#define x first
+#define y second
+using namespace std;
+int n,m;
+bool visit[N];
+
+struct node{
+    int to,w;
+};
+vector<node> edge[N];
+
+struct cmp{
+    bool operator()(node a,node b){
+        return a.w > b.w;
+    }
+};
+
+signed main(){
+    Orz;
+    memset(visit,0,sizeof(visit));
+    cin>>n>>m;
+    rep(i,0,m-1){
+        int a,b,w;cin>>a>>b>>w;
+        edge[a].push_back({b,w});
+        edge[b].push_back({a,w});
+    }
+    priority_queue<node,vector<node>,cmp> pq;
+    visit[1] = 1;
+    for(auto i : edge[1])pq.push(i);
+    int num_edge = 0,ans = 0;
+    while(num_edge < n-1){
+        node x = pq.top();pq.pop();
+        if(visit[x.to])continue;
+        visit[x.to] = 1;
+        num_edge += 1;
+        ans += x.w;
+        for(auto i : edge[x.to]){
+            pq.push(i);
+        }
+    }
+    cout<<ans<<endl;
+}
+```
+
+### 高棕櫚的意外收穫
+
+[題目連結](https://neoj.sprout.tw/problem/169/)
+[講義連結](https://www.csie.ntu.edu.tw/~sprout/algo2021/ppt_pdf/week11/euler_hamilton.pdf)
+
+這一題就是按照字典序print出尤拉路徑，特別用**鄰接矩陣**來存圖是因為要按照字典序輸出，如果用鏈結串列來存還要花時間排序，因此用大一點的空間來節省時間
+
+尤拉路徑也是一筆畫問題，每一個節點一定會有進有出，因此原先的無向圖上每一點一定度數為偶數，若有奇點則選擇其中一個奇點作為起點，當奇點數量超過兩個則代表無解。我們將DFS的過程中離開當前節點的順序紀錄起來，逆序輸出就是一組合法歐拉迴路的解了！
+{% note info %}
+**實作程序**
+
+**1. 判斷奇點個數**，若奇點個數k：
+
+* k > 2，那麼無解
+* k = 2，則選擇其中一個奇點作為起點
+* k = 0，則選擇任意一個點作為起點
+
+**2. DFS 執行下列步驟**
+> 若當前節點還有尚未走過的邊，那麼拜訪該邊，並在拜訪完後輸出該邊
+> 否則離開當前結點
+
+**3. 若還有節點尚未拜訪，則無解**
+**4. 否則輸出順序即為一組解**
+{% endnote %}
+
+```cpp=
+#include <bits/stdc++.h>
+#define N 501
+using namespace std;
+int n,Edge[N][N],ans[1025],ind = 0;
+
+void DFS(int cur){
+    for(int i=1;i<=500;i++){
+        if(Edge[cur][i]){
+            Edge[cur][i]--;Edge[i][cur]--;
+            DFS(i);
+        }
+    }
+    ans[ind++] = cur;
+}
+
+signed main(){
+    cin>>n;
+    memset(Edge, 0, sizeof(Edge));
+    for(int i=0;i<n;i++){
+        int a,b;cin>>a>>b;
+        Edge[a][b]++;
+        Edge[b][a]++;
+    }
+    int start = 1;                //開始的節點編號
+    for(int i=1;i<=500;i++){
+        int sum = 0;
+        for(int j=1;j<=500;j++){
+            sum+=Edge[i][j];
+        }
+        if(sum%2!=0){             //找到第一個度數為奇數的節點
+            start = i;
+            break;
+        }
+    }
+    DFS(start);
+    for(int i=ind-1;i>=0;i--)cout<<ans[i]<<endl;
+}
+```
+
+### 陣線推進
+
+[題目連結](https://neoj.sprout.tw/problem/165/)
+拓墣排序題，兩種實作方式，第一是BFS變形實作（queue實作），被pop出來的順序就是topological sort
+第二種就是DFS搭配時間戳記，最晚離開的放在最前面
+
+這一題是把入度為0的節點先push進priority_queue（按照字典序），當一個點處理過之後，入度變成0的所有它指向的點在push進queue裡面
+拓墣排序可以用在DAG的判定以及解決具有依賴關係的問題
+
+```cpp=
+#include <bits/stdc++.h>
+#define N 100001
+using namespace std;
+int t,n,m,deg[N];//入度
+int ans[N],ind = 0;
+
+signed main(){
+    cin>>t;
+    while(t--){
+        memset(deg,0,sizeof(deg));
+        memset(ans, 0, sizeof(ans));
+        ind = 0;
+        vector<int> edge[N];
+        cin>>n>>m;
+        for(int i=0;i<m;i++){
+            int a,b;cin>>a>>b;
+            edge[a].push_back(b);
+            deg[b]++;
+        }
+        priority_queue<int,vector<int>,greater<int> > qq;//priority_queue取代queue
+        for(int i=0;i<n;i++)if(deg[i]==0)qq.push(i);
+        while(!qq.empty()){
+            int cur = qq.top();
+            qq.pop();
+            ans[ind++] = cur;
+            int len = edge[cur].size();
+            for(int i=0;i<len;i++){
+                deg[edge[cur][i]]--;
+                if(deg[edge[cur][i]]==0)
+                    qq.push(edge[cur][i]);
+            }
+        }
+        if(ind==n){
+            cout<<ans[0];
+            for(int i=1;i<n;i++)cout<<" "<<ans[i];
+            cout<<endl;
+        }
+        else cout<<"QAQ"<<endl;
+    }
+}
+```
+
+## 手寫作業
+
+這一次的手寫也蠻困難的，討論BIT(fenwick tree)的實作以及複雜度！

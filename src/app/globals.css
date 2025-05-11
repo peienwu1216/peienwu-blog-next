@@ -1,23 +1,36 @@
+/* src/app/globals.css */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-@import "katex/dist/katex.min.css";
+@import "katex/dist/katex.min.css"; /* 保留 KaTeX CSS */
 
 :root {
+  /* 你原有的背景/前景顏色變數可以保留 */
   --background: #ffffff;
   --foreground: #000000;
+
+  /* 舊的 --font-geist-sans 和 --font-geist-mono 變數可以移除了，
+    因為我們現在透過 next/font 和 tailwind.config.js 來管理字體。
+    next/font 會自動產生類似 --font-noto-sans-tc 和 --font-jetbrains-mono 的變數，
+    並且已經在 layout.tsx 中將它們加到了 <html> 標籤上。
+  */
 }
 
-@theme inline {
+/* 移除舊的 @theme inline {} 區塊，因為字體變數已由 next/font 處理。
+  Tailwind 的 theme() 函數會從 tailwind.config.js 讀取設定。
+*/
+/* @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+  --font-sans: var(--font-geist-sans); // 將移除
+  --font-mono: var(--font-geist-mono); // 將移除
+} 
+*/
 
 @media (prefers-color-scheme: dark) {
   :root {
+    /* 保留你的暗色模式顏色變數 */
     --background: #0a0a0a;
     --foreground: #ededed;
   }
@@ -26,9 +39,32 @@
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  /* 這裡的 font-family 會被 layout.tsx 中 html 標籤上的 notoSansTC.className 
+    以及 tailwind.config.js 中 theme.extend.fontFamily.sans 的設定所覆蓋或影響。
+    為了確保使用 next/font 載入的 Noto Sans TC，
+    我們可以依賴 layout.tsx 的設定，或者在這裡明確使用 CSS 變數或 Tailwind 的 theme()。
+    由於 layout.tsx 中已經將 notoSansTC.className 加到了 html 標籤，
+    這裡的 body font-family 會繼承它。
+    如果想更明確，可以寫成：
+    font-family: var(--font-noto-sans-tc), theme('fontFamily.sans'); 
+    但通常 layout.tsx 的設定就足夠了。
+    目前暫時移除這行，讓 layout.tsx 的設定主導。
+  */
+  /* font-family: Arial, Helvetica, sans-serif; */ /* <--- 移除或註解此行 */
 }
 
+/* 設定程式碼區塊和行內程式碼的預設字型。
+  我們在 tailwind.config.js 中已經將 'mono' 指向了 var(--font-jetbrains-mono)。
+  所以這裡使用 theme('fontFamily.mono') 是正確的。
+*/
+pre,
+code,
+kbd, /* keyboard input */
+samp /* sample output */ {
+  font-family: theme('fontFamily.mono'); /* 使用 Tailwind 設定的 mono 字型 (即 JetBrains Mono) */
+}
+
+/* 保留你原有的 Note 元件樣式 */
 .note {
   padding: 1rem;
   border-radius: 8px;
@@ -37,15 +73,27 @@ body {
 }
 
 .note-info {
-  background-color: #e0f7fa;
+  background-color: #e0f7fa; /* 你可以考慮將這些顏色也設為 CSS 變數，方便暗色模式調整 */
   border: 1px solid #4dd0e1;
   color: #004d40;
 }
+/* 在暗色模式下為 note-info 設定不同顏色 */
+.dark .note-info {
+  background-color: #0e7490; /* 範例：深色的 info 背景 */
+  border-color: #22d3ee;
+  color: #ecfeff;
+}
+
 
 .note-success {
   background-color: #e6f4ea;
   border: 1px solid #66bb6a;
   color: #1b5e20;
+}
+.dark .note-success {
+  background-color: #166534;
+  border-color: #4ade80;
+  color: #f0fdf4;
 }
 
 .note-warning {
@@ -53,9 +101,19 @@ body {
   border: 1px solid #ffb74d;
   color: #5d4037;
 }
+.dark .note-warning {
+  background-color: #78350f; 
+  border-color: #fbbf24;
+  color: #fefce8;
+}
 
-.note-error {
+.note-error { /* 你之前寫的是 note-error，我假設是 danger 的意思 */
   background-color: #ffebee;
   border: 1px solid #ef5350;
   color: #b71c1c;
+}
+.dark .note-error {
+  background-color: #991b1b;
+  border-color: #f87171;
+  color: #fef2f2;
 }

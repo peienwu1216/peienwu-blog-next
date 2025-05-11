@@ -4,7 +4,7 @@ import { useMDXComponent } from 'next-contentlayer/hooks';
 import { notFound } from 'next/navigation';
 import { format, parseISO } from 'date-fns'; // 用於格式化日期
 import Link from 'next/link'; // 用於標籤連結
-import Note from '../components/Note';    // 你的自訂 MDX 元件
+import Note from '@/components/Note'; // 假設你已設定 @/ 指向 src/
 
 // Params 型別保持不變
 type Params = { slug: string }

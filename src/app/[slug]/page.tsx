@@ -28,7 +28,7 @@ export default function PostPage({ params }: { params: Params }) {
   const components = { Note }; // 如果你有其他自訂元件，也在此處註冊
 
   return (
-    <article className="prose lg:prose-lg mx-auto py-10 px-4 sm:px-6 lg:px-8 dark:prose-invert">
+    <article className="prose lg:prose-lg max-w-[52rem] mx-auto py-10 px-4 sm:px-6 lg:px-8 dark:prose-invert">
       {/* 文章標題 */}
       <h1 className="mb-4 text-3xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100 sm:text-4xl">
         {post.title}

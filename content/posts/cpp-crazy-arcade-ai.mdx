@@ -1,0 +1,255 @@
+---
+title: "C++打造《瘋狂炸彈人》：從FSM到BFS的AI智能設計與物件導向實踐"
+date: "2025-05-15"
+category: "遊戲開發"
+tags: ["C++", "遊戲開發", "AI", "FSM", "BFS", "物件導向", "期末專題", "瘋狂炸彈人"]
+sticky: 100
+---
+
+**組員：113511103 吳沛恩、113511216 洪崧祐**
+
+**課程：計算機概論與程式設計 期末專題**
+
+**GitHub 專案連結：[CrazyArcade-CPP-Game](https://github.com/peienwu1216/CrazyArcade-CPP-Game)**
+
+## 一、專案啟程與目標
+
+本專案旨在運用C++語言，結合物件導向程式設計（OOP）的原則，重現經典遊戲《瘋狂炸彈人》(Crazy Arcade)的核心玩法。我們不僅設計了單人（AI對戰）與雙人（玩家對戰）模式，更投入大量心力於電腦AI玩家的智能控制，目標是打造一個具備挑戰性、趣味性且系統架構清晰、可擴展的遊戲。
+
+在這個過程中，我們不僅追求功能的實現，更將其視為一個深入學習和實踐OOP思想（如封裝與繼承）、演算法（如BFS路徑規劃）以及使用者介面（UI）設計的寶貴機會。
+
+*圖一：遊戲主選單介面 (示意圖)*
+
+## 二、核心遊戲機制
+
+### 2.1 遊戲流程概述
+1.  **核心玩法：** 玩家透過策略性地放置炸彈來攻擊對手，並在地圖中積極收集各種道具以增強自身能力。
+2.  **主要模式：**
+    * 單人模式：玩家與精心設計的AI進行對戰。
+    * 雙人模式：兩位玩家進行本機對戰。
+3.  **初始條件：** 每位玩家擁有3條初始生命值。一旦被炸彈爆炸波及，即損失一條生命。生命值歸零則玩家被淘汰。若雙方同時失去所有生命，則判定為平局。
+4.  **結束條件：** 任一方玩家生命值耗盡，或遊戲時間結束。
+
+### 2.2 道具系統
+多樣的道具為遊戲增添了策略性與變數：
+* **增加玩家分數：** 綠色星星 (★)
+* **增加玩家生命：** 紅色愛心 (♥)
+* **增加同時放置炸彈數量上限：** 黑桃 (♠)
+* **增加炸彈爆炸範圍：** 黑色齒輪 (❁)
+
+### 2.3 計分規則
+玩家的得分主要基於以下行為：
+* **擊敗對手：** 成功使用炸彈擊中對手，獲得100分獎勵。
+* **收集道具：**
+    * 加分道具 (綠色星星★)：每個增加50分。
+    * 其他功能性道具 (增加生命、炸彈數、爆炸範圍)：每個增加20分。
+* **存活時間：** 遊戲結束時，存活時間將作為排行榜上區分同分玩家的額外依據。
+
+### 2.4 地圖設計與爆炸機制
+* **地圖種類：** 遊戲提供三種地圖：簡易版、中等版，以及隨機生成障礙物的困難版。地圖由固定障礙物、可破壞障礙物、道具及空地構成。
+* **爆炸機制：** 玩家炸彈的初始爆炸範圍為3格。爆炸時，路徑上的可摧毀障礙物（Destructible Obstacles）會被清除，並有機率掉落道具。收集到「範圍增加道具（❁）」可使炸彈爆炸範圍額外增加1格。
+
+## 三、系統架構與核心功能實現
+
+### 3.1 專案模組化：檔案結構與職責劃分
+為了實踐模組化與物件導向的設計理念，我們將專案的程式碼拆分為13個檔案，包含標頭檔 (.h)、原始碼檔 (.cpp) 以及純文字資料檔 (.txt)，各司其職。
+
+*圖二：專案檔案架構 (示意圖，請替換為您的圖片)*
+
+#### 3.1.1 遊戲核心邏輯 (`GameCrazyArcade.h` / `GameCrazyArcade.cpp`)
+負責遊戲的整體流程控制，包括初始化、主遊戲循環、炸彈管理、勝負判斷以及玩家狀態（分數、生命）的維護。
+* 主要函數：
+    * `gameInitialization(Player, Player)`
+    * `drawGame(Player, Player, GameObject)`
+    * `updateBombs(Player, Player, GameObject)`
+    * `GameStart(Player, Player, GameObject, Menu)`
+
+#### 3.1.2 AI 玩家控制邏輯 (`AIController.h` / `AIController.cpp`)
+此模組是AI玩家的“大腦”，採用**有限狀態機 (Finite State Machine, FSM)** 進行決策，並結合**廣度優先搜索 (BFS) 演算法**進行路徑規劃。
+* **FSM狀態定義 (`AIController.h`)：**
+    ```cpp
+    // AIController.h (片段) - AI 狀態枚舉
+    enum class AIState {
+        ESCAPE,         // 逃避炸彈
+        WAIT_EXPLOSION, // 等待爆炸結束
+        FETCH_ITEMS,    // 拾取道具
+        ATTACK_PLAYER,  // 攻擊玩家
+        IDLE,           // 閒置巡邏
+    };
+    ```
+* **核心決策函數 (`AIController.cpp`)：** `updateState` 函數根據當前遊戲局勢，依照預設的優先級（如躲避優先於攻擊）來切換AI狀態。
+    ```cpp
+    // AIController.cpp (片段) - updateState 核心邏輯簡化示意
+    void AIController::updateState(Player &computerPlayer, Player &humanPlayer) {
+        // ... (計算炸彈是否活躍等前置判斷) ...
+
+        // Priority 1 : ESCAPE or WAIT_EXPLOSION
+        if (isBombActiveAndNear()) {
+            if (canEscapeToSafeCell()) {
+                if (currentState != AIState::ESCAPE) startState(AIState::ESCAPE);
+                return;
+            } else {
+                if (currentState != AIState::WAIT_EXPLOSION) startState(AIState::WAIT_EXPLOSION);
+                return;
+            }
+        }
+
+        // Priority 2 : ATTACK_PLAYER
+        if (canAttackPlayer(humanPlayer)) {
+            if (shouldPlaceBombToAttack(computerPlayer, humanPlayer)) {
+                placeBombSafely(computerPlayer);
+                startState(AIState::ESCAPE); // or WAIT_EXPLOSION after placing bomb
+                return;
+            } else {
+                if (currentState != AIState::ATTACK_PLAYER) startState(AIState::ATTACK_PLAYER);
+                // ... (設置攻擊路徑) ...
+                return;
+            }
+        }
+        // Priority 3 : FETCH_ITEMS (省略部分邏輯)
+        // ...
+
+        // Default : IDLE
+        if (currentState != AIState::IDLE) startState(AIState::IDLE);
+    }
+    ```
+* **路徑規劃函數 (`AIController.cpp`)：** `bfsFindPath` 實現了BFS演算法，用於計算到達目標點的最短路徑。
+    ```cpp
+    // AIController.cpp (片段) - bfsFindPath 核心結構示意
+    vector<pair<int,int>> AIController::bfsFindPath(const Player &start, const vector<pair<int,int>> &targets, bool avoidDanger){
+        auto dangerMap = computeDangerMap(); // 計算當前危險區域
+        vector<vector<bool>> visited(mapHeight, vector<bool>(mapWidth,false));
+        vector<vector<pair<int,int>>> parent(mapHeight, vector<pair<int,int>>(mapWidth, {-1,-1}));
+        queue<pair<int,int>> q;
+
+        q.push({start.y,start.x});
+        visited[start.y][start.x] = true;
+
+        // BFS 主體邏輯：擴展節點，記錄父節點，直到找到目標或佇列為空
+        // ... (省略了標準的BFS佇列操作、鄰居節點遍歷檢查、邊界與障礙物判斷等) ...
+
+        // 回溯路徑 (Path reconstruction)
+        if (foundTarget) {
+            vector<pair<int,int>> path;
+            pair<int,int> curr = foundTargetCell;
+            while (!(curr.first == start.y && curr.second == start.x)) {
+                path.push_back(curr);
+                curr = parent[curr.first][curr.second];
+            }
+            path.push_back({start.y,start.x}); // 加入起點
+            reverse(path.begin(),path.end());
+            path.erase(path.begin()); // 移除路徑中的第一個元素 (即AI當前位置)
+            return path;
+        }
+        return {}; // 未找到路徑
+    }
+    ```
+* 其他狀態處理函數：`handleEscapeState`, `handleAttackPlayerState`, `handleFetchItemsState` 等。
+
+#### 3.1.3 遊戲物件管理 (`GameObject.h` / `GameObject.cpp`)
+作為遊戲內核心物件（玩家、炸彈等）的基礎，並管理排行榜數據及底層終端機I/O。
+* 主要函數：`loadLeaderboard`, `updateLeaderboard`, `displayLeaderboard`, `setConioTerminalMode`。
+
+#### 3.1.4 使用者介面 (`Menu.h` / `Menu.cpp`)
+負責主選單、地圖選擇、ASCII動畫等視覺呈現與互動。
+* 主要函數：`initial_animation`, `Display_Main_Menu`, `Map_Selection`。
+
+#### 3.1.5 全域變數與設定 (`Globals.h` / `Globals.cpp`)
+集中存儲地圖尺寸、遊戲符號、控制鍵等全域參數。
+
+#### 3.1.6 純文字資料檔 (`leaderboard.txt` / `animation.txt`)
+分別用於持久化存儲排行榜數據和ASCII動畫內容。
+
+### 3.2 物件導向程式設計 (OOP) 的實踐
+物件導向是本專案的核心設計思想。透過**封裝 (Encapsulation)** 與**繼承 (Inheritance)**，我們有效地提升了程式碼的模組化程度、可維護性與擴展性。
+
+*圖三：專案中物件繼承與依賴關係 (示意圖，請替換為您的圖片)*
+
+* **基礎類別 (`GameObject.h`)：**
+    ```cpp
+    // GameObject.h (片段) - 基礎類別定義
+    class GameObject {
+    protected:
+        struct Bomb { /* ... Bomb 結構定義 ... */ };
+        vector<Bomb> bombs;
+    public:
+        struct Player { /* ... Player 結構定義 ... */ };
+        // ... 其他通用方法與成員 ...
+    };
+    ```
+* **繼承結構 (`AIController.h`, `GameCrazyArcade.h`)：**
+    ```cpp
+    // AIController.h (片段) - 繼承 GameObject
+    #include "GameObject.h"
+    class AIController : public GameObject { /* ... AI特定成員與方法 ... */ };
+
+    // GameCrazyArcade.h (片段) - 繼承 AIController
+    #include "AIController.h"
+    class GameCrazyArcade : public AIController { /* ... 遊戲主邏輯方法 ... */ };
+    ```
+    這樣的繼承關係（`Menu`亦繼承自`GameObject`）構建了清晰的類別層次，實現了程式碼的複用與功能的專注。
+* **權限控制與依賴管理：** 透過 `public`, `protected`, `private` 控制成員可見性，並以 `#include` 管理模組間依賴。
+
+*圖四：主要類別間的依賴關係 (示意表，請替換為您的圖片/表格)*
+
+### 3.3 程式執行流程
+遊戲的整體執行流程清晰明瞭，從初始化、選單互動到主遊戲循環，最終進行結果判定。為了編譯方便，我們使用`makefile`技術，大大降低編譯與執行的複雜性。
+
+*圖五：程式執行流程圖 (示意圖，請替換為您的圖片)*
+
+## 四、特色功能深度剖析
+
+除了完成基礎遊戲框架，我們亦投入心力於以下特色功能的實現，並克服了開發過程中的挑戰：
+
+### 4.1 隨機地圖生成與平衡性考量
+為提升遊戲的重玩價值，我們設計了隨機地圖生成演算法。
+* **核心挑戰：** 如何避免玩家初始位置被障礙物完全封鎖。
+* **解決方案：** 引入「玩家保護區」機制，確保玩家初始點周圍3x3區域的通暢。同時，透過機率控制障礙物和道具的整體分佈，以維持地圖的平衡性與趣味性。
+* **道具生成策略：** 可破壞障礙物被摧毀後，有高機率（80%）生成道具，各類道具（加分、加生命、加炸彈數、加範圍）亦有其獨立的出現機率。
+
+*圖六：隨機地圖中的玩家初始保護區 (示意圖)*
+
+### 4.2 使用者互動介面 (UI/UX) 優化
+良好的UI/UX是提升遊戲沉浸感的關鍵。我們著重於選單系統的易用性，並手動編寫了ASCII藝術風格的開場、勝利等動畫效果，力求在純C++文字環境下提供最佳的視覺與互動體驗。排行榜功能也為玩家提供了持續挑戰的目標。
+
+### 4.3 AI 智能核心：有限狀態機 (FSM) 與 BFS 演算法的融合
+AI 的設計是本專案最具挑戰性也最富成就感的部分。
+* **演進過程：** 從最初基於簡單規則的反應式AI，演進到採用有限狀態機 (FSM) 進行宏觀決策，結合BFS進行微觀路徑規劃的策略。
+* **FSM 設計：** AI定義了五種核心狀態（ESCAPE, WAIT_EXPLOSION, FETCH_ITEMS, ATTACK_PLAYER, IDLE）。`updateState()` 函數作為AI的決策中樞，根據當前戰局的優先級（例如，躲避危險 > 攻擊玩家 > 拾取道具）來觸發狀態轉換。
+* **BFS 應用：** 在每個決策狀態下，AI利用BFS快速計算到達目標（安全點、道具、敵方玩家）的最短無障礙路徑，並能動態避開已知的炸彈爆炸區域。
+* **技術亮點：**
+    * **即時決策與反應：** FSM與BFS的結合使得AI能夠在快速變化的遊戲環境中迅速做出反應。
+    * **策略性避險：** AI能主動識別並規避潛在危險。
+    * **多目標路徑規劃：** BFS能夠靈活應對不同狀態下的多樣化路徑尋找需求。
+
+#### AI 狀態轉換邏輯概要
+（此處可保留或精簡您報告中關於各狀態進入與離開條件的詳細文字描述，或者用更簡潔的表格/列表呈現關鍵的轉換邏輯。）
+
+| 狀態 (State)     | 主要行為 (Action)            | 觸發進入條件 (Transition In)                 | 優先離開條件 (Transition Out to Higher Priority) |
+| :--------------- | :------------------------- | :------------------------------- | :--------------------------------------------- |
+| ESCAPE           | 逃離炸彈，尋找安全點           | 偵測到自身處於炸彈爆炸範圍內             | - (最高優先級)                                  |
+| WAIT_EXPLOSION   | 在安全區等待自己放置的炸彈爆炸   | 剛放置炸彈且已移動到安全位置             | ESCAPE (若出現新威脅)                         |
+| ATTACK_PLAYER    | 追蹤並嘗試攻擊人類玩家         | 偵測到玩家且無立即危險                   | ESCAPE                                         |
+| FETCH_ITEMS      | 移動並拾取地圖上的道具         | 偵測到道具且無更高優先級任務              | ESCAPE, ATTACK_PLAYER                          |
+| IDLE             | 在地圖上巡邏或隨機移動         | 無任何上述高優先級任務執行               | ESCAPE, ATTACK_PLAYER, FETCH_ITEMS           |
+
+*表二：AI核心狀態及其轉換優先級簡表*
+
+
+## 五、專案總結與技術反思
+
+這次「瘋狂炸彈人」的專案開發是一次深刻的學習與實踐之旅。從最初的遊戲概念構想到最終的成品，我們不僅深化了對C++語言和物件導向程式設計的理解，更在演算法應用（特別是FSM和BFS在AI設計中的整合）、系統模組化、以及專案管理方面獲得了寶貴的經驗。
+
+**核心技術挑戰與突破：**
+
+* **AI智能設計：** 從規則式AI到引入FSM進行情境判斷與策略切換，是提升AI「智慧感」的關鍵。如何定義合理的狀態、設計精確的轉換條件，並讓AI在不同狀態下表現出符合邏輯的行為，是我們反覆調試和優化的重點。BFS演算法的引入，則有效解決了AI在複雜地圖中的路徑規劃難題。
+* **物件導向實踐：** 隨著專案規模的擴大（最終程式碼超過2000行），物件導向的優勢愈發凸顯。將遊戲元素（玩家、炸彈、地圖、AI控制器、選單等）抽象為類別，並透過封裝、繼承來組織程式碼，極大地提高了程式的可讀性、可維護性和擴展性。例如，AI控制器繼承自通用的遊戲物件，使得AI可以方便地獲取遊戲狀態，同時其自身的邏輯又保持了獨立性。
+* **除錯與迭代：** 大規模程式的除錯無疑是一項艱鉅的任務。我們深刻體會到模組化設計對於定位和修復bug的重要性。不斷的測試、反饋和迭代優化，是專案得以順利完成並達到預期效果的保證。
+
+**個人成長與啟示：**
+
+這個專案不僅僅是一份課程作業，它更像是一次小型軟體工程的演練。從需求分析、系統設計、編碼實現到測試除錯，我們經歷了軟體開發的完整週期。廢寢忘食地投入、與組員的密切協作、以及最終看到親手打造的AI在遊戲中展現出預期行為時的成就感，都成為了寶貴的記憶。
+
+FSM的設計雖然直觀，但在面對更動態和不確定的環境時，其狀態的定義和轉換邏輯會變得非常複雜。這次的經驗也啟發我去思考未來如何引入**更具適應性的AI技術**，例如強化學習的初步概念，來應對更複雜的決策場景。
+
+更重要的是，透過這個專案，我更加確信了自己對軟體邏輯建構與演算法設計的濃厚興趣。能夠將抽象的理論知識轉化為實際可運行的、能與人互動的智慧系統，這種創造過程本身充滿了魅力。未來，我期望能在此基礎上，向更複雜的AI系統、更精巧的演算法設計以及更大型的軟體工程專案發起挑戰。

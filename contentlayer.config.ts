@@ -5,6 +5,7 @@ import remarkMath from 'remark-math' // 讓 remark 理解 LaTeX 數學語法
 import rehypeKatex from 'rehype-katex' // 將 remarkMath 產生的數學 AST 渲染成 KaTeX HTML
 import rehypePrettyCode from 'rehype-pretty-code' // 程式碼高亮
 
+
 // 處理 TypeScript 型別問題，rehype-pretty-code 的預設匯出可能與 rehype 插件型別不完全匹配
 const rehypePrettyCodePlugin = rehypePrettyCode as unknown as any // 這樣處理通常是OK的
 

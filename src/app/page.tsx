@@ -32,9 +32,7 @@ export default function HomePage() {
   ) as string[];
 
   return (
-    // 最外層的 div，它的 padding 和 font 設定可以保留，會應用於首頁的主要內容區域
-    // 這個 div 現在會是 layout.tsx 中 <main> 標籤的直接子元素
-    <div className="container mx-auto px-4 py-8 sm:py-12 font-[family-name:var(--font-geist-sans)]"> {/* 調整了 sm:py-12 讓內容與窄 header 有些間距 */}
+    <div className="container mx-auto px-4 py-8 sm:py-12">
       
       {/* 移除了原本在這裡的 <header>...</header> 區塊。
         網站的標題、副標題和主要導覽列現在由 src/app/layout.tsx 提供。

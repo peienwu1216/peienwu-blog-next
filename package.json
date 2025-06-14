@@ -13,6 +13,7 @@
     "@rehype-pretty/transformers": "^0.13.2",
     "date-fns": "^4.1.0",
     "katex": "^0.16.22",
+    "lucide-react": "^0.515.0",
     "next": "^13.5.11",
     "next-contentlayer": "^0.3.4",
     "next-mdx-remote": "^5.0.0",

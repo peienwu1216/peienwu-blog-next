@@ -50,10 +50,7 @@ export default function PostPage({ params }: { params: Params }) {
       </div>
 
       {/* MDX 內容 */}
-      <div className="prose-p:my-4 prose-headings:my-6 prose-blockquote:my-4 prose-ul:my-4 prose-ol:my-4 prose-li:my-1 prose-table:my-4 prose-code:before:content-[''] prose-code:after:content-['']">
-         <MDXContent components={components} />
-      </div>
-
+      <MDXContent components={components} />
 
       {/* 文章標籤 */}
       {post.tags && post.tags.length > 0 && (

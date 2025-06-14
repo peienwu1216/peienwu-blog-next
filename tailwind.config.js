@@ -30,6 +30,20 @@ module.exports = {
                 borderBottomColor: theme('colors.slate.200'),
                 paddingBottom: theme('spacing.3'),
               },
+              blockquote: {
+                fontStyle: 'normal',
+                borderLeftWidth: '4px',
+                borderLeftColor: theme('colors.green.500'),
+                backgroundColor: theme('colors.slate.100'),
+                paddingLeft: theme('spacing.4'),
+                paddingRight: theme('spacing.4'),
+                paddingTop: theme('spacing.3'),
+                paddingBottom: theme('spacing.3'),
+                borderRadius: theme('borderRadius.lg'),
+              },
+              'blockquote p:first-of-type::before, blockquote p:last-of-type::after': {
+                content: 'none',
+              },
             },
           },
           // 確保 prose-invert 在暗黑模式下也能套用我們的自訂義
@@ -37,6 +51,13 @@ module.exports = {
             css: {
               'h1, h2': {
                 borderBottomColor: theme('colors.slate.700'),
+              },
+              blockquote: {
+                borderLeftColor: theme('colors.green.400'),
+                backgroundColor: theme('colors.slate.800'),
+              },
+              'blockquote p:first-of-type::before, blockquote p:last-of-type::after': {
+                content: 'none',
               },
             },
           },

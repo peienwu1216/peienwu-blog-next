@@ -14,8 +14,8 @@ export async function generateStaticParams() {
     ),
   ];
   return categories.map((category) => ({
-    // 將分類名稱轉換為 URL 安全的格式
-    category: encodeURIComponent(category.toLowerCase().replace(/\s+/g, '-')),
+    // 直接回傳 slug （Next.js 會自動處理 URL encoding）
+    category: category.toLowerCase().replace(/\s+/g, '-'),
   }));
 }
 
@@ -26,7 +26,8 @@ export async function generateMetadata({
   params: { category: string };
 }): Promise<Metadata> {
   // 從 URL 中解碼分類名稱
-  const categoryName = decodeURIComponent(params.category);
+  const categoryParam = params.category;
+  const categoryName = decodeURIComponent(categoryParam);
   const formattedCategoryName =
     categoryName.charAt(0).toUpperCase() + categoryName.slice(1);
 
@@ -42,13 +43,15 @@ export default function CategoryPage({
   params: { category: string };
 }) {
   // 從 URL 中解碼分類名稱
-  const categoryName = decodeURIComponent(params.category);
+  const categoryParam = params.category;
+  const categoryName = decodeURIComponent(categoryParam);
+  const categorySlug = categoryName.toLowerCase().replace(/\s+/g, '-');
 
   // 根據分類名稱篩選文章，並按日期降序排列
   const posts = allPosts
     .filter(
       (post) =>
-        post.category?.toLowerCase().replace(/\s+/g, '-') === categoryName
+        post.category?.toLowerCase().replace(/\s+/g, '-') === categorySlug
     )
     .sort((a, b) => compareDesc(new Date(a.date), new Date(b.date)));
 

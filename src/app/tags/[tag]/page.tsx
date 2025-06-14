@@ -10,8 +10,8 @@ export async function generateStaticParams() {
   const uniqueTags = [...new Set(allTags)];
 
   return uniqueTags.map((tag) => ({
-    // 將標籤名稱轉換為 URL 安全的格式
-    tag: encodeURIComponent(tag.toLowerCase().replace(/\s+/g, '-')),
+    // 直接回傳 slug，Next.js 會自動處理 URL encoding
+    tag: tag.toLowerCase().replace(/\s+/g, '-'),
   }));
 }
 
@@ -22,7 +22,9 @@ export async function generateMetadata({
   params: { tag:string };
 }): Promise<Metadata> {
   // 從 URL 中解碼標籤名稱
-  const tagName = decodeURIComponent(params.tag);
+  const tagParam = params.tag;
+  const tagName = decodeURIComponent(tagParam);
+  const tagSlug = tagName.toLowerCase().replace(/\s+/g, '-');
   const formattedTagName = tagName.charAt(0).toUpperCase() + tagName.slice(1);
 
   return {
@@ -33,13 +35,15 @@ export async function generateMetadata({
 
 export default function TagPage({ params }: { params: { tag: string } }) {
   // 從 URL 中解碼標籤名稱
-  const tagName = decodeURIComponent(params.tag);
+  const tagParam = params.tag;
+  const tagName = decodeURIComponent(tagParam);
+  const tagSlug = tagName.toLowerCase().replace(/\s+/g, '-');
 
   // 根據標籤名稱篩選文章，並按日期降序排列
   const posts = allPosts
     .filter((post) =>
       post.tags?.some(
-        (t) => t.toLowerCase().replace(/\s+/g, '-') === tagName
+        (t) => t.toLowerCase().replace(/\s+/g, '-') === tagSlug
       )
     )
     .sort((a, b) => compareDesc(new Date(a.date), new Date(b.date)));

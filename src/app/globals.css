@@ -139,3 +139,20 @@ pre[data-theme] code {
   font-family: theme('fontFamily.mono'); /* 再次確認，雖然通常會繼承 */
   /* line-height: 1.6; */ /* 可調整行高 */
 }
+
+/* ================================
+   Inline Code Capsule Style
+   ================================ */
+@layer base {
+  /* 只針對行內 <code>，不包含 <pre><code> 區塊 */
+  .prose :not(pre) > code {
+    /* 輕量長方形：淺灰背景、文字深灰、正常字重，略小內距 */
+    @apply rounded bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-100 px-1.5 py-0.5 font-normal;
+  }
+
+  /* 移除 Tailwind Typography 預設插入的前後反引號 */
+  .prose code::before,
+  .prose code::after {
+    content: none !important;
+  }
+}

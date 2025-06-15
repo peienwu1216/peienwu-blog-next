@@ -50,7 +50,7 @@ export default function PostPage({ params }: { params: Params }) {
       </div>
 
       {/* MDX 內容 */}
-      <MDXContent components={components} />
+         <MDXContent components={components} />
 
       {/* 文章標籤 */}
       {post.tags && post.tags.length > 0 && (

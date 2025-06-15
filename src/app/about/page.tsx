@@ -74,7 +74,7 @@ export default function AboutPage() {
                     <strong>導入自動化 CI/CD：</strong>以 GitHub Actions 建立持續整合與部署流程，自動執行 Pytest, flake8，並將最新版本部署至 GitHub Pages 供<strong>線上即時遊玩</strong>。
                   </li>
                   <li>
-                    <strong>實踐業界協作流程：</strong>嚴格執行 Git 工作流，包含分支保護、<strong>Pull Request</strong> 與 <strong>Code Review</strong>，確保程式碼品質與團隊協作效率。
+                    <strong>實踐業界協作流程：</strong>執行 Git 工作流，包含分支保護、<strong>Pull Request</strong> 與 <strong>Code Review</strong>，確保程式碼品質與團隊協作效率。
                   </li>
                 </ul>
                 <p>
@@ -88,7 +88,7 @@ export default function AboutPage() {
               <td style={{ width: '50%', verticalAlign: 'top' }}>
                 <h3>💡 Code Lab: 現代化網頁技術實踐</h3>
                 <p>
-                  為了深化對現代網頁開發的理解，並建立一個分享<strong>演算法、資料結構與專案開發等</strong>學習心得的平台，我正以最新的技術棧重構我的個人部落格。
+                  為了深化對現代網頁開發的理解，並建立一個分享<strong>演算法、資料結構與專案開發等</strong>學習心得的平台，我正嘗試以最新的技術親手打造這個新版的個人網站。
                 </p>
                 <p>
                   <em>這個專案體現了我對新技術的自學能力，以及將所學應用於實際產品的熱情。</em>
@@ -98,9 +98,7 @@ export default function AboutPage() {
                 </p>
                 <p>
                   🔗{' '}
-                  <a href="https://github.com/peienwu1216/peienwu-blog-next" target="_blank" rel="noopener noreferrer"><strong>查看進行中的專案</strong></a>
-                  <br />🚀{' '}
-                  <a href="https://peienwu-blog-next.vercel.app/" target="_blank" rel="noopener noreferrer"><strong>Vercel 線上預覽</strong></a>
+                  <a href="https://github.com/peienwu1216/peienwu-blog-next" target="_blank" rel="noopener noreferrer"><strong>點此探索專案原始碼</strong></a>
                 </p>
               </td>
             </tr>
@@ -108,10 +106,7 @@ export default function AboutPage() {
               <td style={{ width: '50%', verticalAlign: 'top' }}>
                 <h3>🎮 CrazyArcade-CPP: C++ 核心能力實證</h3>
                 <p>
-                  一個從零開始、以 C++ 打造的完整遊戲專案。這個專案驗證了我管理大型專案、實現核心遊戲機制，以及運用 C++ 基礎來交付一個完整產品的能力。
-                </p>
-                <p>
-                  <em>這個專案是我 C++ 程式設計與大型專案執行能力的堅實證明。</em>
+                  一個從零開始、以 C++ 打造的完整遊戲專案。這個專案驗證了我管理較大的遊戲專案、實現核心遊戲機制，以及運用 C++ 基礎來交付一個完整產品的能力。
                 </p>
                 <p>
                   <strong>技術棧：</strong> C++
@@ -124,14 +119,14 @@ export default function AboutPage() {
               <td style={{ width: '50%', verticalAlign: 'top' }}>
                 <h3>📝 個人部落格 (Hexo): 長期學習與分享</h3>
                 <p>
-                  我高中時期架設的主要技術部落格（<a href="https://peienwu.com" target="_blank" rel="noopener noreferrer">peienwu.com</a>），以 Hexo 框架搭建，累積了超過 280 篇文章。它是我長期堅持學習、紀錄與分享知識的證明，並吸引了穩定的讀者群。
+                  我高中時期架設的主要技術部落格（<a href="https://peienwu.com" target="_blank" rel="noopener noreferrer">peienwu.com</a>），以 Hexo 框架搭建，累積了超過 280 篇文章。它是我長期堅持學習、紀錄與分享知識的證明，並吸引讀者閱讀。
                 </p>
                 <p>
                   <strong>技術棧：</strong> Hexo, JavaScript, Stylus, Markdown
                 </p>
                 <p>
                   🔗{' '}
-                  <a href="https://github.com/peienwu1216/peienwu-blog" target="_blank" rel="noopener noreferrer"><strong>查看專案原始碼</strong></a>
+                  <a href="https://github.com/peienwu1216/peienwu-blog" target="_blank" rel="noopener noreferrer"><strong>點此探索專案原始碼</strong></a>
                 </p>
               </td>
             </tr>
@@ -158,14 +153,10 @@ export default function AboutPage() {
             <strong>工具與平台：</strong> GitHub, Vercel, VS Code, Linux Environment
           </li>
           <li>
-            <strong>網頁開發：</strong>
-            <ul>
-              <li><strong>前端：</strong> Next.js, HTML, CSS</li>
-              <li><strong>內容管理：</strong> MDX, Hexo</li>
-            </ul>
+            <strong>網頁開發：</strong>Next.js, HTML, CSS, MDX, Hexo
           </li>
           <li>
-            <strong>遊戲開發基礎：</strong> C++ 遊戲邏輯與機制
+            <strong>遊戲開發基礎：</strong> C++, Python 遊戲邏輯與機制
           </li>
         </ul>
 

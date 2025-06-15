@@ -62,21 +62,13 @@ export default function AboutPage() {
           <tbody>
             <tr>
               <td style={{ width: '50%', verticalAlign: 'top' }}>
-                <h3>🏆 Pycade Bomber: AI、CI/CD 與專業開發流程</h3>
+              <h3>🏆 Pycade Bomber: FSM、CI/CD 與專業開發流程</h3>
                 <p>
-                  在一個<strong>三人團隊</strong>中，我們嘗試業界標準的開發流程，完成一個功能完整的遊戲專案。
+                作為<strong>三人團隊</strong>的核心開發者，我主導並負責兩大關鍵任務：在<strong>演算法層面</strong>，運用 <strong>FSM </strong>與 <strong>A*</strong> 演算法設計出策略多變的AI玩家；在<strong>工程實踐層面</strong>，則透過 GitHub Actions 建立 <strong>CI/CD </strong>自動化部署，並導入 Pull Request 與 Code Review 制度，確保了專案的開發品質與效率。
                 </p>
-                <ul>
-                  <li>
-                    <strong>智慧化 AI 設計：</strong>運用<strong>有限狀態機 (FSM)</strong> 設計了四種行為模式各異的 AI，並結合 <strong>A*/BFS 演算法</strong>實現高效的路徑規劃。
-                  </li>
-                  <li>
-                    <strong>導入自動化 CI/CD：</strong>以 GitHub Actions 建立持續整合與部署流程，自動執行 Pytest, flake8，並將最新版本部署至 GitHub Pages 供<strong>線上即時遊玩</strong>。
-                  </li>
-                  <li>
-                    <strong>實踐業界協作流程：</strong>執行 Git 工作流，包含分支保護、<strong>Pull Request</strong> 與 <strong>Code Review</strong>，確保程式碼品質與團隊協作效率。
-                  </li>
-                </ul>
+                <p>
+                  <em>這個專案完整體現了我在演算法設計、團隊協作與軟體工程實踐上的綜合能力。</em>
+                </p>
                 <p>
                   <strong>技術棧：</strong> Python, Pygame, OOP, FSM, CI/CD, GitHub Actions, Pytest
                 </p>
@@ -88,10 +80,10 @@ export default function AboutPage() {
               <td style={{ width: '50%', verticalAlign: 'top' }}>
                 <h3>💡 Code Lab: 現代化網頁技術實踐</h3>
                 <p>
-                  為了深化對現代網頁開發的理解，並建立一個分享<strong>演算法、資料結構與專案開發等</strong>學習心得的平台，我正嘗試以最新的技術親手打造這個新版的個人網站。
+                  為了深入掌握現代網頁開發，我親手打造了這個技術部落格，將其視為一個完整的<strong>產品設計專案</strong>。從前端架構 (Next.js App Router)、內容處理 (MDX) 到使用者體驗 (響應式設計、深色模式、字體排版)，皆由我獨立規劃與實踐。
                 </p>
                 <p>
-                  <em>這個專案體現了我對新技術的自學能力，以及將所學應用於實際產品的熱情。</em>
+                  我特別在<strong>網頁視覺編排</strong>與<strong>內容呈現</strong>的細節上進行了優化，目標是打造一個兼具專業內涵與閱讀舒適度的個人品牌網站。
                 </p>
                 <p>
                   <strong>技術棧：</strong> Next.js (App Router), React, TypeScript, Tailwind CSS, Contentlayer

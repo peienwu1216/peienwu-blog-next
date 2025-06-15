@@ -27,23 +27,17 @@ export default function AboutPage() {
           </div>
         }
         
-        {/* 社群與聯繫徽章 */}
+        {/* 社群與聯繫徽章 主要內容從這裡開始 */}
         <div className="flex flex-wrap justify-center gap-4 my-8">
           <IconLink
-            href="https://peienwu.com/"
-            text="個人網站"
-            icon={Globe}
+            href="https://github.com/peienwu1216"
+            text="探索我的 GitHub"
+            icon={Book}
             className="bg-blue-100 text-blue-800 hover:bg-blue-200 dark:bg-blue-900 dark:text-blue-200 dark:hover:bg-blue-800"
           />
           <IconLink
-            href="https://github.com/peienwu1216"
-            text="GitHub"
-            icon={Book}
-            className="bg-slate-100 text-slate-800 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
-          />
-          <IconLink
             href="mailto:peien.wu1216@gmail.com"
-            text="電子郵件"
+            text="與我聯繫"
             icon={Mail}
             className="bg-red-100 text-red-800 hover:bg-red-200 dark:bg-red-900 dark:text-red-200 dark:hover:bg-red-800"
           />
@@ -52,15 +46,11 @@ export default function AboutPage() {
         <h2>我是誰？ (About Me)</h2>
 
         <p>
-          我目前就讀於<strong>國立陽明交通大學 (NYCU) 電機工程學系</strong>（大一上校級書卷獎、系排名前 4%）。雖主修電機，但我對軟體工程抱有強烈的熱情，並專注於<strong>演算法、資料結構與軟體架構</strong>的學習與實踐。
+          我目前於<strong>國立陽明交通大學 (NYCU) 電機工程學系</strong>深耕技術基礎（大一上校級書卷獎、系排名前 4%），並專注於將熱情投入在<strong>演算法、資料結構與軟體架構</strong>的實踐上。
         </p>
 
         <p>
-          我致力於將課堂所學的理論應用於解決實際問題。一個關鍵的經驗是，我將「邏輯設計」課程中的有限狀態機 (FSM) 理論，成功應用於遊戲專案中，設計出具備多種策略模式的 AI。下學期的課程中，我更是將專案以 Python 重構，實踐更豐富完整的遊戲專案。這個過程讓我確信，我的興趣在於透過優雅的軟體邏輯來建構複雜且高效的系統。
-        </p>
-
-        <p>
-          此 Code Lab 記錄了我的專案、程式碼、開發紀錄以及在技術路上的學習軌跡。更多內容可以參見我高中時期建立的個人網站 <a href="https://peienwu.com" target="_blank" rel="noopener noreferrer">peienwu.com</a>。
+          我致力於將理論應用於解決實際問題。一個關鍵的經驗是，我將「邏輯設計」課程中的有限狀態機 (FSM) 理論，成功應用於大一上計概期末 C++ 的遊戲專案中，設計出具備多種策略模式的 AI 玩家。這個經驗啟發了我，我在下學期以 Python 和更進階的物件導向重構此專案，並導入自動化 CI/CD 流程，打造一個更穩健、更具智慧的遊戲系統。
         </p>
 
         <hr />
@@ -199,7 +189,7 @@ export default function AboutPage() {
             <strong>知識分享：</strong> 曾擔任建國中學資訊讀書會講師（教授計算幾何），並長期經營兩個技術部落格，將學習心得轉化為系統性的文章。
           </li>
           <li>
-            <strong>自主學習：</strong> 持續探索新技術，包含以 Next.js 進行全端開發、用 Manim 製作數學動畫等。
+            <strong>自主學習：</strong> 持續探索新技術，包含以 Next.js 進行全端開發等。
           </li>
         </ul>
 
@@ -212,7 +202,15 @@ export default function AboutPage() {
           我希望能持續在資訊工程領域深耕，目前的學習重點是建立更穩固的 CS 核心基礎。我對<strong>機器學習</strong>與<strong>計算機系統</strong>等領域抱有濃厚興趣，並計劃在未來尋求相關的專題研究與實習機會，將所學應用於更具挑戰性的真實世界問題中。
         </p>
 
-        <p>感謝您閱讀我的檔案。我樂於討論技術、專案或任何合作的可能性。</p>
+        <p>
+          感謝您的閱讀。若您想探索我自高中以來完整的學習軌跡與超過兩百篇的文章存檔，歡迎參觀我的舊版個人網站：
+          <IconLink
+            href="https://peienwu.com"
+            text="peienwu.com"
+            icon={Book}
+            className="bg-slate-100 text-slate-800 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700"
+          />
+        </p>
       </article>
     </div>
   );

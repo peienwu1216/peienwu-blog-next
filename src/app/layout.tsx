@@ -8,7 +8,6 @@ import { SpeedInsights } from '@vercel/speed-insights/next';
 
 // 載入 Inter (主要內文)
 const inter = Inter({
-  weight: ['400', '500', '700'], // Inter 支援的字重
   subsets: ['latin', 'latin-ext'], // Inter 支援的子集
   variable: '--font-inter',      // 設定 CSS 變數
   display: 'swap',
@@ -16,7 +15,6 @@ const inter = Inter({
 
 // 載入 Fira Code (程式碼)
 const firaCode = Fira_Code({
-  weight: ['400', '700'], // Fira Code 支援的字重
   subsets: ['latin', 'latin-ext'], // Fira Code 支援的子集
   variable: '--font-fira-code',  // 設定 CSS 變數
   display: 'swap',

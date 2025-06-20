@@ -155,4 +155,43 @@ pre[data-theme] code {
   .prose code::after {
     content: none !important;
   }
+
+  /* 移除預設的引號內容 */
+  .prose blockquote::before,
+  .prose blockquote::after,
+  .prose blockquote p::before,
+  .prose blockquote p::after {
+    content: none;
+  }
+
+  /* 確保每個 p 元素在 blockquote 內部分開顯示 */
+  .prose blockquote p {
+    margin: 0.25rem 0; /* 更緊湊的行距，模仿 HackMD */
+  }
+
+  .prose blockquote p:first-of-type::before,
+  .prose blockquote p:last-of-type::after {
+    content: none;
+  }
+
+  /* 為標題增加滾動邊距以避免被固定頁首遮擋 */
+  .prose h2,
+  .prose h3 {
+    scroll-margin-top: 5rem; /* 根據你的 Header 高度微調 */
+  }
+
+  /* 連結顏色統一為類似 HackMD 藍色 */
+  .prose a {
+    @apply text-blue-600 hover:text-blue-700 underline;
+  }
+}
+
+/* ====================================
+   TOC two-line clamp utility
+   ==================================== */
+.toc-truncate {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }

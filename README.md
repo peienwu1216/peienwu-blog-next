@@ -112,4 +112,4 @@
 *   [ ] 搬遷並優化舊部落格文章。
 
 ---
-> This README is actively maintained. Last updated on YYYY-MM-DD.
+> This README is actively maintained. Last updated on 2025-06-21.

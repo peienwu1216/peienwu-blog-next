@@ -146,8 +146,8 @@ pre[data-theme] code {
 @layer base {
   /* 只針對行內 <code>，不包含 <pre><code> 區塊 */
   .prose :not(pre) > code {
-    /* 輕量長方形：淺灰背景、文字深灰、正常字重，略小內距 */
-    @apply rounded bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-100 px-1.5 py-0.5 font-normal;
+    /* 略為提高辨識度：稍深背景 + 細邊框 + 中等字重，但仍維持低調 */
+    @apply rounded bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-100 px-1.5 py-0.5 font-medium ring-1 ring-inset ring-gray-300 dark:ring-gray-600;
   }
 
   /* 移除 Tailwind Typography 預設插入的前後反引號 */

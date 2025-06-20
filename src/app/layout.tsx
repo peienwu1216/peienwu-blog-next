@@ -4,6 +4,7 @@ import './globals.css';
 import { Metadata } from 'next';
 import SiteHeader from '@/components/SiteHeader'; // 引入新的 Header 元件
 import { Analytics } from '@vercel/analytics/next';
+import { SpeedInsights } from '@vercel/speed-insights/next';
 
 // 載入 Inter (主要內文)
 const inter = Inter({
@@ -53,6 +54,7 @@ export default function RootLayout({
           </p>
         </footer>
         <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );

@@ -8,7 +8,7 @@
 
 **線上預覽:** [https://peienwu-blog-next.vercel.app/](https://peienwu-blog-next.vercel.app/)
 
-![部落格文章頁面概覽](https://github.com/user-attachments/assets/184e27f4-ff3d-4c3e-8c3e-329433a02737)
+![部落格文章頁面概覽](https://github.com/user-attachments/assets/70176ba7-cf9d-4c6d-b445-515bf94658d4)
 
 ## 📁 專案結構
 

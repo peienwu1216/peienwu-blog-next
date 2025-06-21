@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation'; // 引入 usePathname
 import { useState, useEffect } from 'react';
+import SearchButton from './SearchButton';
 
 // SVG 圖示元件
 const MenuIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -78,17 +79,21 @@ export default function SiteHeader() {
             </p>
           </div>
 
-          {/* 桌面導覽列 */}
-          <nav className="hidden md:flex items-center gap-6 text-sm font-medium text-slate-700 dark:text-slate-300">
-            {navLinks.map(link => (
-              <Link key={link.href} href={link.href} className="hover:text-slate-900 dark:hover:text-slate-50 transition-colors">
-                {link.label}
-              </Link>
-            ))}
-          </nav>
+          {/* 桌面導覽列和搜尋 */}
+          <div className="hidden md:flex items-center gap-4">
+            <nav className="flex items-center gap-6 text-sm font-medium text-slate-700 dark:text-slate-300">
+              {navLinks.map(link => (
+                <Link key={link.href} href={link.href} className="hover:text-slate-900 dark:hover:text-slate-50 transition-colors">
+                  {link.label}
+                </Link>
+              ))}
+            </nav>
+            <SearchButton />
+          </div>
 
-          {/* 漢堡選單按鈕 (只在 md 以下顯示) */}
-          <div className="md:hidden">
+          {/* 手機版：搜尋按鈕和漢堡選單 */}
+          <div className="md:hidden flex items-center gap-2">
+            <SearchButton />
             <button onClick={() => setIsMenuOpen(true)} className="text-slate-700 dark:text-slate-300" aria-label="開啟選單">
               <MenuIcon className="h-7 w-7" />
             </button>

@@ -123,10 +123,10 @@ export default function HomePage() {
             </div>
           </section>
 
-          {/* 搜尋文章卡片 - 注意：這個表單的 action="/search" 需要你有對應的搜尋頁面或 API 路由來處理 */}
+          {/* 搜尋文章卡片 */}
           <section className="p-6 rounded-lg shadow-lg bg-white dark:bg-slate-800">
             <h3 className="text-xl font-semibold mb-4 dark:text-white">搜尋文章</h3>
-            <form action="/search" method="GET"> {/* 你可能需要一個 /search 頁面來顯示結果 */}
+            <form action="/search" method="GET">
               <input
                 type="text"
                 name="q"

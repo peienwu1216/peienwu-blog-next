@@ -48,49 +48,49 @@ export default function PostPage({ params }: { params: Params }) {
       <TableOfContents headings={headings} />
       <div className="min-w-0">
         <article className="prose lg:prose-lg mx-auto dark:prose-invert max-w-3xl">
-          {/* 文章標題 */}
-          <h1 className="mb-4 text-3xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100 sm:text-4xl">
-            {post.title}
-          </h1>
+      {/* 文章標題 */}
+      <h1 className="mb-4 text-3xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100 sm:text-4xl">
+        {post.title}
+      </h1>
 
-          {/* 文章元數據：日期和分類 */}
-          <div className="mb-6 text-sm text-gray-500 dark:text-gray-400">
-            <time dateTime={post.date}>
-              {format(parseISO(post.date), 'yyyy年MM月dd日')}
-            </time>
-            {post.category && (
-              <>
-                <span className="mx-2">&bull;</span>
-                <Link href={`/categories/${post.category.toLowerCase()}`} className="hover:underline">
-                  {post.category}
-                </Link>
-              </>
-            )}
+      {/* 文章元數據：日期和分類 */}
+      <div className="mb-6 text-sm text-gray-500 dark:text-gray-400">
+        <time dateTime={post.date}>
+          {format(parseISO(post.date), 'yyyy年MM月dd日')}
+        </time>
+        {post.category && (
+          <>
+            <span className="mx-2">&bull;</span>
+            <Link href={`/categories/${post.category.toLowerCase()}`} className="hover:underline">
+              {post.category}
+            </Link>
+          </>
+        )}
+      </div>
+
+      {/* MDX 內容 */}
+         <MDXContent components={components} />
+
+      {/* 文章標籤 */}
+      {post.tags && post.tags.length > 0 && (
+        <div className="mt-10 pt-6 border-t border-gray-200 dark:border-gray-700">
+          <h3 className="text-lg font-semibold mb-3 text-gray-700 dark:text-gray-300">標籤:</h3>
+          <div className="flex flex-wrap gap-2">
+            {post.tags.map((tag: string) => ( // 明確標註 tag 的型別
+              <Link
+                key={tag}
+                href={`/tags/${tag.toLowerCase()}`}
+                className="text-sm bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-full px-3 py-1 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
+              >
+                #{tag}
+              </Link>
+            ))}
           </div>
+        </div>
+      )}
 
-          {/* MDX 內容 */}
-             <MDXContent components={components} />
-
-          {/* 文章標籤 */}
-          {post.tags && post.tags.length > 0 && (
-            <div className="mt-10 pt-6 border-t border-gray-200 dark:border-gray-700">
-              <h3 className="text-lg font-semibold mb-3 text-gray-700 dark:text-gray-300">標籤:</h3>
-              <div className="flex flex-wrap gap-2">
-                {post.tags.map((tag: string) => ( // 明確標註 tag 的型別
-                  <Link
-                    key={tag}
-                    href={`/tags/${tag.toLowerCase()}`}
-                    className="text-sm bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-full px-3 py-1 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-                  >
-                    #{tag}
-                  </Link>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* 可以添加相關文章、留言區等 */}
-        </article>
+      {/* 可以添加相關文章、留言區等 */}
+    </article>
       </div>
     </div>
   );

@@ -41,6 +41,38 @@ module.exports = {
                 paddingBottom: theme('spacing.3'),
                 borderRadius: theme('borderRadius.lg'),
               },
+              /*
+               * Custom styling for code blocks (``` ... ``` in Markdown)
+               * We want a consistently dark backdrop that is still comfortable
+               * to read in light mode while maintaining a subtle difference
+               * in dark mode. We therefore use slate.900 for light mode and
+               * slate.800 for dark mode coupled with light foreground text.
+               */
+              pre: {
+                backgroundColor: theme('colors.slate.900'),
+                color: theme('colors.slate.100'),
+                borderRadius: theme('borderRadius.lg'),
+                paddingTop: theme('spacing.4'),
+                paddingBottom: theme('spacing.4'),
+                paddingLeft: theme('spacing.5'),
+                paddingRight: theme('spacing.5'),
+                lineHeight: theme('lineHeight.relaxed'),
+                overflowX: 'auto',
+              },
+              'pre code': {
+                backgroundColor: 'inherit',
+                color: 'inherit',
+                padding: '0',
+                borderRadius: '0',
+              },
+              /* Optional : keep inline code readable without huge contrast */
+              code: {
+                color: theme('colors.pink.600'),
+                backgroundColor: theme('colors.slate.100'),
+                paddingLeft: theme('spacing.1'),
+                paddingRight: theme('spacing.1'),
+                borderRadius: theme('borderRadius.sm'),
+              },
               'blockquote p:first-of-type::before, blockquote p:last-of-type::after': {
                 content: 'none',
               },
@@ -55,6 +87,25 @@ module.exports = {
               blockquote: {
                 borderLeftColor: theme('colors.green.400'),
                 backgroundColor: theme('colors.slate.800'),
+              },
+              /* Dark mode (prose-invert) overrides */
+              pre: {
+                backgroundColor: theme('colors.slate.800'),
+                color: theme('colors.slate.100'),
+                borderRadius: theme('borderRadius.lg'),
+                paddingTop: theme('spacing.4'),
+                paddingBottom: theme('spacing.4'),
+                paddingLeft: theme('spacing.5'),
+                paddingRight: theme('spacing.5'),
+                overflowX: 'auto',
+              },
+              'pre code': {
+                backgroundColor: 'inherit',
+                color: 'inherit',
+              },
+              code: {
+                color: theme('colors.pink.400'),
+                backgroundColor: theme('colors.slate.700'),
               },
               'blockquote p:first-of-type::before, blockquote p:last-of-type::after': {
                 content: 'none',

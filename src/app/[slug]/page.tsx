@@ -7,6 +7,7 @@ import Link from 'next/link'; // 用於標籤連結
 import Note from '@/components/Note'; // 假設你已設定 @/ 指向 src/
 import TableOfContents from '@/components/TableOfContents'; // Import the new component
 import Slugger from 'github-slugger';
+import Pre from '@/components/Pre'; // 引入新的 Pre 元件
 
 // Params 型別保持不變
 type Params = { slug: string }
@@ -41,7 +42,7 @@ export default function PostPage({ params }: { params: Params }) {
   );
 
   const MDXContent = useMDXComponent(post.body.code);
-  const components = { Note }; // 如果你有其他自訂元件，也在此處註冊
+  const components = { Note, pre: Pre }; // 將 Pre 元件註冊到 pre 標籤
 
   return (
     <div className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 py-10 lg:flex lg:space-x-8">

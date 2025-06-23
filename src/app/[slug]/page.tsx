@@ -29,6 +29,8 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
 
   const description = post.body.raw.substring(0, 150);
 
+  const ogImage = post.image || '/og-default.png';
+
   return {
     title: post.title,
     description: description,
@@ -40,7 +42,9 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
       url: `https://peienwu-blog-next.vercel.app/${post.slug}`,
       images: [
         {
-          url: post.image || '/images/avatar.jpeg',
+          url: ogImage,
+          width: 1200,
+          height: 630,
           alt: post.title,
         },
       ],

@@ -34,9 +34,9 @@ export const metadata: Metadata = {
     siteName: "Peienwu's Code Lab",
     images: [
       {
-        url: "/images/avatar.jpeg",
-        width: 800,
-        height: 800,
+        url: "/og-default.png",
+        width: 1200,
+        height: 630,
         alt: "Peienwu's Code Lab",
       },
     ],

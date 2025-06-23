@@ -21,6 +21,7 @@ const firaCode = Fira_Code({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL('https://peienwu-blog-next.vercel.app'),
   title: {
     default: "Peienwu's Code Lab",
     template: "%s | Peienwu's Code Lab",
@@ -29,7 +30,7 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Peienwu's Code Lab",
     description: "這裡沒有魔法，只有還沒讀懂的 Source Code",
-    url: "https://peienwu.com",
+    url: 'https://peienwu-blog-next.vercel.app',
     siteName: "Peienwu's Code Lab",
     images: [
       {

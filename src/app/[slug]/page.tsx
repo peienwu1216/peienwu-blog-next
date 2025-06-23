@@ -37,7 +37,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
       description: description,
       type: 'article',
       publishedTime: post.date,
-      url: `https://peienwu.com/${post.slug}`,
+      url: `https://peienwu-blog-next.vercel.app/${post.slug}`,
       images: [
         {
           url: post.image || '/images/avatar.jpeg',

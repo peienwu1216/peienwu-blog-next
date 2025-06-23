@@ -29,7 +29,7 @@ export async function generateMetadata({ params }: { params: Params }): Promise<
 
   const description = post.body.raw.substring(0, 150);
 
-  const ogImage = post.image || '/og-default.png';
+  const ogImage = post.image || `/api/og?title=${encodeURIComponent(post.title)}`;
 
   return {
     title: post.title,

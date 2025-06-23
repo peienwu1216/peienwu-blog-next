@@ -5,6 +5,7 @@ import remarkMath from 'remark-math' // 讓 remark 理解 LaTeX 數學語法
 import rehypeKatex from 'rehype-katex' // 將 remarkMath 產生的數學 AST 渲染成 KaTeX HTML
 import rehypePrettyCode from 'rehype-pretty-code' // 程式碼高亮
 import rehypeSlug from 'rehype-slug' // 增加標題 id
+import rehypeExternalLinks from 'rehype-external-links' // 外部連結處理
 
 // 處理 TypeScript 型別問題，rehype-pretty-code 的預設匯出可能與 rehype 插件型別不完全匹配
 const rehypePrettyCodePlugin = rehypePrettyCode as unknown as any // 這樣處理通常是OK的
@@ -19,6 +20,7 @@ export const Post = defineDocumentType(() => ({
     sticky: { type: 'number' }, // 置頂權重，不錯！
     tags: { type: 'list', of: { type: 'string' } },
     category: { type: 'string' },
+    image: { type: 'string' }, // 文章代表圖
   },
   computedFields: {
     url: {
@@ -40,6 +42,7 @@ export default makeSource({
     rehypePlugins: [
       rehypeSlug,
       [rehypeKatex, { strict: false }], // strict: false 可以容忍一些輕微的 KaTeX 錯誤
+      [rehypeExternalLinks, { target: '_blank', rel: ['noopener', 'noreferrer'] }], // 外部連結在新分頁開啟
       [
         rehypePrettyCodePlugin,
         {

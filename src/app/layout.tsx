@@ -26,6 +26,22 @@ export const metadata: Metadata = {
     template: "%s | Peienwu's Code Lab",
   },
   description: "這裡沒有魔法，只有還沒讀懂的 Source Code",
+  openGraph: {
+    title: "Peienwu's Code Lab",
+    description: "這裡沒有魔法，只有還沒讀懂的 Source Code",
+    url: "https://peienwu.com",
+    siteName: "Peienwu's Code Lab",
+    images: [
+      {
+        url: "/images/avatar.jpeg",
+        width: 800,
+        height: 800,
+        alt: "Peienwu's Code Lab",
+      },
+    ],
+    locale: "zh_TW",
+    type: "website",
+  },
 };
 
 export default function RootLayout({

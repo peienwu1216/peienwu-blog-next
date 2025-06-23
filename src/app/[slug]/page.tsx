@@ -8,6 +8,7 @@ import Note from '@/components/Note'; // 假設你已設定 @/ 指向 src/
 import TableOfContents from '@/components/TableOfContents'; // Import the new component
 import Slugger from 'github-slugger';
 import Pre from '@/components/Pre'; // 引入新的 Pre 元件
+import { Metadata } from 'next';
 
 // Params 型別保持不變
 type Params = { slug: string }
@@ -17,6 +18,34 @@ export async function generateStaticParams(): Promise<Params[]> {
   return allPosts.map((post) => ({
     slug: post.slug, // 使用在 contentlayer.config.ts 中定義的 computed slug
   }));
+}
+
+export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
+  const post = allPosts.find((p) => p.slug === params.slug);
+
+  if (!post) {
+    return {};
+  }
+
+  const description = post.body.raw.substring(0, 150);
+
+  return {
+    title: post.title,
+    description: description,
+    openGraph: {
+      title: post.title,
+      description: description,
+      type: 'article',
+      publishedTime: post.date,
+      url: `https://peienwu.com/${post.slug}`,
+      images: [
+        {
+          url: post.image || '/images/avatar.jpeg',
+          alt: post.title,
+        },
+      ],
+    },
+  };
 }
 
 export default function PostPage({ params }: { params: Params }) {

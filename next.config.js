@@ -9,26 +9,38 @@ const withMDX = require('@next/mdx')({
   },
 })
 
-module.exports = withContentlayer(
-  withMDX({
-    pageExtensions: ['js', 'jsx', 'ts', 'tsx', 'md', 'mdx'],
-  }),
-)
-
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // ... 其他你的 Next.js 設定 ...
-
+  pageExtensions: ['js', 'jsx', 'ts', 'tsx', 'md', 'mdx'],
+  reactStrictMode: true,
+  swcMinify: true,
+  images: {
+    // 允許來自這些 hostname 的外部圖片
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'avatars.githubusercontent.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'raw.githubusercontent.com',
+      },
+    ],
+  },
   async redirects() {
     return [
       {
-        source: '/sprot10', // 來源路徑
-        destination: '/sprout10', // 目標路徑
-        permanent: true, // true 代表 301 永久重定向, false 代表 302 暫時重定向
+        source: '/sprout10-1',
+        destination: '/posts/sprout10-1',
+        permanent: true,
       },
-      // 你可以加入更多重定向規則
-    ];
+      {
+        source: '/sprot10', 
+        destination: '/posts/sprout10',
+        permanent: true, 
+      },
+    ]
   },
-};
+}
 
-module.exports = nextConfig;
+module.exports = withContentlayer(nextConfig)

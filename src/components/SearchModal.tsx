@@ -299,7 +299,8 @@ interface DocResult {
     content?: boolean;
     category?: boolean;
     tags?: boolean;
-    technical?: boolean;
+    code?: boolean;
+    math?: boolean;
   };
 }
 
@@ -377,10 +378,12 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
           content: doc.plainText.toLowerCase().includes(lowered),
           category: doc.category.toLowerCase().includes(lowered),
           tags: doc.tags.toLowerCase().includes(lowered),
-          technical: doc.technicalText.toLowerCase().includes(lowered),
+          code: doc.codeText.toLowerCase().includes(lowered),
+          math: doc.mathText.toLowerCase().includes(lowered),
         },
       }));
-      setResults(formatted);
+      const withLabel = formatted.filter(r => Object.values(r.matches).some(Boolean));
+      setResults(withLabel);
       setSelectedIndex(-1);
       setIsLoading(false);
     },
@@ -552,19 +555,20 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
                       className={`block px-4 py-3 mx-2 my-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors ${index === selectedIndex ? 'bg-slate-100 dark:bg-slate-800' : ''
                     }`}
                   >
-                      <div className="flex justify-between items-start">
-                        <div className="flex-1">
-                          <div className="font-medium text-slate-900 dark:text-slate-100" dangerouslySetInnerHTML={{ __html: highlightText(result.title, query) }} />
-                          <div className="mt-1 text-slate-500 dark:text-slate-400" dangerouslySetInnerHTML={{ __html: highlightText(extractExcerpt(result.plainText, query) || '', query) }} />
-                        </div>
-                        <div className="flex gap-1.5 ml-3 flex-shrink-0">
+                    <div>
+                      <div className="flex justify-between items-start gap-4">
+                        <div className="flex-1 font-medium text-slate-900 dark:text-slate-100 truncate" dangerouslySetInnerHTML={{ __html: highlightText(result.title, query) }} />
+                        <div className="flex gap-1.5 flex-shrink-0">
                           {result.matches.title && <span className="px-2 py-0.5 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 rounded-full text-xs font-medium">標題</span>}
                           {result.matches.category && <span className="px-2 py-0.5 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-full text-xs font-medium">分類</span>}
                           {result.matches.tags && <span className="px-2 py-0.5 bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 rounded-full text-xs font-medium">標籤</span>}
                           {result.matches.content && <span className="px-2 py-0.5 bg-orange-100 dark:bg-orange-900 text-orange-700 dark:text-orange-300 rounded-full text-xs font-medium">內容</span>}
-                          {result.matches.technical && <span className="px-2 py-0.5 bg-cyan-100 dark:bg-cyan-900 text-cyan-700 dark:text-cyan-300 rounded-full text-xs font-medium">技術</span>}
+                          {result.matches.code && <span className="px-2 py-0.5 bg-cyan-100 dark:bg-cyan-900 text-cyan-700 dark:text-cyan-300 rounded-full text-xs font-medium">程式碼</span>}
+                          {result.matches.math && <span className="px-2 py-0.5 bg-teal-100 dark:bg-teal-900 text-teal-700 dark:text-teal-300 rounded-full text-xs font-medium">公式</span>}
                         </div>
                       </div>
+                      <div className="mt-2 text-sm text-slate-500 dark:text-slate-400 text-justify" dangerouslySetInnerHTML={{ __html: highlightText(extractExcerpt(result.plainText, query) || '', query) }} />
+                    </div>
                   </Link>
                 ))}
               </div>

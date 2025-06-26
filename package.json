@@ -3,8 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "(contentlayer dev 2>&1 | grep -v '▲ \\[WARNING\\]') & next dev",
-    "build": "contentlayer build && next build && node scripts/build-search.js",
+    "dev": "concurrently -k \"contentlayer dev\" \"node scripts/build-search.mjs --watch\" \"next dev\"",
+    "build": "contentlayer build && next build && node scripts/build-search.mjs",
     "start": "next start"
   },
   "dependencies": {
@@ -54,6 +54,7 @@
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "autoprefixer": "^10.4.21",
+    "concurrently": "^9.2.0",
     "contentlayer": "^0.3.4",
     "eslint": "^9",
     "eslint-config-next": "15.3.1",

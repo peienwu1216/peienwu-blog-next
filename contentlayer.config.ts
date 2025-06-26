@@ -46,20 +46,33 @@ export const Post = defineDocumentType(() => ({
         return removeMd(raw).replace(/\s+/g, ' ').trim()
       },
     },
-    technicalText: {
+    codeText: {
+      type: 'string',
+      resolve: (post) => {
+          const raw = (post as any).body?.raw || '';
+          const codeRegex = /```[\s\S]*?```|`[^`]*?`/g;
+          const codeMatches = raw.match(codeRegex) || [];
+          return codeMatches
+            .map((snippet: string) => {
+              // Remove leading & trailing backticks
+              let cleaned = snippet.replace(/```/g, '').replace(/`/g, '')
+              // For fenced blocks, a language hint may appear on the first line (e.g., "cpp", "js")
+              // We strip that first line if it is only an identifier without spaces or symbols
+              cleaned = cleaned.replace(/^\s*[-a-zA-Z0-9#+.]*\s*\n/, '')
+              return cleaned
+            })
+            .join(' ');
+      }
+    },
+    mathText: {
       type: 'string',
       resolve: (post) => {
           const raw = (post as any).body?.raw || '';
           const mathRegex = /\$\$[\s\S]*?\$\$|\$[\s\S]*?\$/g;
-          const codeRegex = /```[\s\S]*?```|`[^`]*?`/g;
-          
           const mathMatches = raw.match(mathRegex) || [];
-          const codeMatches = raw.match(codeRegex) || [];
-          
-          const cleanCode = codeMatches.map((s: string) => s.replace(/```/g, '').replace(/`/g, ''));
-          const cleanMath = mathMatches.map((s: string) => s.replace(/\$\$/g, '').replace(/\$/g, ''));
-
-          return [...cleanCode, ...cleanMath].join(' ');
+          return mathMatches
+            .map((s: string) => s.replace(/\$\$/g, '').replace(/\$/g, ''))
+            .join(' ');
       }
     }
   },

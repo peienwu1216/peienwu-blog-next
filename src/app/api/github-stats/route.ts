@@ -6,7 +6,7 @@ export const revalidate = 86400; // 24 hours in seconds (60 * 60 * 24)
 
 // Initialize Octokit
 const octokit = new Octokit({
-  auth: process.env.GITHUB_TOKEN,
+  auth: process.env.GITHUB_PAT,
 });
 
 // Define the repositories to track

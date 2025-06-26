@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation'; // 引入 usePathname
 import { useState, useEffect } from 'react';
 import SearchButton from './SearchButton';
+import SearchModal from './SearchModal'; // 引入 SearchModal
 import { ThemeToggleButton } from './ThemeToggleButton';
 
 // SVG 圖示元件
@@ -22,7 +23,21 @@ const CloseIcon = (props: React.SVGProps<SVGSVGElement>) => (
 export default function SiteHeader() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isSearchOpen, setIsSearchOpen] = useState(false); // 新增 SearchModal 狀態
   const pathname = usePathname(); // 獲取當前路徑
+
+  // --- 新增: 處理 Cmd+K 開啟 SearchModal ---
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        setIsSearchOpen(true);
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, []);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -91,14 +106,14 @@ export default function SiteHeader() {
               ))}
             </nav>
             <div className="flex items-center gap-2">
-              <SearchButton />
+              <SearchButton onClick={() => setIsSearchOpen(true)} />
               <ThemeToggleButton />
             </div>
           </div>
 
           {/* 手機版：搜尋按鈕和漢堡選單 */}
           <div className="md:hidden flex items-center gap-2">
-            <SearchButton />
+            <SearchButton onClick={() => setIsSearchOpen(true)} />
             <button onClick={() => setIsMenuOpen(true)} className="text-slate-700 dark:text-slate-300" aria-label="開啟選單">
               <MenuIcon className="h-7 w-7" />
             </button>
@@ -154,6 +169,12 @@ export default function SiteHeader() {
           </nav>
         </div>
       </div>
+
+      {/* --- 全域 SearchModal --- */}
+      <SearchModal 
+        isOpen={isSearchOpen} 
+        onClose={() => setIsSearchOpen(false)} 
+      />
     </>
   );
 }

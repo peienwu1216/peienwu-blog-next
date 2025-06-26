@@ -6,6 +6,8 @@ import SiteHeader from '@/components/SiteHeader'; // 引入新的 Header 元件
 import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import { ThemeProvider } from '@/components/ThemeProvider'; // 引入 ThemeProvider
+import { Toaster } from 'sonner'; // 引入 sonner
+import { ProTipToast } from '@/components/ProTipToast'; // 引入 ProTipToast
 
 // 載入 Inter (主要內文)
 const inter = Inter({
@@ -76,6 +78,8 @@ export default function RootLayout({
           </footer>
           <Analytics />
           <SpeedInsights />
+          <Toaster theme="system" />
+          <ProTipToast />
         </ThemeProvider>
       </body>
     </html>

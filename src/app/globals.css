@@ -150,6 +150,11 @@ pre[data-theme] code {
     @apply rounded bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-100 px-1.5 py-0.5 font-medium ring-1 ring-inset ring-gray-300 dark:ring-gray-600;
   }
 
+  /* 解決方案：在暗色模式下，移除程式碼區塊中 <code> 的背景和外框 */
+  .dark .prose pre code {
+    @apply bg-transparent ring-0;
+  }
+
   /* 移除 Tailwind Typography 預設插入的前後反引號 */
   .prose code::before,
   .prose code::after {

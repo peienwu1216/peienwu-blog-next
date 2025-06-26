@@ -5,6 +5,7 @@ import { Metadata } from 'next';
 import SiteHeader from '@/components/SiteHeader'; // 引入新的 Header 元件
 import { Analytics } from '@vercel/analytics/next';
 import { SpeedInsights } from '@vercel/speed-insights/next';
+import { ThemeProvider } from '@/components/ThemeProvider'; // 引入 ThemeProvider
 
 // 載入 Inter (主要內文)
 const inter = Inter({
@@ -53,23 +54,29 @@ export default function RootLayout({
   const blogTitle = "Peienwu's Code Lab";
 
   return (
-    <html lang="zh-TW" className={`${inter.variable} ${firaCode.variable}`}>
+    <html lang="zh-TW" className={`${inter.variable} ${firaCode.variable}`} suppressHydrationWarning>
       <body className="flex flex-col min-h-screen bg-slate-100 dark:bg-slate-900 text-slate-800 dark:text-slate-200 antialiased font-sans">
-        
-        <SiteHeader /> {/* 使用新的、可動態縮放的 Header */}
+        <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+        >
+          <SiteHeader /> {/* 使用新的、可動態縮放的 Header */}
 
-        <main className="flex-grow w-full">
-          {children}
-        </main>
+          <main className="flex-grow w-full">
+            {children}
+          </main>
 
-        <footer className="py-6 px-4 sm:px-6 text-center bg-slate-200 dark:bg-slate-800 border-t border-slate-300 dark:border-slate-700 mt-auto">
-          <p className="text-slate-600 dark:text-slate-400 text-xs sm:text-sm">&copy; {new Date().getFullYear()} {blogTitle}. 保留所有權利.</p>
-          <p className="mt-1 text-xs text-slate-500 dark:text-slate-500">
-            Powered by Next.js & Contentlayer. Deployed on Vercel.
-          </p>
-        </footer>
-        <Analytics />
-        <SpeedInsights />
+          <footer className="py-6 px-4 sm:px-6 text-center bg-slate-200 dark:bg-slate-800 border-t border-slate-300 dark:border-slate-700 mt-auto">
+            <p className="text-slate-600 dark:text-slate-400 text-xs sm:text-sm">&copy; {new Date().getFullYear()} {blogTitle}. 保留所有權利.</p>
+            <p className="mt-1 text-xs text-slate-500 dark:text-slate-500">
+              Powered by Next.js & Contentlayer. Deployed on Vercel.
+            </p>
+          </footer>
+          <Analytics />
+          <SpeedInsights />
+        </ThemeProvider>
       </body>
     </html>
   );

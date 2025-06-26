@@ -50,7 +50,7 @@ const Note: React.FC<NoteProps> = ({ children, type = 'default', title }) => {
           {title}
         </h3>
       )}
-      <div className="prose prose-sm dark:prose-invert max-w-none"> {/* prose-sm 讓裡面的文字小一點 */}
+      <div className="prose dark:prose-invert max-w-none"> {/* 移除 prose-sm 以保持與內文一致的文字大小 */}
         {children}
       </div>
     </div>

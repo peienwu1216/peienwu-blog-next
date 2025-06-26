@@ -144,7 +144,7 @@ function SearchResultsContent() {
                       className="text-slate-600 dark:text-slate-300 line-clamp-3"
                       dangerouslySetInnerHTML={{ 
                         __html: highlightText(
-                          extractExcerpt(result.post.body?.raw || '', query, 200),
+                          extractExcerpt((result.post as any).plainText || '', query, 200),
                           query
                         )
                       }}

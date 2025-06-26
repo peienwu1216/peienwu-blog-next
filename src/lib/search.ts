@@ -53,8 +53,8 @@ export function searchPosts(query: string, limit: number = 20): SearchResult[] {
       matches.tags = true;
     }
 
-    // 內容匹配 (權重較低)
-    if (post.body && post.body.raw.toLowerCase().includes(normalizedQuery)) {
+    // 內容匹配 (權重較低) - 使用純文字索引
+    if ((post as any).plainText && (post as any).plainText.toLowerCase().includes(normalizedQuery)) {
       score += 1;
       matches.content = true;
     }

@@ -298,6 +298,13 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
   const router = useRouter();
   const { theme, setTheme } = useTheme();
 
+  useEffect(() => {
+    // 當搜尋關鍵字改變時，重設選中索引。
+    // 這可以防止在選中一個指令後立即開始搜尋時，
+    // 因為索引未被即時重設而導致的 out-of-bounds 錯誤。
+    setSelectedIndex(-1);
+  }, [query]);
+
   const toggleTheme = () => {
     setTheme(theme === 'dark' ? 'light' : 'dark');
   };
@@ -515,8 +522,18 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
                       className={`block px-4 py-3 mx-2 my-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors ${index === selectedIndex ? 'bg-slate-100 dark:bg-slate-800' : ''
                     }`}
                   >
-                      <div className="font-medium text-slate-900 dark:text-slate-100" dangerouslySetInnerHTML={{ __html: highlightText(result.post.title, result.matches.title ? query : '') }} />
-                      <div className="mt-1 text-slate-500 dark:text-slate-400" dangerouslySetInnerHTML={{ __html: extractExcerpt(result.post.body.raw, query) || '' }} />
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <div className="font-medium text-slate-900 dark:text-slate-100" dangerouslySetInnerHTML={{ __html: highlightText(result.post.title, query) }} />
+                          <div className="mt-1 text-slate-500 dark:text-slate-400" dangerouslySetInnerHTML={{ __html: highlightText(extractExcerpt((result.post as any).plainText, query) || '', query) }} />
+                        </div>
+                        <div className="flex gap-1.5 ml-3 flex-shrink-0">
+                          {result.matches.title && <span className="px-2 py-0.5 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 rounded-full text-xs font-medium">標題</span>}
+                          {result.matches.category && <span className="px-2 py-0.5 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-full text-xs font-medium">分類</span>}
+                          {result.matches.tags && <span className="px-2 py-0.5 bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 rounded-full text-xs font-medium">標籤</span>}
+                          {result.matches.content && <span className="px-2 py-0.5 bg-orange-100 dark:bg-orange-900 text-orange-700 dark:text-orange-300 rounded-full text-xs font-medium">內容</span>}
+                        </div>
+                      </div>
                   </Link>
                 ))}
               </div>

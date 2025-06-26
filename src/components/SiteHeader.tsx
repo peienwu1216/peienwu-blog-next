@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation'; // 引入 usePathname
 import { useState, useEffect } from 'react';
 import SearchButton from './SearchButton';
+import { ThemeToggleButton } from './ThemeToggleButton';
 
 // SVG 圖示元件
 const MenuIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -89,7 +90,10 @@ export default function SiteHeader() {
                 </Link>
               ))}
             </nav>
-            <SearchButton />
+            <div className="flex items-center gap-2">
+              <SearchButton />
+              <ThemeToggleButton />
+            </div>
           </div>
 
           {/* 手機版：搜尋按鈕和漢堡選單 */}
@@ -120,7 +124,8 @@ export default function SiteHeader() {
             ${isMenuOpen ? 'translate-x-0' : 'translate-x-full'}
           `}
         >
-          <div className="flex justify-end p-4 border-b border-slate-200/80 dark:border-slate-800/80">
+          <div className="flex justify-between items-center p-4 border-b border-slate-200/80 dark:border-slate-800/80">
+            <ThemeToggleButton size="base" />
             <button onClick={() => setIsMenuOpen(false)} className="text-slate-600 dark:text-slate-400" aria-label="關閉選單">
               <CloseIcon className="h-7 w-7" />
             </button>

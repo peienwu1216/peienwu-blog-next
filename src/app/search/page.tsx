@@ -136,6 +136,7 @@ function SearchResultsContent() {
                       {result.matches.category && <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded-full text-xs">分類</span>}
                       {result.matches.tags && <span className="px-2 py-1 bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 rounded-full text-xs">標籤</span>}
                       {result.matches.content && <span className="px-2 py-1 bg-orange-100 dark:bg-orange-900 text-orange-700 dark:text-orange-300 rounded-full text-xs">內容</span>}
+                      {result.matches.technical && <span className="px-2 py-1 bg-cyan-100 dark:bg-cyan-900 text-cyan-700 dark:text-cyan-300 rounded-full text-xs">技術</span>}
                     </div>
                   </div>
                   

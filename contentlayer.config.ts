@@ -36,12 +36,32 @@ export const Post = defineDocumentType(() => ({
       type: 'string',
       resolve: (post) => {
         let raw = (post as any).body?.raw || ''
-        // 方案A: 先用正規表示式去除 MDX 的 JSX 註解 {/* ... */}
+        // 1. 去除 MDX 的 JSX 註解 {/* ... */}
         raw = raw.replace(/{\/\*[\s\S]*?\*\/}/g, '')
-        // 再用 remove-markdown 去除標準 Markdown 語法
-        return removeMd(raw).replace(/\s+/g, ' ').trim();
+        // 2. 去除 LaTeX 公式字串 ($...$ 和 $$...$$)
+        raw = raw.replace(/\$\$[\s\S]*?\$\$|\$[\s\S]*?\$/g, '')
+        // 3. 去除程式碼區塊 (```...```) 和行內程式碼 (`...`)
+        raw = raw.replace(/```[\s\S]*?```|`[^`]*?`/g, '')
+        // 4. 最後用 remove-markdown 去除其餘 Markdown 語法
+        return removeMd(raw).replace(/\s+/g, ' ').trim()
       },
     },
+    technicalText: {
+      type: 'string',
+      resolve: (post) => {
+          const raw = (post as any).body?.raw || '';
+          const mathRegex = /\$\$[\s\S]*?\$\$|\$[\s\S]*?\$/g;
+          const codeRegex = /```[\s\S]*?```|`[^`]*?`/g;
+          
+          const mathMatches = raw.match(mathRegex) || [];
+          const codeMatches = raw.match(codeRegex) || [];
+          
+          const cleanCode = codeMatches.map((s: string) => s.replace(/```/g, '').replace(/`/g, ''));
+          const cleanMath = mathMatches.map((s: string) => s.replace(/\$\$/g, '').replace(/\$/g, ''));
+
+          return [...cleanCode, ...cleanMath].join(' ');
+      }
+    }
   },
 }))
 

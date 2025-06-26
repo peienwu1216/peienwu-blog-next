@@ -9,6 +9,7 @@ export interface SearchResult {
     content?: boolean;
     category?: boolean;
     tags?: boolean;
+    technical?: boolean;
   };
 }
 
@@ -33,6 +34,7 @@ export function searchPosts(query: string, limit: number = 20): SearchResult[] {
       content: false,
       category: false,
       tags: false,
+      technical: false,
     };
 
     // 標題匹配 (權重最高)
@@ -57,6 +59,12 @@ export function searchPosts(query: string, limit: number = 20): SearchResult[] {
     if ((post as any).plainText && (post as any).plainText.toLowerCase().includes(normalizedQuery)) {
       score += 1;
       matches.content = true;
+    }
+
+    // 技術內容匹配
+    if ((post as any).technicalText && (post as any).technicalText.toLowerCase().includes(normalizedQuery)) {
+      score += 4;
+      matches.technical = true;
     }
 
     // 如果有任何匹配，加入結果

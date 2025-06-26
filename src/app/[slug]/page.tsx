@@ -9,6 +9,7 @@ import TableOfContents from '@/components/TableOfContents'; // Import the new co
 import Slugger from 'github-slugger';
 import Pre from '@/components/Pre'; // 引入新的 Pre 元件
 import { Metadata } from 'next';
+import ViewCounter from '@/components/ViewCounter';
 
 // Params 型別保持不變
 type Params = { slug: string }
@@ -88,18 +89,20 @@ export default function PostPage({ params }: { params: Params }) {
       </h1>
 
       {/* 文章元數據：日期和分類 */}
-      <div className="mb-6 text-sm text-gray-500 dark:text-gray-400">
+      <div className="flex items-center gap-4 mb-6 text-sm text-gray-500 dark:text-gray-400">
         <time dateTime={post.date}>
           {format(parseISO(post.date), 'yyyy年MM月dd日')}
         </time>
         {post.category && (
           <>
-            <span className="mx-2">&bull;</span>
+            <span className="hidden sm:inline-block">&bull;</span>
             <Link href={`/categories/${post.category.toLowerCase()}`} className="hover:underline">
               {post.category}
             </Link>
           </>
         )}
+        <span className="hidden sm:inline-block">&bull;</span>
+        <ViewCounter slug={post.slug} />
       </div>
 
       {/* MDX 內容 */}

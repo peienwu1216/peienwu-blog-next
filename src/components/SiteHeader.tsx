@@ -43,6 +43,7 @@ export default function SiteHeader() {
   const navLinks = [
     { href: '/', label: '首頁' },
     { href: '/about', label: '關於我' },
+    { href: '/projects', label: '專案' },
     { href: '/categories', label: '分類' },
     { href: '/tags', label: '標籤' },
     { href: '/posts', label: '所有文章' },

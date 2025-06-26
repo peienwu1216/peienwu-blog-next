@@ -4,7 +4,7 @@ export interface Project {
   techStack: string[];
   repoUrl: string;
   liveDemoUrl?: string;
-  category: '團隊合作與軟體工程' | '遊戲開發' | '個人品牌與網頁開發' | '程式語言與基礎';
+  category: '團隊合作與軟體工程' | '遊戲開發' | '個人品牌與網頁開發' | '物件導向與版本控制';
 
   // 動態 GitHub stats（稍後由前端注入）
   stars?: number;
@@ -42,7 +42,8 @@ export const projectsData: Project[] = [
     title: '🎮 CrazyArcade-CPP: C++ 遊戲開發實戰',
     description: [
       '這款以 C++ 打造的類炸彈超人遊戲，是一個完整的期末專案，展現了我從設計、實作到交付一款遊戲的綜合能力。',
-      '專案內容涵蓋了核心遊戲機制、邏輯設計，並在實戰中應用了 C++ 的基礎程式設計原則。'
+      '專案內容涵蓋了核心遊戲機制、邏輯設計，並在實戰中應用了 C++ 的基礎程式設計原則。',
+      '**奠定基礎：** 作為大一上的 C++ 核心專案，它不僅讓我熟悉了遊戲開發的完整流程，也為大一下的 Pycade Bomber 團隊專案奠定了扎實的技術基礎。'
     ],
     techStack: ['C++'],
     repoUrl: 'https://github.com/peienwu1216/CrazyArcade-CPP-Game',
@@ -67,6 +68,6 @@ export const projectsData: Project[] = [
     ],
     techStack: ['Python', 'OOP', 'Git'],
     repoUrl: 'https://github.com/peienwu1216/oop-python-nycu',
-    category: '程式語言與基礎',
+    category: '物件導向與版本控制',
   },
 ]; 

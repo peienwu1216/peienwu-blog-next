@@ -25,14 +25,23 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
   return (
     <div className="flex flex-col rounded-lg bg-white dark:bg-slate-800 shadow-lg overflow-hidden transition-transform duration-300 hover:scale-[1.02] hover:shadow-xl">
       <div className="p-6 flex-grow">
-        <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-2">{project.title}</h3>
+        <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-2">
+          <a
+            href={project.repoUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="hover:text-sky-500 dark:hover:text-sky-400 transition-colors"
+          >
+            {project.title}
+          </a>
+        </h3>
         <div className="prose prose-slate dark:prose-invert max-w-none mb-4 text-sm">
           {project.description.map((paragraph, index) => (
             <p key={index} dangerouslySetInnerHTML={{ __html: paragraph.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>') }}></p>
           ))}
         </div>
         
-        <div className="flex flex-wrap gap-2 mb-4">
+        <div className="flex flex-wrap gap-2">
           {project.techStack.map((tech, index) => (
             <span key={index} className="inline-block bg-sky-100 text-sky-800 dark:bg-sky-900 dark:text-sky-200 text-xs font-semibold px-2.5 py-1 rounded-full">
               {tech}
@@ -41,43 +50,43 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project }) => {
         </div>
       </div>
       
-      <div className="bg-slate-50 dark:bg-slate-700/50 px-6 py-4 space-y-3">
-        <div className="flex items-center justify-between">
-          <span className="text-xs font-medium text-slate-500 dark:text-slate-400">{project.category}</span>
-          <div className="flex items-center gap-4">
-            <a href={project.repoUrl} target="_blank" rel="noopener noreferrer" className="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition-colors">
-              <GithubIcon className="w-5 h-5" />
-            </a>
-            {project.liveDemoUrl && (
-              <a href={project.liveDemoUrl} target="_blank" rel="noopener noreferrer" className="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition-colors">
-                <ExternalLinkIcon className="w-5 h-5" />
-              </a>
-            )}
-          </div>
-        </div>
+      <div className="border-t border-slate-200 dark:border-slate-700 px-6 py-4 flex items-center justify-between">
+        <span className="text-xs font-medium text-slate-500 dark:text-slate-400">{project.category}</span>
+        
+        <div className="flex items-center gap-4">
+          {project.stars !== undefined && (
+            <div className="flex items-center gap-1 text-xs text-slate-600 dark:text-slate-300">
+              <StarIcon className="w-4 h-4 text-yellow-500" />
+              <span>{project.stars}</span>
+            </div>
+          )}
+          {project.forks !== undefined && (
+            <div className="flex items-center gap-1 text-xs text-slate-600 dark:text-slate-300">
+              <ForkIcon className="w-4 h-4" />
+              <span>{project.forks}</span>
+            </div>
+          )}
+          {project.commits !== undefined && (
+            <div className="flex items-center gap-1 text-xs text-slate-600 dark:text-slate-300">
+              <CommitIcon className="w-4 h-4" />
+              <span>{project.commits}</span>
+            </div>
+          )}
 
-        {(project.stars !== undefined || project.forks !== undefined || project.commits !== undefined) && (
-          <div className="flex items-center gap-6 text-xs text-slate-600 dark:text-slate-300">
-            {project.stars !== undefined && (
-              <div className="flex items-center gap-1">
-                <StarIcon className="w-4 h-4 text-yellow-500" />
-                <span>{project.stars}</span>
-              </div>
-            )}
-            {project.forks !== undefined && (
-              <div className="flex items-center gap-1">
-                <ForkIcon className="w-4 h-4" />
-                <span>{project.forks}</span>
-              </div>
-            )}
-            {project.commits !== undefined && (
-              <div className="flex items-center gap-1">
-                <CommitIcon className="w-4 h-4" />
-                <span>{project.commits}</span>
-              </div>
-            )}
-          </div>
-        )}
+          {/* Vertical divider */}
+          {(project.stars !== undefined || project.forks !== undefined || project.commits !== undefined) && 
+           (project.repoUrl || project.liveDemoUrl) && 
+           <div className="w-px h-4 bg-slate-200 dark:bg-slate-700"></div>}
+
+          <a href={project.repoUrl} target="_blank" rel="noopener noreferrer" className="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition-colors">
+            <GithubIcon className="w-5 h-5" />
+          </a>
+          {project.liveDemoUrl && (
+            <a href={project.liveDemoUrl} target="_blank" rel="noopener noreferrer" className="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 transition-colors">
+              <ExternalLinkIcon className="w-5 h-5" />
+            </a>
+          )}
+        </div>
       </div>
     </div>
   );

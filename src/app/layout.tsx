@@ -78,7 +78,7 @@ export default function RootLayout({
           </footer>
           <Analytics />
           <SpeedInsights />
-          <Toaster theme="system" />
+          <Toaster theme="system" expand={true} />
           <ProTipToast />
         </ThemeProvider>
       </body>

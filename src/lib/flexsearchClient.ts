@@ -1,8 +1,9 @@
 import { Document } from 'flexsearch';
 
-interface DocPayload {
+export interface DocPayload {
   id: number;
   title: string;
+  date: string;
   plainText: string;
   technicalText: string;
   codeText: string;

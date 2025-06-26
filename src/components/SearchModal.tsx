@@ -309,6 +309,7 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
   const [results, setResults] = useState<DocResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
+  const [isQueryTooShort, setIsQueryTooShort] = useState(false);
   const [suggestions] = useState(() => getSearchSuggestions());
   const [view, setView] = useState<View>('main');
   
@@ -392,10 +393,23 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
 
   useEffect(() => {
     if (view === 'main') {
-    const timeoutId = setTimeout(() => {
-      performSearch(query);
-    }, 300);
-    return () => clearTimeout(timeoutId);
+      const isMathLike = /[()\\^_+]/.test(query);
+      const minLen = isMathLike ? 1 : 2;
+      const cleanedQuery = query.replace(/[^\p{L}\p{N}+]+/gu, ' ').trim();
+      const tokens = cleanedQuery.split(/\s+/).filter(t => t.length >= minLen);
+
+      if (query.trim() !== '' && tokens.length === 0) {
+        setResults([]);
+        setIsQueryTooShort(true);
+        return;
+      }
+      
+      setIsQueryTooShort(false);
+
+      const timeoutId = setTimeout(() => {
+        performSearch(query);
+      }, 300);
+      return () => clearTimeout(timeoutId);
     }
   }, [query, performSearch, view]);
 
@@ -543,8 +557,11 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
               // Search Results
               <div className="py-2">
                 {isLoading && <div className="p-4 text-center text-slate-500">搜尋中...</div>}
-                {!isLoading && results.length === 0 && (
+                {!isLoading && results.length === 0 && query.trim() !== '' && !isQueryTooShort && (
                   <div className="p-4 text-center text-slate-500">找不到與 "{query}" 相關的文章。</div>
+                )}
+                {!isLoading && isQueryTooShort && (
+                  <div className="p-4 text-center text-slate-500">請輸入更長的關鍵字...</div>
                 )}
                 {results.map((result, index) => (
                   <Link

@@ -15,6 +15,7 @@ function build() {
         const docs = allPosts.map((post, idx) => ({
             id: idx,
             title: post.title,
+            date: post.date,
             plainText: post.plainText,
             codeText: post.codeText,
             mathText: post.mathText,

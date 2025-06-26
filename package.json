@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "(contentlayer dev 2>&1 | grep -v '▲ \\[WARNING\\]') & next dev",
-    "build": "contentlayer build && next build",
+    "build": "contentlayer build && next build && node scripts/build-search.js",
     "start": "next start"
   },
   "dependencies": {

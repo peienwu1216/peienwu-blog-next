@@ -4,7 +4,8 @@ import { createPortal } from 'react-dom';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import { format, parseISO } from 'date-fns';
-import { searchPosts, getSearchSuggestions, highlightText, extractExcerpt, SearchResult } from '@/lib/search';
+import { getSearchSuggestions, highlightText, extractExcerpt } from '@/lib/search';
+import { searchDocs } from '@/lib/flexsearchClient';
 import { useRouter } from 'next/navigation';
 import { useTheme } from 'next-themes';
 import { toast } from 'sonner';
@@ -284,9 +285,27 @@ interface SearchModalProps {
   onClose: () => void;
 }
 
+interface DocResult {
+  id: number;
+  title: string;
+  plainText: string;
+  technicalText: string;
+  category: string;
+  tags: string;
+  url: string;
+  slug: string;
+  matches: {
+    title?: boolean;
+    content?: boolean;
+    category?: boolean;
+    tags?: boolean;
+    technical?: boolean;
+  };
+}
+
 export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
   const [query, setQuery] = useState('');
-  const [results, setResults] = useState<SearchResult[]>([]);
+  const [results, setResults] = useState<DocResult[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const [suggestions] = useState(() => getSearchSuggestions());
@@ -349,8 +368,19 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
         return;
       }
       setIsLoading(true);
-      const searchResults = searchPosts(searchQuery, 10);
-      setResults(searchResults);
+      const docs = await searchDocs(searchQuery, 10);
+      const lowered = searchQuery.toLowerCase();
+      const formatted: DocResult[] = docs.map((doc) => ({
+        ...doc,
+        matches: {
+          title: doc.title.toLowerCase().includes(lowered),
+          content: doc.plainText.toLowerCase().includes(lowered),
+          category: doc.category.toLowerCase().includes(lowered),
+          tags: doc.tags.toLowerCase().includes(lowered),
+          technical: doc.technicalText.toLowerCase().includes(lowered),
+        },
+      }));
+      setResults(formatted);
       setSelectedIndex(-1);
       setIsLoading(false);
     },
@@ -397,7 +427,7 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
             }
         } else {
             const result = results[selectedIndex];
-            window.location.href = result.post.url || `/posts/${result.post.slug}`;
+            window.location.href = result.url || `/posts/${result.slug}`;
           }
       } else if (e.key === 'Escape') {
         onClose();
@@ -515,8 +545,8 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
                 )}
                 {results.map((result, index) => (
                   <Link
-                    key={result.post._id}
-                    href={result.post.url || `/posts/${result.post.slug}`}
+                    key={result.id}
+                    href={result.url || `/posts/${result.slug}`}
                     onClick={onClose}
                       onMouseMove={() => setSelectedIndex(index)}
                       className={`block px-4 py-3 mx-2 my-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors ${index === selectedIndex ? 'bg-slate-100 dark:bg-slate-800' : ''
@@ -524,8 +554,8 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
                   >
                       <div className="flex justify-between items-start">
                         <div className="flex-1">
-                          <div className="font-medium text-slate-900 dark:text-slate-100" dangerouslySetInnerHTML={{ __html: highlightText(result.post.title, query) }} />
-                          <div className="mt-1 text-slate-500 dark:text-slate-400" dangerouslySetInnerHTML={{ __html: highlightText(extractExcerpt((result.post as any).plainText, query) || '', query) }} />
+                          <div className="font-medium text-slate-900 dark:text-slate-100" dangerouslySetInnerHTML={{ __html: highlightText(result.title, query) }} />
+                          <div className="mt-1 text-slate-500 dark:text-slate-400" dangerouslySetInnerHTML={{ __html: highlightText(extractExcerpt(result.plainText, query) || '', query) }} />
                         </div>
                         <div className="flex gap-1.5 ml-3 flex-shrink-0">
                           {result.matches.title && <span className="px-2 py-0.5 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 rounded-full text-xs font-medium">標題</span>}

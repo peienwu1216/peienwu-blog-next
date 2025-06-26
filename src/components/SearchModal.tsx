@@ -83,15 +83,191 @@ const ProjectIcon = (props: React.SVGProps<SVGSVGElement>) => (
     </svg>
 );
 
-// --- 命令項目類型定義 ---
+// --- Start of new icons and components ---
+const ArrowLeftIcon = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
+    </svg>
+);
+
+const CircleIcon = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg viewBox="0 0 16 16" fill="currentColor" {...props}>
+        <path d="M8 9.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3Z"></path>
+        <path d="M8 0a8 8 0 1 0 0 16A8 8 0 0 0 8 0ZM1.5 8a6.5 6.5 0 1 1 13 0 6.5 6.5 0 0 1-13 0Z"></path>
+    </svg>
+);
+  
+const InProgressIcon = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg viewBox="0 0 16 16" fill="currentColor" {...props}>
+        <path d="M8 16a8 8 0 1 0 0-16 8 8 0 0 0 0 16Zm.5-11.5a.5.5 0 0 0-1 0V8h-2a.5.5 0 0 0 0 1h2.5a.5.5 0 0 0 .5-.5v-4Z"></path>
+    </svg>
+);
+
+const IssueIcon = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg viewBox="0 0 16 16" fill="currentColor" {...props}>
+        <path d="M8 1.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0Zm-1.5 8a.5.5 0 0 1 .5-.5h2a.5.5 0 0 1 0 1h-2a.5.5 0 0 1-.5-.5Zm.5 2.5a.5.5 0 0 1 .5-.5h.5a.5.5 0 0 1 0 1h-.5a.5.5 0 0 1-.5-.5Z"></path>
+    </svg>
+);
+
+const DevPlanIcon = (props: React.SVGProps<SVGSVGElement>) => (
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" {...props}>
+        <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 7.5l3 2.25-3 2.25m4.5 0h3m-9 8.25h13.5A2.25 2.25 0 0 0 21 18V6a2.25 2.25 0 0 0-2.25-2.25H5.25A2.25 2.25 0 0 0 3 6v12a2.25 2.25 0 0 0 2.25 2.25Z" />
+    </svg>
+);
+
+// --- End of new icons and components ---
+
+// --- Type Definitions Update ---
+type View = 'main' | 'github';
+
 interface Command {
   name: string;
   icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
   action: () => void;
   section: '導航' | '命令' | '外部連結';
-  // for dynamic items, we add the data here
   data?: any;
 }
+
+interface GitHubIssue {
+    title: string;
+    url: string;
+    number: number;
+    repository: {
+        name: string;
+    };
+}
+
+interface GitHubProjectData {
+    todo: GitHubIssue[];
+    inProgress: GitHubIssue[];
+}
+
+type GitHubViewItem = 
+    | { type: 'back'; name: string; icon: React.ComponentType<React.SVGProps<SVGSVGElement>>; action: () => void; }
+    | (GitHubIssue & { type: 'issue'; status: 'Todo' | 'In Progress'; });
+
+
+interface GitHubIssuesViewProps {
+    onBack: () => void;
+    onClose: () => void;
+    setParentIndex: (index: number) => void;
+}
+
+// --- GitHub Issues Sub-component ---
+const GitHubIssuesView: React.FC<GitHubIssuesViewProps> = ({ onBack, onClose, setParentIndex }) => {
+    const [issues, setIssues] = useState<GitHubProjectData>({ todo: [], inProgress: [] });
+    const [isLoading, setIsLoading] = useState(true);
+    const [selectedIndex, setSelectedIndex] = useState(0);
+
+    useEffect(() => {
+        const fetchIssues = async () => {
+            try {
+                const res = await fetch('/api/github-issues');
+                if (res.ok) {
+                    const data = await res.json();
+                    setIssues(data);
+                }
+            } catch (error) {
+                console.error("Failed to fetch GitHub issues", error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+        fetchIssues();
+    }, []);
+
+    const allItems: GitHubViewItem[] = [
+        { type: 'back', name: '返回', icon: ArrowLeftIcon, action: onBack },
+        ...issues.inProgress.map(issue => ({ ...issue, type: 'issue' as const, status: 'In Progress' as const })),
+        ...issues.todo.map(issue => ({ ...issue, type: 'issue' as const, status: 'Todo' as const })),
+    ];
+    
+    useEffect(() => {
+        setParentIndex(selectedIndex);
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                setSelectedIndex(prev => Math.min(prev + 1, allItems.length - 1));
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                setSelectedIndex(prev => Math.max(prev - 1, 0));
+            } else if (e.key === 'Enter') {
+                e.preventDefault();
+                const item = allItems[selectedIndex];
+                if (item.type === 'back') {
+                    item.action();
+                } else if (item.type === 'issue') {
+                    window.open(item.url, '_blank');
+                    onClose();
+                }
+            } else if (e.key === 'Escape') {
+                onClose();
+            }
+        };
+        document.addEventListener('keydown', handleKeyDown);
+        return () => document.removeEventListener('keydown', handleKeyDown);
+    }, [selectedIndex, allItems, onClose, onBack, setParentIndex]);
+
+    const renderItem = (item: GitHubViewItem, index: number) => {
+        const isSelected = selectedIndex === index;
+        const baseClasses = "flex items-center gap-4 px-4 py-3 text-sm cursor-pointer";
+        const selectedClasses = "bg-slate-100 dark:bg-slate-700/50";
+        const textClasses = isSelected ? "text-slate-900 dark:text-white" : "text-slate-600 dark:text-slate-300";
+        const iconClasses = isSelected ? "text-slate-800 dark:text-slate-200" : "text-slate-500 dark:text-slate-400";
+
+        if (item.type === 'back') {
+            return (
+                <div key="back" className={`${baseClasses} ${isSelected ? selectedClasses : ''}`} onClick={item.action}>
+                    <item.icon className={`w-5 h-5 ${iconClasses}`} />
+                    <span className={textClasses}>{item.name}</span>
+                </div>
+            );
+        }
+        
+        const statusIcon = item.status === 'In Progress' 
+            ? <InProgressIcon className="w-5 h-5 text-yellow-500" /> 
+            : <CircleIcon className="w-5 h-5 text-green-500" />;
+
+        return (
+            <div 
+                key={`${item.repository.name}#${item.number}`} 
+                className={`${baseClasses} ${isSelected ? selectedClasses : ''}`}
+                onClick={() => { window.open(item.url, '_blank'); onClose(); }}
+                onMouseMove={() => setSelectedIndex(index)}
+            >
+                {statusIcon}
+                <div className="flex flex-col flex-1 overflow-hidden">
+                    <span className={`truncate font-medium ${textClasses}`}>{item.title}</span>
+                    <span className="text-xs text-slate-400 dark:text-slate-500">
+                        {item.repository.name}#{item.number}
+                    </span>
+                </div>
+            </div>
+        );
+    };
+
+    if (isLoading) {
+        return <div className="p-6 text-center text-slate-500">正在讀取開發計畫...</div>;
+    }
+
+    const inProgressItems = allItems.filter(it => it.type === 'issue' && it.status === 'In Progress');
+    const todoItems = allItems.filter(it => it.type === 'issue' && it.status === 'Todo');
+
+    return (
+        <div>
+            {inProgressItems.length > 0 && <div className="px-4 pt-4 pb-2 text-xs font-semibold text-slate-400 dark:text-slate-500">進行中</div>}
+            {inProgressItems.map(item => renderItem(item, allItems.indexOf(item)))}
+            
+            {todoItems.length > 0 && <div className="px-4 pt-4 pb-2 text-xs font-semibold text-slate-400 dark:text-slate-500">待辦</div>}
+            {todoItems.map(item => renderItem(item, allItems.indexOf(item)))}
+            
+            <div className="border-t border-slate-200 dark:border-slate-700 mt-2">
+                {renderItem(allItems[0], 0)}
+            </div>
+        </div>
+    );
+};
+// --- End of GitHub Issues Sub-component ---
 
 interface SearchModalProps {
   isOpen: boolean;
@@ -104,6 +280,7 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const [suggestions] = useState(() => getSearchSuggestions());
+  const [view, setView] = useState<View>('main');
   
   const inputRef = useRef<HTMLInputElement>(null);
   const resultsRef = useRef<HTMLDivElement>(null);
@@ -115,7 +292,6 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
     setTheme(theme === 'dark' ? 'light' : 'dark');
   };
 
-  // Memoize commands to prevent re-calculation on every render
   const allCommands = React.useMemo(() => {
     const staticCommands: Command[] = [
         { name: '首頁', icon: HomeIcon, action: () => router.push('/'), section: '導航' },
@@ -123,10 +299,10 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
         { name: '所有標籤', icon: TagIcon, action: () => router.push('/tags'), section: '導航' },
         { name: '專案儀表板', icon: ProjectIcon, action: () => router.push('/projects'), section: '導航' },
         { name: '切換主題', icon: theme === 'dark' ? SunIcon : MoonIcon, action: toggleTheme, section: '命令' },
+        { name: '查看開發計畫...', icon: DevPlanIcon, action: () => setView('github'), section: '命令' },
         { name: '複製網址', icon: LinkIcon, action: () => navigator.clipboard.writeText(window.location.href), section: '命令' },
         { name: '查看原始碼', icon: GithubIcon, action: () => window.open('https://github.com/peienwu1216/peienwu-blog-next', '_blank'), section: '外部連結' },
       ];
-
       return staticCommands;
   }, [theme, router]);
 
@@ -134,7 +310,14 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
     setIsMounted(true);
   }, []);
 
-  // 搜尋邏輯
+  useEffect(() => {
+      setQuery('');
+      setSelectedIndex(-1);
+      if (isOpen && view === 'main') {
+        inputRef.current?.focus();
+      }
+  }, [view, isOpen]);
+
   const performSearch = useCallback(
     async (searchQuery: string) => {
       if (!searchQuery.trim()) {
@@ -142,7 +325,6 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
         return;
       }
       setIsLoading(true);
-      await new Promise(resolve => setTimeout(resolve, 100));
       const searchResults = searchPosts(searchQuery, 10);
       setResults(searchResults);
       setSelectedIndex(-1);
@@ -151,61 +333,56 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
     []
   );
 
-  // 防抖搜尋
   useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      performSearch(query);
-    }, 300);
-    return () => clearTimeout(timeoutId);
-  }, [query, performSearch]);
+    if (view === 'main') {
+        const timeoutId = setTimeout(() => {
+            performSearch(query);
+        }, 300);
+        return () => clearTimeout(timeoutId);
+    }
+  }, [query, performSearch, view]);
 
-  // 當模態開啟時聚焦到輸入框
   useEffect(() => {
     if (isOpen) {
       inputRef.current?.focus();
     }
   }, [isOpen]);
 
-  // 鍵盤導航
   useEffect(() => {
+    if (view !== 'main') return;
+
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!isOpen) return;
 
       const isCommandView = query.trim() === '';
-      const activeListLength = isCommandView ? allCommands.length : results.length;
+      const list = isCommandView ? allCommands : results;
 
-      switch (e.key) {
-        case 'Escape':
-          onClose();
-          break;
-        case 'ArrowDown':
-          e.preventDefault();
-          setSelectedIndex(prev => (prev < activeListLength - 1 ? prev + 1 : prev));
-          break;
-        case 'ArrowUp':
-          e.preventDefault();
-          setSelectedIndex(prev => (prev > -1 ? prev - 1 : prev));
-          break;
-        case 'Enter':
-          e.preventDefault();
-          if (selectedIndex < 0) return;
-          
-          if (isCommandView) {
-            allCommands[selectedIndex].action();
-            onClose();
-          } else {
-            if (results[selectedIndex]) {
-              window.location.href = results[selectedIndex].post.url || `/posts/${results[selectedIndex].post.slug}`;
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        setSelectedIndex(prev => Math.min(prev + 1, list.length - 1));
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        setSelectedIndex(prev => Math.max(prev - 1, -1));
+      } else if (e.key === 'Enter' && selectedIndex >= 0) {
+        e.preventDefault();
+        if (isCommandView) {
+            const command = allCommands[selectedIndex];
+            command.action();
+            if (command.name !== '查看開發計畫...') {
+                onClose();
             }
-          }
-          break;
+        } else {
+            const result = results[selectedIndex];
+            window.location.href = result.post.url || `/posts/${result.post.slug}`;
+        }
+      } else if (e.key === 'Escape') {
+        onClose();
       }
     };
     document.addEventListener('keydown', handleKeyDown);
     return () => document.removeEventListener('keydown', handleKeyDown);
-  }, [isOpen, onClose, selectedIndex, results, query, allCommands]);
+  }, [isOpen, onClose, selectedIndex, results, query, allCommands, view]);
 
-  // 阻止背景滾動
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
@@ -222,20 +399,19 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
     inputRef.current?.focus();
   };
 
+  const resetView = () => {
+    setView('main');
+  };
+
   if (!isOpen) return null;
 
   const modalContent = (
-    <div 
-      className="fixed inset-0 z-50 flex items-start justify-center pt-0 sm:pt-20"
-      onClick={onClose}
-    >
+    <div className="fixed inset-0 z-50 flex items-start justify-center pt-0 sm:pt-20" onClick={onClose}>
       <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-lg animate-in fade-in" />
-      
       <div 
         className="relative flex flex-col w-full h-full overflow-hidden bg-white shadow-2xl dark:bg-slate-900 sm:h-auto sm:max-w-2xl sm:rounded-xl animate-in fade-in zoom-in-95 duration-300 sm:max-h-[calc(100vh-12rem)]"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* --- Header Section --- */}
         <div className="flex items-center gap-3 p-4 border-b border-slate-200 dark:border-slate-700">
           <SearchIcon className="w-5 h-5 text-slate-400" />
           <input
@@ -243,8 +419,9 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            placeholder="搜尋文章..."
+            placeholder={view === 'main' ? "搜尋文章..." : "開發計畫"}
             className="flex-1 text-lg bg-transparent border-none outline-none text-slate-900 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400"
+            disabled={view !== 'main'}
           />
           <div className="hidden sm:flex items-center gap-2">
             <kbd className="px-2 py-1 text-xs font-mono text-slate-500 bg-slate-100 dark:bg-slate-700 dark:text-slate-400 rounded border">ESC</kbd>
@@ -256,8 +433,8 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
               <CloseIcon className="w-5 h-5" />
             </button>
           </div>
-          <button 
-            onClick={onClose} 
+          <button
+            onClick={onClose}
             className="p-1 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition-colors sm:hidden"
             aria-label="關閉搜尋"
           >
@@ -265,95 +442,92 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
           </button>
         </div>
 
-        {/* --- Results Section (Scrollable) --- */}
         <div ref={resultsRef} className="flex-1 overflow-y-auto">
-          {isLoading ? (
-            <div className="flex items-center justify-center py-8">
-              <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-500"></div>
-              <span className="ml-2 text-slate-600 dark:text-slate-400">搜尋中...</span>
-            </div>
-          ) : query ? (
-            results.length > 0 ? (
+          {view === 'main' ? (
+            query.trim() === '' ? (
+              // Command List
               <div className="py-2">
-                <h4 className="px-4 pt-2 pb-1 text-xs font-semibold text-slate-500 dark:text-slate-400">文章</h4>
-                {results.map((result, index) => (
-                  <Link
-                    key={result.post._id}
-                    href={result.post.url || `/posts/${result.post.slug}`}
-                    onClick={onClose}
-                    className={`block px-4 py-3 mx-2 my-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors ${
-                      index === selectedIndex ? 'bg-slate-100 dark:bg-slate-800' : ''
-                    }`}
-                  >
-                    <div className="flex flex-col gap-1">
-                      <h3 
-                        className="font-medium text-slate-900 dark:text-slate-100 line-clamp-1"
-                        dangerouslySetInnerHTML={{ __html: highlightText(result.post.title, query) }}
-                      />
-                      <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-                        <span>{format(parseISO(result.post.date), 'yyyy/MM/dd')}</span>
-                        {result.post.category && (
-                          <>
-                            <span>•</span>
-                            <span dangerouslySetInnerHTML={{ __html: highlightText(result.post.category, query) }} />
-                          </>
-                        )}
-                        <div className="flex gap-1 ml-auto">
-                          {result.matches.title && <span className="px-1 py-0.5 bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 rounded text-xs">標題</span>}
-                          {result.matches.category && <span className="px-1 py-0.5 bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 rounded text-xs">分類</span>}
-                          {result.matches.tags && <span className="px-1 py-0.5 bg-purple-100 dark:bg-purple-900 text-purple-700 dark:text-purple-300 rounded text-xs">標籤</span>}
-                          {result.matches.content && <span className="px-1 py-0.5 bg-orange-100 dark:bg-orange-900 text-orange-700 dark:text-orange-300 rounded text-xs">內容</span>}
-                        </div>
-                      </div>
-                      {result.matches.content && (
-                        <p 
-                          className="text-sm text-slate-600 dark:text-slate-300 line-clamp-2"
-                          dangerouslySetInnerHTML={{ __html: highlightText(extractExcerpt(result.post.body?.raw || '', query), query) }}
-                        />
-                      )}
+                {Object.entries(
+                  allCommands.reduce((acc, command) => {
+                    const section = command.section;
+                    if (!acc[section]) acc[section] = [];
+                    acc[section].push(command);
+                    return acc;
+                  }, {} as Record<string, Command[]>)
+                ).map(([section, commands]) => (
+                  <div key={section} className="mt-2">
+                    <div className="px-4 pt-2 pb-1 text-xs font-semibold text-slate-400 dark:text-slate-500">
+                      {section}
                     </div>
-                  </Link>
+                    {commands.map((command) => {
+                      const overallIndex = allCommands.findIndex(c => c.name === command.name);
+                      const isSelected = selectedIndex === overallIndex;
+                      return (
+                        <div 
+                          key={command.name}
+                          className={`flex items-center gap-4 px-4 py-3 cursor-pointer ${isSelected ? 'bg-slate-100 dark:bg-slate-700/50' : ''}`}
+                          onClick={() => {
+                            command.action();
+                            if (command.name !== '查看開發計畫...') {
+                                onClose();
+                            }
+                          }}
+                          onMouseMove={() => setSelectedIndex(overallIndex)}
+                        >
+                          <command.icon className={`w-5 h-5 ${isSelected ? 'text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400'}`} />
+                          <span className={`font-medium ${isSelected ? 'text-slate-900 dark:text-white' : 'text-slate-600 dark:text-slate-300'}`}>{command.name}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
                 ))}
               </div>
             ) : (
-              <div className="py-8 text-center">
-                <p className="text-slate-500 dark:text-slate-400 mb-4">找不到結果</p>
-                <p className="text-sm text-slate-400 dark:text-slate-500">試試其他關鍵字</p>
+              // Search Results
+              <div className="py-2">
+                {isLoading && <div className="p-4 text-center text-slate-500">搜尋中...</div>}
+                {!isLoading && results.length === 0 && (
+                  <div className="p-4 text-center text-slate-500">找不到與 "{query}" 相關的文章。</div>
+                )}
+                {results.map((result, index) => (
+                    <Link
+                      key={result.post._id}
+                      href={result.post.url || `/posts/${result.post.slug}`}
+                      onClick={onClose}
+                      onMouseMove={() => setSelectedIndex(index)}
+                      className={`block px-4 py-3 mx-2 my-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors ${index === selectedIndex ? 'bg-slate-100 dark:bg-slate-800' : ''
+                        }`}
+                    >
+                      <div className="font-medium text-slate-900 dark:text-slate-100" dangerouslySetInnerHTML={{ __html: highlightText(result.post.title, result.matches.title ? query : '') }} />
+                      <div className="mt-1 text-slate-500 dark:text-slate-400" dangerouslySetInnerHTML={{ __html: extractExcerpt(result.post.body.raw, query) || '' }} />
+                    </Link>
+                ))}
               </div>
             )
           ) : (
-            <div className="py-2">
-              {/* --- 靜態命令 --- */}
-              {['導航', '命令', '外部連結'].map(section => (
-                <div key={section} className="mb-2">
-                  <h4 className="px-4 pt-2 pb-1 text-xs font-semibold text-slate-500 dark:text-slate-400">{section}</h4>
-                  {allCommands.filter(cmd => cmd.section === section).map((command) => {
-                    const globalIndex = allCommands.findIndex(c => c.name === command.name);
-                    return (
-                      <button
-                        key={command.name}
-                        onClick={() => { command.action(); onClose(); }}
-                        className={`flex items-center gap-3 w-full text-left px-4 py-2.5 mx-2 my-0.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors ${
-                          globalIndex === selectedIndex ? 'bg-slate-100 dark:bg-slate-800' : ''
-                        }`}
-                      >
-                        <command.icon className="w-5 h-5 text-slate-500 dark:text-slate-400" />
-                        <span className="text-slate-900 dark:text-slate-100 flex-1">{command.name}</span>
-                      </button>
-                    )
-                  })}
-                </div>
-              ))}
-            </div>
+            <GitHubIssuesView onBack={resetView} onClose={onClose} setParentIndex={setSelectedIndex}/>
           )}
         </div>
+
+        {query.trim() === '' && view === 'main' && (
+          <div className="flex items-center justify-between gap-4 p-3 border-t border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50">
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-slate-500">熱門搜尋:</span>
+              {suggestions.slice(0, 3).map(suggestion => (
+                <button 
+                  key={suggestion}
+                  onClick={() => handleSuggestionClick(suggestion)}
+                  className="px-2 py-1 text-xs text-slate-600 bg-slate-100 dark:bg-slate-700 dark:text-slate-300 rounded hover:bg-slate-200 dark:hover:bg-slate-600"
+                >
+                  {suggestion}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
 
-  if (isMounted) {
-    return createPortal(modalContent, document.body);
-  }
-
-  return null;
+  return isMounted ? createPortal(modalContent, document.body) : null;
 } 

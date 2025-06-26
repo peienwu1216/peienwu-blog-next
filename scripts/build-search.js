@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { allPosts } from 'contentlayer/generated';
+import { allPosts } from '../.contentlayer/generated/index.mjs';
 
 // Build a lightweight dataset for client-side FlexSearch
 const docs = allPosts.map((post, idx) => ({

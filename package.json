@@ -36,9 +36,13 @@
     "rehype-katex": "^5.0.0",
     "remark-gfm": "^3.0.1",
     "remark-math": "^5.1.1",
+    "remark-remove-comments": "^1.1.1",
+    "remove-markdown": "^0.6.2",
     "shiki": "^3.4.0",
     "sonner": "^2.0.5",
-    "swr": "^2.3.3"
+    "strip-markdown": "^6.0.0",
+    "swr": "^2.3.3",
+    "unist-util-visit": "^5.0.0"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

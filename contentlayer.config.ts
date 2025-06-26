@@ -6,6 +6,7 @@ import rehypeKatex from 'rehype-katex' // 將 remarkMath 產生的數學 AST 渲
 import rehypePrettyCode from 'rehype-pretty-code' // 程式碼高亮
 import rehypeSlug from 'rehype-slug' // 增加標題 id
 import rehypeExternalLinks from 'rehype-external-links' // 外部連結處理
+import removeMd from 'remove-markdown'
 
 // 處理 TypeScript 型別問題，rehype-pretty-code 的預設匯出可能與 rehype 插件型別不完全匹配
 const rehypePrettyCodePlugin = rehypePrettyCode as unknown as any // 這樣處理通常是OK的
@@ -30,6 +31,16 @@ export const Post = defineDocumentType(() => ({
     slug: {
       type: 'string',
       resolve: (post) => post._raw.flattenedPath.replace(/^posts\/?/, ''),
+    },
+    plainText: {
+      type: 'string',
+      resolve: (post) => {
+        let raw = (post as any).body?.raw || ''
+        // 方案A: 先用正規表示式去除 MDX 的 JSX 註解 {/* ... */}
+        raw = raw.replace(/{\/\*[\s\S]*?\*\/}/g, '')
+        // 再用 remove-markdown 去除標準 Markdown 語法
+        return removeMd(raw).replace(/\s+/g, ' ').trim();
+      },
     },
   },
 }))

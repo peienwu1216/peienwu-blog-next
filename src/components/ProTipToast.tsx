@@ -41,7 +41,7 @@ export function ProTipToast() {
 
       // 標記已顯示
       sessionStorage.setItem('proTipShown', 'true');
-    }, 5000); // 頁面載入5秒後顯示
+    }, 3000); // 頁面載入3秒後顯示
 
     return () => clearTimeout(timer);
   }, [isDesktop]);

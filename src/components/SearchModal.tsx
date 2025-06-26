@@ -7,6 +7,8 @@ import { format, parseISO } from 'date-fns';
 import { searchPosts, getSearchSuggestions, highlightText, extractExcerpt, SearchResult } from '@/lib/search';
 import { useRouter } from 'next/navigation';
 import { useTheme } from 'next-themes';
+import { toast } from 'sonner';
+import { CustomToast } from './ProTipToast';
 
 // SVG 圖示元件
 const SearchIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -115,7 +117,13 @@ const DevPlanIcon = (props: React.SVGProps<SVGSVGElement>) => (
     </svg>
 );
 
-// --- End of new icons and components ---
+const CopySuccessIcon = () => (
+  <div className="text-green-500 dark:text-green-400">
+    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+    </svg>
+  </div>
+);
 
 // --- Type Definitions Update ---
 type View = 'main' | 'github';
@@ -158,6 +166,8 @@ const GitHubIssuesView: React.FC<GitHubIssuesViewProps> = ({ onBack, onClose, se
     const [issues, setIssues] = useState<GitHubProjectData>({ todo: [], inProgress: [] });
     const [isLoading, setIsLoading] = useState(true);
     const [selectedIndex, setSelectedIndex] = useState(0);
+    const { theme, setTheme } = useTheme();
+    const router = useRouter();
 
     useEffect(() => {
         const fetchIssues = async () => {
@@ -300,7 +310,14 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
         { name: '專案儀表板', icon: ProjectIcon, action: () => router.push('/projects'), section: '導航' },
         { name: '切換主題', icon: theme === 'dark' ? SunIcon : MoonIcon, action: toggleTheme, section: '命令' },
         { name: '查看開發計畫...', icon: DevPlanIcon, action: () => setView('github'), section: '命令' },
-        { name: '複製網址', icon: LinkIcon, action: () => navigator.clipboard.writeText(window.location.href), section: '命令' },
+        { name: '複製網址', icon: LinkIcon, action: () => {
+          navigator.clipboard.writeText(window.location.href);
+          toast.custom(() => <CustomToast icon={<CopySuccessIcon />} message="已成功複製網址！" />, {
+            duration: 3000,
+            position: 'bottom-right',
+          });
+          onClose();
+        }, section: '命令' },
         { name: '查看原始碼', icon: GithubIcon, action: () => window.open('https://github.com/peienwu1216/peienwu-blog-next', '_blank'), section: '外部連結' },
       ];
       return staticCommands;
@@ -335,10 +352,10 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
 
   useEffect(() => {
     if (view === 'main') {
-        const timeoutId = setTimeout(() => {
-            performSearch(query);
-        }, 300);
-        return () => clearTimeout(timeoutId);
+    const timeoutId = setTimeout(() => {
+      performSearch(query);
+    }, 300);
+    return () => clearTimeout(timeoutId);
     }
   }, [query, performSearch, view]);
 
@@ -358,23 +375,23 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
       const list = isCommandView ? allCommands : results;
 
       if (e.key === 'ArrowDown') {
-        e.preventDefault();
+          e.preventDefault();
         setSelectedIndex(prev => Math.min(prev + 1, list.length - 1));
       } else if (e.key === 'ArrowUp') {
-        e.preventDefault();
+          e.preventDefault();
         setSelectedIndex(prev => Math.max(prev - 1, -1));
       } else if (e.key === 'Enter' && selectedIndex >= 0) {
-        e.preventDefault();
-        if (isCommandView) {
+          e.preventDefault();
+          if (isCommandView) {
             const command = allCommands[selectedIndex];
             command.action();
             if (command.name !== '查看開發計畫...') {
-                onClose();
+            onClose();
             }
         } else {
             const result = results[selectedIndex];
             window.location.href = result.post.url || `/posts/${result.post.slug}`;
-        }
+          }
       } else if (e.key === 'Escape') {
         onClose();
       }
@@ -433,8 +450,8 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
               <CloseIcon className="w-5 h-5" />
             </button>
           </div>
-          <button
-            onClick={onClose}
+          <button 
+            onClick={onClose} 
             className="p-1 text-slate-500 hover:text-slate-800 dark:hover:text-slate-200 transition-colors sm:hidden"
             aria-label="關閉搜尋"
           >
@@ -481,7 +498,7 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
                     })}
                   </div>
                 ))}
-              </div>
+            </div>
             ) : (
               // Search Results
               <div className="py-2">
@@ -490,21 +507,21 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
                   <div className="p-4 text-center text-slate-500">找不到與 "{query}" 相關的文章。</div>
                 )}
                 {results.map((result, index) => (
-                    <Link
-                      key={result.post._id}
-                      href={result.post.url || `/posts/${result.post.slug}`}
-                      onClick={onClose}
+                  <Link
+                    key={result.post._id}
+                    href={result.post.url || `/posts/${result.post.slug}`}
+                    onClick={onClose}
                       onMouseMove={() => setSelectedIndex(index)}
                       className={`block px-4 py-3 mx-2 my-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors ${index === selectedIndex ? 'bg-slate-100 dark:bg-slate-800' : ''
-                        }`}
-                    >
+                    }`}
+                  >
                       <div className="font-medium text-slate-900 dark:text-slate-100" dangerouslySetInnerHTML={{ __html: highlightText(result.post.title, result.matches.title ? query : '') }} />
                       <div className="mt-1 text-slate-500 dark:text-slate-400" dangerouslySetInnerHTML={{ __html: extractExcerpt(result.post.body.raw, query) || '' }} />
-                    </Link>
+                  </Link>
                 ))}
               </div>
             )
-          ) : (
+            ) : (
             <GitHubIssuesView onBack={resetView} onClose={onClose} setParentIndex={setSelectedIndex}/>
           )}
         </div>
@@ -514,17 +531,17 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
             <div className="flex items-center gap-2">
               <span className="text-xs text-slate-500">熱門搜尋:</span>
               {suggestions.slice(0, 3).map(suggestion => (
-                <button 
+                      <button
                   key={suggestion}
                   onClick={() => handleSuggestionClick(suggestion)}
                   className="px-2 py-1 text-xs text-slate-600 bg-slate-100 dark:bg-slate-700 dark:text-slate-300 rounded hover:bg-slate-200 dark:hover:bg-slate-600"
                 >
                   {suggestion}
-                </button>
+                      </button>
               ))}
             </div>
-          </div>
-        )}
+            </div>
+          )}
       </div>
     </div>
   );

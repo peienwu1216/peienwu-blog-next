@@ -8,73 +8,94 @@
 
 **線上預覽:** [https://peienwu-blog-next.vercel.app/](https://peienwu-blog-next.vercel.app/)
 
-![部落格文章頁面概覽](https://github.com/user-attachments/assets/70176ba7-cf9d-4c6d-b445-515bf94658d4)
+![部落格文章頁面概覽](https://github.com/user-attachments/assets/a21066bb-b955-40bd-affb-c51798888f81)
+
+## 🌟 專案亮點總結 (Key Highlights)
+
+這個專案不僅僅是一個部落格，它是一個**精心設計的全端應用程式**，旨在展示現代化的工程實踐與極致的使用者體驗。以下是其核心所在：
+
+1.  **🚀 應用程式級的互動體驗 (Application-Grade Experience)**
+    * **`⌘+K` 指揮中心**: 實作了超越傳統搜尋的**巢狀指令面板**。它不僅能以毫秒級速度搜尋全站內容，更能**執行動作**（如切換主題）、**層級式導覽**，並**整合後端 API**。
+    * **動態儀表板**: 專案頁面和指令面板能**即時**從 GitHub 拉取專案的星級、開發中任務等**動態數據**，並透過**智慧快取策略**兼顧即時性與效能，徹底擺脫靜態網站的限制。
+
+2.  **🧠 專業級搜尋引擎架構 (Professional Search Engine Architecture)**
+    * **建置時索引 (Build-Time Indexing)**: 在 `next build` 階段，透過自訂腳本將所有文章預先處理成一個**輕量、乾淨的 JSON 搜尋索引**，實現了前端的極速查詢。
+    * **智慧型多重索引**: 將內容拆分為「純文字」、「程式碼」、「數學公式」等多重索引，並為**不同欄位設定不同權重**（`標題 > 標籤 > 內文 > 程式碼`），讓搜尋結果極其精準且符合使用者預期。
+    * **上下文感知查詢**: 搜尋邏輯能**自動偵測**使用者輸入的是「自然語言」還是「程式碼/數學符號」，並**動態調整**最小搜尋長度與匹配模式，實現了真正的「智慧搜尋」。
+
+3.  **🏗️ 現代化的全端工程實踐 (Modern Full-Stack Engineering)**
+    * **API 路由與安全**: 透過 Next.js API Routes 建立後端服務，安全地在伺服器端處理如 **GitHub PAT (Personal Access Token)** 等敏感金鑰，實現與 GitHub 私有專案的通訊。
+    * **效能優化策略**: 針對不同 API（`開發計畫` vs. `專案統計`）的特性，分別採用了 **60 秒**和 **24 小時**兩種不同的**伺服器端快取 (`revalidate`) 策略**，在效能、成本與即時性之間做出了精準的權衡。
+
+> **總結來說，此專案完整地展示了我從前端互動設計、後端 API 開發、搜尋引擎架構，到 DevOps 自動化部署與效能優化的全端工程能力。**
 
 ## 📁 專案結構
 
 ```
 .
-├── src/
-│   ├── app/                # Next.js App Router: 頁面與佈局
-│   ├── components/         # 共用的 React 元件 (TOC, Note, etc.)
-│   ├── lib/                # 輔助函式與工具
-│   └── styles/             # 全域樣式與字體
 ├── content/
 │   └── posts/              # .mdx 格式的部落格文章
-├── public/                 # 靜態資源 (圖片, favicons)
-├── contentlayer.config.ts  # Contentlayer 設定檔
-├── tailwind.config.ts      # Tailwind CSS 設定檔
-└── next.config.mjs         # Next.js 設定檔
+├── public/
+│   └── search-data.json    # ✨ FlexSearch 的預建置搜尋索引
+├── scripts/
+│   └── build-search.mjs    # ✨ 用於在建置時產生 `search-data.json` 的腳本
+├── src/
+│   ├── app/                # Next.js App Router: 頁面、API 路由與全域樣式
+│   │   ├── api/            # 🔗 全端 API 路由 (GitHub 整合)
+│   │   └── ...
+│   ├── components/         # 共用的 React 元件
+│   │   └── CommandPalette.tsx # 🧠 Cmd+K 指揮中心的核心 UI
+│   └── lib/                # 輔助函式與客戶端工具
+│       └── flexsearch.ts     # 🧠 FlexSearch 引擎的客戶端邏輯
+├── contentlayer.config.ts  # 🛠️ Contentlayer 設定檔 (定義內容模型)
+├── next.config.js          # Next.js 設定檔
+├── package.json            # 專案依賴與腳本 (新增 `flexsearch`, `concurrently`)
+└── tailwind.config.js      # Tailwind CSS 設定檔
 ```
+**圖示說明 (Legend):**
+* ✨ 核心亮點: 體現本專案「建置時索引」獨特架構的關鍵檔案。
+* 🧠 智慧中樞: 驅動專業級搜尋與指令功能的核心邏輯。
+* 🔗 全端橋樑: 連接前端與外部服務 (GitHub API) 的後端路由。
+* 🛠️ 內容引擎: 定義內容如何被處理、驗證與轉換。
 
 ## ✨ 核心功能 (Features)
 
-*   **現代化技術棧**:
-    *   **Next.js (App Router)**: 採用最新的 React Server Components (RSC) 架構，實現極致效能與開發體驗。
-    *   **Contentlayer**: 型別安全的內容管理，將 `.mdx` 檔案無縫轉換為可供 Next.js 使用的資料。
-    *   **Tailwind CSS**: 搭配 `@tailwindcss/typography` 實現快速、一致且高度客製化的 UI 設計。
-    *   **TypeScript**: 全站使用 TypeScript，確保程式碼的健壯性與可維護性。
+本專案不僅是一個部落格，更是一個從架構、體驗到內容管線都經過精心設計的全端應用。
 
-*   **優化的閱讀體驗**:
-    *   **雙欄佈局**: 長篇文章頁面採用雙欄設計，左側為文章內容，右側為動態目錄，提升資訊獲取效率。
-    *   **動態目錄 (TOC)**:
-        *   使用 `IntersectionObserver` API 實現 **捲動監聽**，自動高亮當前閱讀章節。
-        *   **手風琴效果**，預設僅展開當前 H2 章節下的 H3 子項目，保持介面清爽。
-        *   提供「全部展開/收合」、「回到頂部/前往底部」等快捷按鈕。
-        *   目錄項目支援 **兩行截斷**，避免過長標題破壞版面。
-    *   **HackMD 風格 UI**: 模仿 HackMD 的視覺風格，對引用區塊、連結、行內程式碼等元素進行了細緻的樣式調整。
-    *   **高效字體載入**: 透過 `next/font` 整合 Google Fonts (Noto Sans TC, JetBrains Mono)，解決了本地託管的效能問題。
-    *   **手動主題切換**: 除了根據系統偏好設定自動切換外，也提供手動按鈕，讓使用者能自由在淺色與深色模式間切換，並將偏好儲存於 `localStorage`。
+### 🚀 現代化全端架構 (Modern Full-Stack Architecture)
 
-*   **動態專案儀表板**:
-    *   **混合資料獲取策略**: 專案頁面結合了靜態與動態資料。專案的核心資訊（如標題、描述）是靜態建置的，以達到最快的載入速度。
-    *   **即時 GitHub 統計**: 透過後端 API (`/api/github-stats`) 從 GitHub 拉取每個專案的即時星級 (Stars)、Fork 數與提交數。
-    *   **長效快取優化**: 為了兼顧效能與數據時效性，此 API 採用了 **24 小時**的長效快取策略 (`revalidate = 86400`)，確保數據每日更新的同時，避免對 API 的過度請求。
+採用業界前沿的技術棧，打造了一個高效、可擴充且易於維護的應用程式。
 
-*   **強大的內容功能**:
-    *   **支援 MDX**: 可在 Markdown 中無縫嵌入互動式 React 元件。
-    *   **伺服器端語法高亮**: 透過 `rehype-pretty-code` 與 `shiki`，提供美觀且高效的程式碼區塊高亮。
-    *   **支援 KaTeX**: 優雅地展示數學公式。
-    *   **完整的內容組織**: 支援文章的分類與標籤，並提供獨立的列表頁面。
+* **核心框架**: 以 **Next.js (App Router)** 為核心，充分利用 **React Server Components (RSC)** 的優勢，在伺服器端處理資料獲取與渲染，實現極致的載入效能與優良的開發體驗。
+* **全端能力**: 透過 **Next.js API Routes** 建立後端服務，安全地在伺服器端處理 **GitHub API** 的驗證與請求，實現了**動態專案儀表板**和**即時開發狀態追蹤**等功能。
+* **智慧快取策略**: 針對不同的 API，分別採用 **60 秒** (開發任務) 和 **24 小時** (專案統計) 的**伺服器端增量靜態再生 (ISR) 快取**，在數據即時性、效能與成本之間取得了精準的平衡。
+* **型別安全**: 全站使用 **TypeScript**，並藉由 **Contentlayer** 實現了從內容 (`.mdx`) 到元件 (`.tsx`) 的端到端型別安全，大幅提升了程式碼的健壯性與可維護性。
 
-*   **進階搜尋引擎 (⌘+K & /search)**:
-    *   **關聯性優先排序**: 整合 `FlexSearch.js` 函式庫，取代傳統的關鍵字比對。搜尋結果會根據 TF-IDF (詞頻-逆文件頻率) 演算法進行評分，將最相關的文章排在最前面。
-    *   **自訂欄位權重**: 為不同欄位設定了不同的搜尋權重（`標題 > 標籤/分類 > 內文 > 技術內容`），確保搜尋結果的精準度。
-    *   **純淨化的搜尋索引**:
-        *   在建置階段 (`next build`) 自動生成一個乾淨的搜尋索引 (`plainText`)。
-        *   此索引會預先移除所有 Markdown 語法、MDX 註解、程式碼區塊及 LaTeX 公式，避免語法噪音干擾搜尋結果。
-        *   同時建立一個獨立的技術內容索引 (`technicalText`)，讓程式碼和公式也可被搜尋，但賦予較低權重。
-    *   **建置時索引 (Build-Time Indexing)**: 整個搜尋索引會在建置時預先產生，並儲存為一個靜態 JSON 檔 (`public/search-data.json`)。前端只需載入此檔案即可，實現了極致的搜尋速度與零客戶端運算負擔。
+### 🧠 專業級搜尋引擎 (Professional-Grade Search Engine)
 
-*   **互動式指令面板 (⌘+K)**:
-    *   **巢狀指令介面**: 實作了巢狀（或稱子母）指令面板，在提供豐富功能的同時，保持主介面的簡潔優雅。
-    *   **動態 GitHub Projects 整合**:
-        *   主面板提供「查看開發計畫」入口，點擊後會流暢切換至子選單。
-        *   子選單透過後端 API (`/api/github-issues`) **即時抓取**一個私有 GitHub Project 的開發狀態。
-        *   API 會解析並分類顯示「待辦 (Todo)」與「進行中 (In Progress)」的 Issues 列表。
-    *   **智慧快取策略**: 後端 API 採用 Next.js 的 `revalidate` 機制，設定了 **60 秒**的快取時間，在即時性與效能之間取得絕佳平衡。
+從零開始設計並實作了一套媲美專業文件網站的、完全在前端運行的即時搜尋系統。
 
-*   **分析與監控**: 整合 **Vercel Analytics** 與 **Speed Insights**，用於追蹤與改善網站效能。
+* **關聯性優先排序**: 整合 **`FlexSearch.js`**，利用 **TF-IDF** 演算法取代傳統的關鍵字比對，讓搜尋結果真正按照「相關程度」排序。
+* **智慧型多重索引**: 在建置時 (`Build-Time`) 將內容預處理為「**純文字**」、「**程式碼**」和「**數學公式**」三個獨立索引，並為**不同欄位設定不同權重** (`標題 > 標籤 > 內文 > 程式碼`)，實現了極高的搜尋精準度。
+* **上下文感知查詢**: 搜尋邏輯能**自動偵測**使用者輸入的是「自然語言」還是「技術符號」，並**動態調整**搜尋策略，例如允許對程式碼中的單一字母變數進行搜尋。
+
+### 🎨 應用程式級使用者體驗 (Application-Level User Experience)
+
+專注於打造流暢、直觀、且充滿細節的互動體驗，讓網站從「頁面」質變為「產品」。
+
+* **`⌘+K` 指揮中心**: 網站的核心互動中樞。實作了**巢狀（子母）指令介面**，不僅提供全站內容的毫秒級搜尋，更能執行「切換主題」、「複製資訊」等**動作**，並整合 API **即時顯示 GitHub 開發中任務**。
+* **動態目錄 (TOC)**: 使用 **`IntersectionObserver` API** 實現捲動監聽，**自動高亮**使用者正在閱讀的章節，並以**手風琴效果**保持介面清爽，極大提升了長篇文章的導航效率。
+* **細緻的 UI/UX**: 從 HackMD 風格的 UI 元素、`next/font` 優化的字體載入，到尊重系統偏好且可手動覆寫的**智慧型主題切換**，每一個細節都旨在提供最佳的閱讀與互動體驗。
+
+### 🛠️ 最佳化內容管線 (Optimized Content Pipeline)
+
+為技術內容的呈現，建立了一套高效且高品質的處理流程。
+
+* **MDX 驅動**: 所有文章均採用 MDX 格式，允許在 Markdown 中無縫嵌入**互動式 React 元件**，為未來的 p5.js 視覺化等功能打下基礎。
+* **高效語法高亮**: 透過 `rehype-pretty-code` + `shiki` 在**伺服器端**完成程式碼高亮，避免了客戶端的效能損耗，並提供媲美 VS Code 的視覺效果。
+* **優雅的數學公式**: 整合 **KaTeX**，確保所有 LaTeX 數學公式都能被快速、正確且美觀地渲染。
+
+---
 
 ## 🔗 全端 API 整合 (Full-Stack API Integration)
 
@@ -82,22 +103,23 @@
 
 ### 1. 開發計畫儀表板 (Command Palette)
 
-- **前端實作**: 在 `⌘+K` 指令面板中，透過 React `useState` 管理巢狀視圖，打造出流暢的子母選單切換體驗。
-- **後端 API**: 建立 `/api/github-issues/route.ts` 路由，使用 `Octokit` 與 GitHub GraphQL API 溝通。
-- **核心功能**:
-    - 安全地在伺服器端驗證 Personal Access Token，讀取**私有 (Private) GitHub Project** 的開發狀態。
-    - 後端負責解析 API 回傳的資料，並將 Issues 篩選、分類為「待辦」與「進行中」兩個類別。
-- **效能優化**: 採用 `revalidate = 60` 的快取策略，讓使用者在 60 秒內的重複操作能享受瞬時載入的體驗，同時確保資料的高度即時性。
+-   **前端實作**: 在 `⌘+K` 指令面板中，透過 React `useState` 管理巢狀視圖，打造出流暢的子母選單切換體驗。
+-   **後端 API**: 建立 `/api/github-issues/route.ts` 路由，使用 `Octokit` 與 GitHub GraphQL API 溝通。
+-   **核心功能**:
+    -   安全地在伺服器端驗證 Personal Access Token，讀取**私有 (Private) GitHub Project** 的開發狀態。
+    -   後端負責解析 API 回傳的資料，並將 Issues 篩選、分類為「待辦」與「進行中」兩個類別。
+-   **效能優化**: 採用 `revalidate = 60` 的快取策略，讓使用者在 60 秒內的重複操作能享受瞬時載入的體驗，同時確保資料的高度即時性。
 
 ### 2. 專案統計儀表板 (Projects Page)
 
-- **前端實作**: 在專案導覽頁上，透過客戶端 `fetch` 非同步載入統計數據，實現靜態頁面與動態資訊的結合。
-- **後端 API**: 建立 `/api/github-stats/route.ts` 路由，向 GitHub REST API 請求多個專案的統計資料。
-- **核心功能**:
-    - 批次抓取指定專案的星級 (Stars)、Fork 數、總提交數 (Total Commits) 等即時數據。
-    - API 部署於 Vercel 的 Edge Network (`runtime = 'edge'`)，提供全球性的低延遲回應。
-- **效能優化**: 考量到統計數據變動頻率較低，採用 `revalidate = 86400` (24 小時) 的長效快取策略，最大化效能並節省 API 請求資源。
+-   **前端實作**: 在專案導覽頁上，透過客戶端 `fetch` 非同步載入統計數據，實現靜態頁面與動態資訊的結合。
+-   **後端 API**: 建立 `/api/github-stats/route.ts` 路由，向 GitHub REST API 請求多個專案的統計資料。
+-   **核心功能**:
+    -   批次抓取指定專案的星級 (Stars)、Fork 數、總提交數 (Total Commits) 等即時數據。
+    -   API 部署於 Vercel 的 Edge Network (`runtime = 'edge'`)，提供全球性的低延遲回應。
+-   **效能優化**: 考量到統計數據變動頻率較低，採用 `revalidate = 86400` (24 小時) 的長效快取策略，最大化效能並節省 API 請求資源。
 
+---
 ## 🚀 如何在本機運行 (Setup and Run Locally)
 
 1.  **複製專案 (Clone the repository):**

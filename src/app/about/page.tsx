@@ -80,7 +80,7 @@ export default function AboutPage() {
             <td style={{ width: '50%', verticalAlign: 'top' }}>
             <h3>🏆 Pycade Bomber: 演算法設計與軟體工程實踐</h3>
             <p>
-              作為<strong>三人團隊</strong>的核心開發者，我主導並負責兩大關鍵任務：在<strong>演算法層面</strong>，我運用 <strong>FSM</strong> 設計了五種策略多變的動態玩家，並透過 <strong>A* 演算法</strong>實現高效的路徑規劃；在<strong>工程實踐層面</strong>，我從零開始為團隊建立了基於 <strong>GitHub Actions</strong> 的 <strong>CI/CD</strong> 自動化管線，部署線上版的遊戲體驗，並導入 Pull Request 與 Code Review 制度，學習並導入業界標準的開發流程。
+              作為<strong>三人團隊</strong>的核心開發者，我主導並負責兩大關鍵任務：在<strong>演算法層面</strong>，我運用 <strong>FSM</strong> 設計了五種策略多變的動態玩家，並透過 <strong>A* 演算法</strong>實現高效的路徑規劃；在<strong>工程實踐層面</strong>，我從零開始為團隊建立了基於 <strong>GitHub Actions</strong> 的 <strong>CI/CD</strong> 自動化管線，部署線上版的遊戲體驗，並導入 Pull Request 與 Code Review 制度，學習並實踐業界標準的開發流程。
             </p>
             <p>
               這個專案完整地展現了我將複雜演算法應用於實際產品、並以工程化方法確保團隊開發品質與效率的綜合能力。

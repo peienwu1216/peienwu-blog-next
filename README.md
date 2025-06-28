@@ -25,7 +25,7 @@
 
 3.  **🏗️ 現代化的全端工程實踐 (Modern Full-Stack Engineering)**
     * **API 路由與安全**: 透過 Next.js API Routes 建立後端服務，安全地在伺服器端處理如 **GitHub PAT (Personal Access Token)** 等敏感金鑰，實現與 GitHub 私有專案的通訊。
-    * **效能優化策略**: 針對不同 API（`開發計畫` vs. `專案統計`）的特性，分別採用了 **60 秒**和 **24 小時**兩種不同的**伺服器端快取 (`revalidate`) 策略**，在效能、成本與即時性之間做出了精準的權衡。
+    * **效能優化策略**: 針對不同 API（`開發計畫` vs. `專案統計`）的特性，分別採用 **60 秒**和 **1 小時**兩種不同的**伺服器端快取 (`revalidate`) 策略**，在效能、成本與即時性之間做出了精準的權衡。
 
 > **總結來說，此專案完整地展示了我從前端互動設計、後端 API 開發、搜尋引擎架構，到 DevOps 自動化部署與效能優化的全端工程能力。**
 
@@ -68,7 +68,7 @@
 
 * **核心框架**: 以 **Next.js (App Router)** 為核心，充分利用 **React Server Components (RSC)** 的優勢，在伺服器端處理資料獲取與渲染，實現極致的載入效能與優良的開發體驗。
 * **全端能力**: 透過 **Next.js API Routes** 建立後端服務，安全地在伺服器端處理 **GitHub API** 的驗證與請求，實現了**動態專案儀表板**和**即時開發狀態追蹤**等功能。
-* **智慧快取策略**: 針對不同的 API，分別採用 **60 秒** (開發任務) 和 **24 小時** (專案統計) 的**伺服器端增量靜態再生 (ISR) 快取**，在數據即時性、效能與成本之間取得了精準的平衡。
+* **智慧快取策略**: 針對不同的 API，分別採用 **60 秒** (開發任務) 和 **1 小時** (專案統計) 的**伺服器端增量靜態再生 (ISR) 快取**，在數據即時性、效能與成本之間取得了精準的平衡。
 * **型別安全**: 全站使用 **TypeScript**，並藉由 **Contentlayer** 實現了從內容 (`.mdx`) 到元件 (`.tsx`) 的端到端型別安全，大幅提升了程式碼的健壯性與可維護性。
 
 ### 🧠 專業級搜尋引擎 (Professional-Grade Search Engine)
@@ -103,21 +103,19 @@
 
 ### 1. 開發計畫儀表板 (Command Palette)
 
--   **前端實作**: 在 `⌘+K` 指令面板中，透過 React `useState` 管理巢狀視圖，打造出流暢的子母選單切換體驗。
--   **後端 API**: 建立 `/api/github-issues/route.ts` 路由，使用 `Octokit` 與 GitHub GraphQL API 溝通。
+-   **API 路由**: `/api/github-issues/route.ts`
 -   **核心功能**:
-    -   安全地在伺服器端驗證 Personal Access Token，讀取**私有 (Private) GitHub Project** 的開發狀態。
-    -   後端負責解析 API 回傳的資料，並將 Issues 篩選、分類為「待辦」與「進行中」兩個類別。
--   **效能優化**: 採用 `revalidate = 60` 的快取策略，讓使用者在 60 秒內的重複操作能享受瞬時載入的體驗，同時確保資料的高度即時性。
+    -   安全地在伺服器端使用 `Octokit` 與 GitHub GraphQL API 溝通，讀取**私有 (Private) GitHub Project** 的開發狀態。
+    -   將 Issues 篩選、分類為「待辦」與「進行中」，並整合於 `⌘+K` 的巢狀指令面板中。
+-   **效能優化**: 採用 `revalidate = 60` (60 秒) 的快取策略，讓使用者在短時間內的重複操作能享受瞬時載入的體驗，同時確保開發狀態的高度即時性。
 
 ### 2. 專案統計儀表板 (Projects Page)
 
--   **前端實作**: 在專案導覽頁上，透過客戶端 `fetch` 非同步載入統計數據，實現靜態頁面與動態資訊的結合。
--   **後端 API**: 建立 `/api/github-stats/route.ts` 路由，向 GitHub REST API 請求多個專案的統計資料。
+-   **API 路由**: `/api/github-stats/route.ts`
 -   **核心功能**:
-    -   批次抓取指定專案的星級 (Stars)、Fork 數、總提交數 (Total Commits) 等即時數據。
+    -   批次抓取指定專案的星級 (Stars)、Fork 數、總提交數 (Total Commits) 等公開數據。
     -   API 部署於 Vercel 的 Edge Network (`runtime = 'edge'`)，提供全球性的低延遲回應。
--   **效能優化**: 考量到統計數據變動頻率較低，採用 `revalidate = 86400` (24 小時) 的長效快取策略，最大化效能並節省 API 請求資源。
+-   **效能優化**: 考量到專案統計數據的變動頻率較低，採用 `revalidate = 3600` (1 小時) 的長效快取策略，在確保數據相對即時的同時，最大化效能並節省 API 請求資源。
 
 ---
 ## 🚀 如何在本機運行 (Setup and Run Locally)

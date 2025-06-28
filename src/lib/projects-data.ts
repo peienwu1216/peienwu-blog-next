@@ -63,8 +63,8 @@ export const projectsData: Project[] = [
   {
     title: '🐍 OOP in Python (NYCU)',
     description: [
-      '這個在陽明交大的物件導向課程專案，不僅展現了我的 Python 與 OOP 技能，更是一次寶貴的 Git 協作經驗。',
-      '所有課堂練習都透過 Pull Request 提交，讓我們在實作中熟悉了版本控制與團隊合作的流程。'
+      '在陽明交大的物件導向課程中，不僅展現了我的 Python 與 OOP 技能，更是一次寶貴的 Git 協作經驗。',
+      '所有課堂練習都透過 Pull Request 提交至課程專案，讓我們在實作中熟悉了版本控制與團隊合作的流程。'
     ],
     techStack: ['Python', 'OOP', 'Git'],
     repoUrl: 'https://github.com/peienwu1216/oop-python-nycu',

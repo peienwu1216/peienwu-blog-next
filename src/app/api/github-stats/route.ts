@@ -2,7 +2,7 @@ import { Octokit } from 'octokit';
 import { NextResponse } from 'next/server';
 
 export const runtime = 'edge'; // Vercel Edge Functions are great for this
-export const revalidate = 86400; // 24 hours in seconds (60 * 60 * 24)
+export const revalidate = 3600; // 1 hour in seconds
 
 // Initialize Octokit
 const octokit = new Octokit({

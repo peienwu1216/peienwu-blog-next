@@ -80,7 +80,7 @@ export default function AboutPage() {
             <td style={{ width: '50%', verticalAlign: 'top' }}>
             <h3>🏆 Pycade Bomber: 演算法設計與軟體工程實踐</h3>
             <p>
-              作為<strong>三人團隊</strong>的核心開發者，我主導並負責兩大關鍵任務：在<strong>演算法層面</strong>，我運用 <strong>FSM</strong> 設計了五種策略多變的動態玩家，並透過 <strong>A* 演算法</strong>實現高效的路徑規劃；在<strong>工程實踐層面</strong>，我從零開始為團隊建立了基於 <strong>GitHub Actions</strong> 的 <strong>CI/CD</strong> 自動化管線，並導入 Pull Request 與 Code Review 制度，學習業界標準的開發流程。
+              作為<strong>三人團隊</strong>的核心開發者，我主導並負責兩大關鍵任務：在<strong>演算法層面</strong>，我運用 <strong>FSM</strong> 設計了五種策略多變的動態玩家，並透過 <strong>A* 演算法</strong>實現高效的路徑規劃；在<strong>工程實踐層面</strong>，我從零開始為團隊建立了基於 <strong>GitHub Actions</strong> 的 <strong>CI/CD</strong> 自動化管線，部署線上版的遊戲體驗，並導入 Pull Request 與 Code Review 制度，學習並導入業界標準的開發流程。
             </p>
             <p>
               這個專案完整地展現了我將複雜演算法應用於實際產品、並以工程化方法確保團隊開發品質與效率的綜合能力。
@@ -94,12 +94,12 @@ export default function AboutPage() {
             </p>
           </td>
           <td style={{ width: '50%', verticalAlign: 'top' }}>
-            <h3>💡 Code Lab: 全端應用開發與工程實踐</h3>
+            <h3>💡 Code Lab: 全端應用開發與現代網頁技術實踐</h3>
             <p>
-            在此專案中，我將個人網站作為一個完整的<strong>全端應用</strong>進行工程實踐。我不僅利用 <strong>Next.js API Routes</strong> 開發了具備智慧快取 (ISR) 的後端服務，安全地與 <strong>GitHub API</strong> 串接以注入即時動態數據；更在前端基於 <strong>FlexSearch.js</strong> 實作了一套專業的客戶端搜尋引擎，其<strong>多重加權索引</strong>與<strong>上下文感知查詢</strong>，確保了毫秒級的資訊獲取效率。
+            我將個人網站從零開始，打造成為一個功能完整的<strong>全端應用</strong>，學習並實踐現代網頁開發技術與工程方法。我不僅利用 <strong>Next.js API Routes</strong> 開發了具備智慧快取 (ISR) 的後端服務，安全地與 <strong>GitHub API</strong> 串接以注入即時動態數據；更在前端基於 <strong>FlexSearch.js</strong> 實作了一套專業的客戶端搜尋引擎，其<strong>多重加權索引</strong>與<strong>上下文感知查詢</strong>，確保了毫秒級的資訊獲取效率。
             </p>
             <p>
-            最終，我將所有功能無縫整合於一個應用程式級的 <strong>⌘+K 指揮中心</strong> ，將靜態的瀏覽體驗，升級為流暢、可操作的產品級互動。
+            我將所有功能整合於一個應用程式級的 <strong>⌘+K 指揮中心</strong> ，將靜態的瀏覽體驗，升級為流暢、可操作的產品級互動。
             </p>
             <p>
               <strong>技術棧：</strong> Next.js, React, TypeScript, Tailwind CSS, Contentlayer, FlexSearch.js, Vercel

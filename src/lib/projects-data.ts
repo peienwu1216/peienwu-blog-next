@@ -15,25 +15,27 @@ export interface Project {
 
 export const projectsData: Project[] = [
   {
-    title: '🏆 Pycade Bomber: 完整軟體工程實踐',
+    title: '🏆 Pycade Bomber: 團隊協作與軟體工程實踐',
     description: [
-      '在三人團隊中，我們打造了《Pycade Bomber》，一個從開發到部署都採用專業工作流程的專案。',
-      '**智慧型 AI 設計：** 運用有限狀態機 (FSM) 設計了四種不同策略的 AI 對手，並結合 A*/BFS 演算法進行路徑規劃。',
-      '**實現 CI/CD 流程：** 建立 CI/CD 自動化流程，包含自動化測試 (Pytest, flake8) 與部署，讓最新版本能直接在線上遊玩。',
-      '**導入業界標準流程：** 嚴格執行 Git 工作流程，包含分支保護、Pull Request 與 Code Review，確保程式碼品質。'
+      '在三人團隊中，作為專案的主要貢獻者，我主導了《Pycade Bomber》的開發。此專案在既有的 C++ 版本基礎上進行了全面重構，並學習了業界標準的軟體開發生命週期 (SDLC)。',
+      '',
+      '**智慧型 AI 設計：** 運用有限狀態機 (FSM) 進行行為決策，並結合 A*/BFS 演算法實現高效的動態路徑規劃。',
+      '**CI/CD 自動化管線：** 透過 GitHub Actions 建立 CI/CD 管線，自動執行 Pytest 測試與 Flake8 風格檢查，並將最新穩定版本部署至線上遊玩。我們也實踐了觸控功能，提供行動裝置友善的遊戲體驗。',
+      '**專業版控流程：** 執行 Git 工作流程，學習業界的開發標準，透過分支保護、強制性 Pull Request 與 Code Review，來保障主分支的穩定性與團隊的程式碼品質。'
     ],
-    techStack: ['Python', 'Pygame', 'OOP', 'FSM', 'CI/CD', 'GitHub Actions', 'Pytest'],
+    techStack: ['Python', 'Pygame', 'OOP', 'FSM', 'A* Algorithm', 'CI/CD', 'GitHub Actions', 'Pytest'],
     repoUrl: 'https://github.com/peienwu1216/oop-2025-proj-pycade',
     category: '團隊合作與軟體工程',
   },
   {
-    title: "💡 Code Lab: 我的 Next.js 技術實驗室",
+    title: "💡 Code Lab: 全端應用開發與現代網頁技術實踐",
     description: [
-      "這是目前此個人網站（Code Lab）的專案原始碼，也是我探索現代網頁技術的實驗場。我正使用 Next.js (App Router)、React、TypeScript 等最新技術重新打造它。",
-      "這個專案不僅是我分享演算法、資料結構筆記的平台，也是我主動學習並掌握新工具與框架的證明。",
-      
+      "這是一個從零開始打造的個人網站，將現代化工程方法付諸實踐的數位基地，目標提供讀者極致的瀏覽體驗與應用程式級的互動。",
+      "**專業級搜尋引擎：** 整合 FlexSearch.js，透過自訂建置腳本，產生帶有多重欄位權重與上下文感知能力的離線索引，實現了毫秒級的、媲美專業文件網站的搜尋體驗。",
+      "**全端 API 整合：** 開發 Next.js API Routes，安全地與 GitHub GraphQL/REST API 串接，並透過增量靜態再生 (ISR) 的智慧快取策略，為前端提供即時的動態數據。",
+      "**⌘+K 指揮中心：** 打造了一個應用程式級的巢狀指令面板，將高精準度搜尋、全站導覽、與 API 驅動的動態指令整合於一個流暢的互動中，將網站從頁面升級為「產品」。"
     ],
-    techStack: ['Next.js', 'React', 'TypeScript', 'Contentlayer', 'Tailwind CSS'],
+    techStack: ['Next.js', 'React', 'TypeScript', 'Contentlayer', 'Tailwind CSS', 'FlexSearch.js'],
     repoUrl: 'https://github.com/peienwu1216/peienwu-blog-next',
     liveDemoUrl: 'https://peienwu-blog-next.vercel.app/',
     category: '個人品牌與網頁開發',

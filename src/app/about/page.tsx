@@ -77,38 +77,38 @@ export default function AboutPage() {
         <table>
           <tbody>
             <tr>
-              <td style={{ width: '50%', verticalAlign: 'top' }}>
-              <h3>🏆 Pycade Bomber: FSM、CI/CD 與專業開發流程</h3>
-                <p>
-                作為<strong>三人團隊</strong>的核心開發者，我主導並負責兩大關鍵任務：在<strong>演算法層面</strong>，運用 <strong>FSM </strong>與 <strong>A*</strong> 演算法設計出策略多變的AI玩家；在<strong>工程實踐層面</strong>，則透過 GitHub Actions 建立 <strong>CI/CD </strong>自動化部署，並導入 Pull Request 與 Code Review 制度，確保了專案的開發品質與效率。
-                </p>
-                <p>
-                  <em>這個專案完整體現了我在演算法設計、團隊協作與軟體工程實踐上的綜合能力。</em>
-                </p>
-                <p>
-                  <strong>技術棧：</strong> Python, Pygame, OOP, FSM, CI/CD, GitHub Actions, Pytest
-                </p>
-                <p>
-                  🔗{' '}
-                  <a href="https://github.com/peienwu1216/oop-2025-proj-pycade" target="_blank" rel="noopener noreferrer"><strong>點此探索專案原始碼</strong></a>
-                </p>
-              </td>
-              <td style={{ width: '50%', verticalAlign: 'top' }}>
-                <h3>💡 Code Lab: 現代化網頁技術實踐</h3>
-                <p>
-                  為了深入掌握現代網頁開發，我親手打造了這個技術部落格，將其視為一個完整的<strong>產品設計專案</strong>。從前端架構 (Next.js App Router)、內容處理 (MDX) 到使用者體驗 (響應式設計、深色模式、字體排版)，皆由我獨立規劃與實踐。
-                </p>
-                <p>
-                  我特別在<strong>網頁視覺編排</strong>與<strong>內容呈現</strong>的細節上進行了優化，目標是打造一個兼具專業內涵與閱讀舒適度的個人品牌網站。
-                </p>
-                <p>
-                  <strong>技術棧：</strong> Next.js (App Router), React, TypeScript, Tailwind CSS, Contentlayer
-                </p>
-                <p>
-                  🔗{' '}
-                  <a href="https://github.com/peienwu1216/peienwu-blog-next" target="_blank" rel="noopener noreferrer"><strong>點此探索專案原始碼</strong></a>
-                </p>
-              </td>
+            <td style={{ width: '50%', verticalAlign: 'top' }}>
+            <h3>🏆 Pycade Bomber: 演算法設計與軟體工程實踐</h3>
+            <p>
+              作為<strong>三人團隊</strong>的核心開發者，我主導並負責兩大關鍵任務：在<strong>演算法層面</strong>，我運用 <strong>FSM</strong> 設計了五種策略多變的動態玩家，並透過 <strong>A* 演算法</strong>實現高效的路徑規劃；在<strong>工程實踐層面</strong>，我從零開始為團隊建立了基於 <strong>GitHub Actions</strong> 的 <strong>CI/CD</strong> 自動化管線，並導入 Pull Request 與 Code Review 制度，學習業界標準的開發流程。
+            </p>
+            <p>
+              這個專案完整地展現了我將複雜演算法應用於實際產品、並以工程化方法確保團隊開發品質與效率的綜合能力。
+            </p>
+            <p>
+              <strong>技術棧：</strong> Python, Pygame, OOP, FSM, A* Algorithm, CI/CD, GitHub Actions, Pytest
+            </p>
+            <p>
+              🔗{' '}
+              <a href="https://github.com/peienwu1216/oop-2025-proj-pycade" target="_blank" rel="noopener noreferrer"><strong>探索專案原始碼</strong></a>
+            </p>
+          </td>
+          <td style={{ width: '50%', verticalAlign: 'top' }}>
+            <h3>💡 Code Lab: 全端應用開發與工程實踐</h3>
+            <p>
+            在此專案中，我將個人網站作為一個完整的<strong>全端應用</strong>進行工程實踐。我不僅利用 <strong>Next.js API Routes</strong> 開發了具備智慧快取 (ISR) 的後端服務，安全地與 <strong>GitHub API</strong> 串接以注入即時動態數據；更在前端基於 <strong>FlexSearch.js</strong> 實作了一套專業的客戶端搜尋引擎，其<strong>多重加權索引</strong>與<strong>上下文感知查詢</strong>，確保了毫秒級的資訊獲取效率。
+            </p>
+            <p>
+            最終，我將所有功能無縫整合於一個應用程式級的 <strong>⌘+K 指揮中心</strong> ，將靜態的瀏覽體驗，升級為流暢、可操作的產品級互動。
+            </p>
+            <p>
+              <strong>技術棧：</strong> Next.js, React, TypeScript, Tailwind CSS, Contentlayer, FlexSearch.js, Vercel
+            </p>
+            <p>
+              🔗{' '}
+              <a href="https://github.com/peienwu1216/peienwu-blog-next" target="_blank" rel="noopener noreferrer"><strong>探索專案原始碼</strong></a>
+            </p>
+          </td>
             </tr>
             <tr>
               <td style={{ width: '50%', verticalAlign: 'top' }}>

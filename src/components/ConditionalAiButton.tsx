@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { allPosts } from 'contentlayer/generated';
 import { Bot } from 'lucide-react';
@@ -11,6 +11,10 @@ export default function ConditionalAiButton() {
   const [chatRole, setChatRole] = useState<AiRole>('guide');
   const [promptInput, setPromptInput] = useState('');
   const pathname = usePathname();
+
+  useEffect(() => {
+    setChatOpen(false);
+  }, [pathname]);
 
   // 建立一個所有文章 slug 的集合，方便快速查找
   // useMemo確保這個集合只會在元件初次渲染時建立一次

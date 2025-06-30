@@ -9,7 +9,7 @@ import TableOfContents from '@/components/TableOfContents';
 import Pre from '@/components/Pre';
 import ViewCounter from '@/components/ViewCounter';
 import AiChatWindow, { AiRole } from '@/components/AiChatWindow';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Bot, BookOpen, Sparkles, X } from 'lucide-react';
 
 interface ArticleClientProps {
@@ -24,6 +24,10 @@ export default function ArticleClient({ post, headings }: ArticleClientProps) {
   const [startWithSummary, setStartWithSummary] = useState(false);
   const [promptInput, setPromptInput] = useState('');
   
+  useEffect(() => {
+    handleCloseChat();
+  }, [post.slug]);
+
   const MDXContent = useMDXComponent(post.body.code);
   const components = { Note, pre: Pre };
 

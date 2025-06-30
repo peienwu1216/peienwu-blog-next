@@ -307,33 +307,23 @@ export default function AiChatWindow({
                       )}
                     </div>
                   )}
-                  <div className={`px-4 py-3 rounded-2xl max-w-[85%] ${isUser ? 'bg-blue-600 text-white' : 'bg-slate-100 dark:bg-slate-800'} ${isLastInSequence ? (isUser ? 'rounded-br-none' : 'rounded-bl-none') : ''}`}>
-                    {msg.role === 'assistant' ? (
-                      <ReactMarkdown
-                        remarkPlugins={[remarkGfm]}
-                        components={{
-                          p: ({node, ...props}) => <p className="prose prose-sm dark:prose-invert max-w-full" {...props} />,
-                          ul: ({node, ...props}) => <ul className="prose prose-sm dark:prose-invert max-w-full" {...props} />,
-                          ol: ({node, ...props}) => <ol className="prose prose-sm dark:prose-invert max-w-full" {...props} />,
-                          li: ({node, ...props}) => <li className="prose prose-sm dark:prose-invert max-w-full" {...props} />,
-                          strong: ({node, ...props}) => <strong className="prose prose-sm dark:prose-invert max-w-full" {...props} />,
-                          h1: ({node, ...props}) => <h1 className="prose prose-sm dark:prose-invert max-w-full" {...props} />,
-                          h2: ({node, ...props}) => <h2 className="prose prose-sm dark:prose-invert max-w-full" {...props} />,
-                          h3: ({node, ...props}) => <h3 className="prose prose-sm dark:prose-invert max-w-full" {...props} />,
-                        }}
-                      >
-                        {msg.content}
-                      </ReactMarkdown>
-                    ) : (
-                      <p>{msg.content}</p>
-                    )}
+                  <div className={`px-4 py-2 rounded-2xl max-w-[85%] ${isUser ? 'bg-blue-600 text-white' : 'bg-slate-100 dark:bg-slate-800'} ${isLastInSequence ? (isUser ? 'rounded-br-none' : 'rounded-bl-none') : ''}`}>
+                    <div className={`prose prose-sm max-w-full ${isUser ? 'text-white' : 'dark:prose-invert'}`}>
+                      {msg.role === 'assistant' ? (
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                          {msg.content}
+                        </ReactMarkdown>
+                      ) : (
+                        <p>{msg.content}</p>
+                      )}
+                    </div>
                   </div>
                 </div>
               )
             })}
             {/* -- 新增摘要按鈕 -- */}
             {showSummaryButton && (
-              <div className="flex justify-center">
+              <div className="flex justify-center my-4">
                 <button
                   onClick={handleGenerateSummaryClick}
                   className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 dark:bg-blue-900/50 dark:text-blue-400 rounded-lg hover:bg-blue-100 dark:hover:bg-blue-900 transition-colors"

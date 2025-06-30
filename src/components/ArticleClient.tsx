@@ -28,6 +28,18 @@ export default function ArticleClient({ post, headings }: ArticleClientProps) {
     handleCloseChat();
   }, [post.slug]);
 
+  useEffect(() => {
+    if (isChatOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'auto';
+    }
+
+    return () => {
+      document.body.style.overflow = 'auto';
+    };
+  }, [isChatOpen]);
+
   const MDXContent = useMDXComponent(post.body.code);
   const components = { Note, pre: Pre };
 

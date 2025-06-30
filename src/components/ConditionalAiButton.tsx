@@ -16,6 +16,20 @@ export default function ConditionalAiButton() {
     setChatOpen(false);
   }, [pathname]);
 
+  // 當聊天視窗開啟時，禁止背景滾動
+  useEffect(() => {
+    if (isChatOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = 'auto';
+    }
+
+    // 元件卸載時，確保恢復滾動
+    return () => {
+      document.body.style.overflow = 'auto';
+    };
+  }, [isChatOpen]);
+
   // 建立一個所有文章 slug 的集合，方便快速查找
   // useMemo確保這個集合只會在元件初次渲染時建立一次
   const postSlugs = useMemo(() => new Set(allPosts.map(p => `/${p.slug}`)), []);

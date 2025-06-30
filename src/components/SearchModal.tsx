@@ -10,6 +10,7 @@ import { useRouter } from 'next/navigation';
 import { useTheme } from 'next-themes';
 import { toast } from 'sonner';
 import { CustomToast } from './ProTipToast';
+import { useLockBodyScroll } from '@/lib/use-lock-body-scroll';
 
 // SVG 圖示元件
 const SearchIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -454,16 +455,8 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose, selectedIndex, results, query, allCommands, view]);
 
-  useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'auto';
-    }
-    return () => {
-      document.body.style.overflow = 'auto';
-    };
-  }, [isOpen]);
+  // 只在行動裝置鎖定卷軸
+  useLockBodyScroll(isOpen);
 
   const handleSuggestionClick = (suggestion: string) => {
     setQuery(suggestion);

@@ -11,6 +11,7 @@ import ViewCounter from '@/components/ViewCounter';
 import AiChatWindow, { AiRole } from '@/components/AiChatWindow';
 import { useState, useEffect } from 'react';
 import { Bot, BookOpen, Sparkles, X } from 'lucide-react';
+import { useLockBodyScroll } from '@/lib/use-lock-body-scroll';
 
 interface ArticleClientProps {
   post: Post;
@@ -28,17 +29,8 @@ export default function ArticleClient({ post, headings }: ArticleClientProps) {
     handleCloseChat();
   }, [post.slug]);
 
-  useEffect(() => {
-    if (isChatOpen) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = 'auto';
-    }
-
-    return () => {
-      document.body.style.overflow = 'auto';
-    };
-  }, [isChatOpen]);
+  // 只在行動裝置鎖定卷軸
+  useLockBodyScroll(isChatOpen);
 
   const MDXContent = useMDXComponent(post.body.code);
   const components = { Note, pre: Pre };
@@ -165,10 +157,10 @@ export default function ArticleClient({ post, headings }: ArticleClientProps) {
 
           <button
             onClick={handleFabClick}
-            className="rounded-full bg-blue-600 p-4 text-white shadow-lg transition-transform hover:scale-110"
+            className="rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 p-5 text-white shadow-2xl ring-4 ring-blue-300 dark:ring-blue-800 transition-transform hover:scale-110 focus:outline-none"
             aria-label={isMenuOpen ? "關閉 AI 選單" : "開啟 AI 選單"}
           >
-            {isMenuOpen ? <X className="h-6 w-6" /> : <Bot className="h-6 w-6" />}
+            {isMenuOpen ? <X className="h-7 w-7" /> : <Bot className="h-7 w-7" />}
           </button>
         </div>
       )}

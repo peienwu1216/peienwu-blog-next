@@ -1,10 +1,15 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, memo } from 'react';
 import { useChat } from 'ai/react';
 import { BookOpen, Sparkles, X, MoreHorizontal, Send, RefreshCw, AlertTriangle, FileText, Eraser } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
+import rehypeKatex from 'rehype-katex';
+import 'katex/dist/katex.min.css';
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { oneDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { useChatStore } from '@/store/chat';
 import type { ChatStoreState, ChatMessage } from '@/store/chat';
 import { Message } from 'ai';
@@ -77,6 +82,9 @@ export default function AiChatWindow({
   // -- 新增動畫狀態 --
   const [isVisible, setIsVisible] = useState(false);
 
+  // 在每次請求期間避免重複顯示錯誤訊息
+  const errorShownRef = useRef(false);
+
   useEffect(() => {
     // 元件掛載後觸發進場動畫
     const timer = setTimeout(() => setIsVisible(true), 10);
@@ -97,6 +105,17 @@ export default function AiChatWindow({
     api: currentRole === 'specialist' ? '/api/article-chat' : '/api/chat',
     initialMessages: stored.length ? stored : defaultWelcome,
     body: { articleContent: currentRole === 'specialist' ? articleContent : undefined },
+    onError(error) {
+      if (!errorShownRef.current) {
+        append({
+          id: `error-${Date.now()}`,
+          role: 'assistant',
+          content: '抱歉，AI 目前暫時無法回應（可能是額度用盡或連線問題）。請稍後再試一次！',
+        });
+        errorShownRef.current = true;
+      }
+      console.error('[AiChatWindow] AI error:', error);
+    },
   });
 
   const inputRef = useRef(input);
@@ -180,6 +199,60 @@ export default function AiChatWindow({
   const otherRole = currentRole === 'specialist' ? 'guide' : 'specialist';
   const showSummaryButton = currentRole === 'specialist' && messages.length === 1;
 
+  // --- 程式碼高亮自訂元件 ---
+  const CodeBlock = memo(({ node, inline, className, children, ...props }: any) => {
+    const codeString = String(children).replace(/\n$/, '');
+
+    // 處理行內程式碼
+    if (inline || (!codeString.includes('\n') && !(className || '').includes('language-'))) {
+      return (
+        <code className="bg-slate-100 dark:bg-slate-800 rounded px-1.5 py-0.5 font-mono text-sm text-pink-600 dark:text-pink-400 whitespace-pre">
+          {codeString}
+        </code>
+      );
+    }
+
+    // 處理區塊程式碼
+    const match = /language-(\w+)/.exec(className || '');
+    const lang = match ? match[1] : undefined;
+
+    return (
+      <SyntaxHighlighter
+        language={lang}
+        style={oneDark}
+        // 模擬 rehype-pretty-code 的行為，只用一個 pre 標籤包裹
+        PreTag={(preProps) => <pre className="not-prose" {...preProps} />}
+        // 確保 highlighter 本身沒有多餘的樣式
+        customStyle={{
+          background: 'transparent',
+          margin: 0,
+          padding: 0,
+          border: 'none',
+        }}
+        codeTagProps={{
+          style: {
+            fontFamily: 'inherit',
+            fontSize: 'inherit',
+            lineHeight: 'inherit',
+            padding: '1rem',
+            display: 'block',
+            width: '100%',
+            overflowX: 'auto',
+          }
+        }}
+        {...props}
+      >
+        {codeString}
+      </SyntaxHighlighter>
+    );
+  });
+
+  // 封裝 submit，重置錯誤旗標
+  const onFormSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    errorShownRef.current = false;
+    handleSubmit(e);
+  };
+
   return (
     <>
       {/* 清除確認 Modal */}
@@ -233,8 +306,8 @@ export default function AiChatWindow({
       )}
 
       {/* -- Use Gentle Fade-in & Slide-up Animation -- */}
-      <div className={`fixed inset-x-0 bottom-0 sm:inset-x-auto sm:right-4 sm:bottom-4 z-50 w-full sm:max-w-md transform-gpu transition-all duration-300 ease-in-out ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-        <div className="bg-white dark:bg-slate-900 rounded-t-lg sm:rounded-lg shadow-2xl flex flex-col h-[80vh] max-h-[800px] border-t border-x sm:border border-slate-200 dark:border-slate-700">
+      <div className={`fixed inset-x-0 top-16 bottom-0 sm:top-auto sm:inset-x-auto sm:right-4 sm:bottom-4 z-50 w-full sm:max-w-md transform-gpu transition-all duration-300 ease-in-out ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
+        <div className="bg-white dark:bg-slate-900 rounded-t-lg sm:rounded-lg shadow-2xl flex flex-col h-full sm:h-[80vh] sm:max-h-[800px] border-t border-x sm:border border-slate-200 dark:border-slate-700">
           {/* 標頭 */}
           <header className="flex items-center justify-between border-b border-slate-200 dark:border-slate-700 p-3">
             <div className="flex items-center gap-3">
@@ -307,10 +380,16 @@ export default function AiChatWindow({
                       )}
                     </div>
                   )}
-                  <div className={`px-4 py-2 rounded-2xl max-w-[85%] ${isUser ? 'bg-blue-600 text-white' : 'bg-slate-100 dark:bg-slate-800'} ${isLastInSequence ? (isUser ? 'rounded-br-none' : 'rounded-bl-none') : ''}`}>
+                  <div className={`px-4 py-2 rounded-2xl max-w-[85%] ${isUser ? 'bg-blue-500 text-white' : 'bg-slate-100 dark:bg-slate-700'} ${isLastInSequence ? (isUser ? 'rounded-br-none' : 'rounded-bl-none') : ''}`}>
                     <div className={`prose prose-sm max-w-full ${isUser ? 'text-white' : 'dark:prose-invert'}`}>
                       {msg.role === 'assistant' ? (
-                        <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        <ReactMarkdown 
+                          remarkPlugins={[remarkGfm, remarkMath] as any}
+                          rehypePlugins={[rehypeKatex] as any}
+                          components={{
+                            code: CodeBlock,
+                          }}
+                        >
                           {msg.content}
                         </ReactMarkdown>
                       ) : (
@@ -337,7 +416,7 @@ export default function AiChatWindow({
 
           {/* 輸入框 */}
           <div className="border-t border-slate-200 dark:border-slate-700 p-3 bg-white dark:bg-slate-900">
-            <form onSubmit={handleSubmit} className="flex items-center gap-2">
+            <form onSubmit={onFormSubmit} className="flex items-center gap-2">
               <input
                 type="text"
                 value={input}

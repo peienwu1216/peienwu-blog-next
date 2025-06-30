@@ -10,14 +10,16 @@ type Heading = {
 
 type TableOfContentsProps = {
   headings: Heading[]
-  onSummary: () => void
-  onAsk: () => void
+  onSummary?: () => void
+  onAsk?: () => void
+  assistantVariant?: 'article' | 'about'
 }
 
 export default function TableOfContents({
   headings,
   onSummary,
   onAsk,
+  assistantVariant = 'article',
 }: TableOfContentsProps) {
   const [activeParent, setActiveParent] = useState<string | null>(null)
   const [activeId, setActiveId] = useState('')
@@ -145,25 +147,36 @@ export default function TableOfContents({
         <div className="mt-auto">
           {/* AI Assistant Dock */}
           <div className="mt-6 pt-6 border-t border-slate-200 dark:border-slate-700">
-            <div className="bg-indigo-50 rounded-lg p-3 dark:bg-indigo-900/20">
-              <h4 className="mb-2 text-sm font-semibold text-slate-800 dark:text-slate-200">
-                AI 助理
-              </h4>
-              <div className="space-y-2">
-                <button
-                  onClick={onSummary}
-                  className="block text-left w-full text-sm text-indigo-700 dark:text-indigo-300 hover:text-indigo-900 dark:hover:text-indigo-200 transition-colors"
-                >
-                  📌 快速摘要
-                </button>
-                <button
-                  onClick={onAsk}
-                  className="block text-left w-full text-sm text-indigo-700 dark:text-indigo-300 hover:text-indigo-900 dark:hover:text-indigo-200 transition-colors"
-                >
-                  💬 AI 問答
-                </button>
+            {assistantVariant === 'about' ? (
+              <button
+                {...(onAsk ? { onClick: onAsk } : {})}
+                className="w-full bg-gradient-to-br from-indigo-100 to-blue-200 text-indigo-800 text-sm font-medium rounded-lg py-3 shadow-md hover:scale-105 transition-transform flex items-center justify-start pl-14"
+              >
+                ✨ 全站數位分身
+              </button>
+            ) : (
+              <div className="bg-indigo-50 rounded-lg p-3 dark:bg-indigo-900/20">
+                <h4 className="mb-2 text-sm font-semibold text-slate-800 dark:text-slate-200">
+                  AI 助理
+                </h4>
+                <div className="space-y-2">
+                  {onSummary && (
+                    <button
+                      onClick={onSummary}
+                      className="block text-left w-full text-sm text-indigo-700 dark:text-indigo-300 hover:text-indigo-900 dark:hover:text-indigo-200 transition-colors"
+                    >
+                      📌 快速摘要
+                    </button>
+                  )}
+                  <button
+                    onClick={onAsk}
+                    className="block text-left w-full text-sm text-indigo-700 dark:text-indigo-300 hover:text-indigo-900 dark:hover:text-indigo-200 transition-colors"
+                  >
+                    💬 AI 問答
+                  </button>
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           {/* 快速導航 */}

@@ -1,3 +1,5 @@
+'use client';
+
 import Image from 'next/image'; // 如果你想放個人圖片
 import Link from 'next/link';
 import IconLink from '@/components/IconLink';
@@ -19,7 +21,14 @@ export default function AboutPage() {
   return (
     <div className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 py-10 lg:flex lg:space-x-8">
       {/* TOC */}
-      <TableOfContents headings={headings} />
+      <TableOfContents
+        headings={headings}
+        assistantVariant="about"
+        onAsk={() => {
+          const btn = document.querySelector('button[aria-label="與數位分身對話"]') as HTMLButtonElement | null;
+          btn?.click();
+        }}
+      />
 
       <div className="min-w-0">
         <div className="container mx-auto px-0 max-w-3xl">

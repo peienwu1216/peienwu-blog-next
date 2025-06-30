@@ -8,10 +8,9 @@ import Note from '@/components/Note';
 import TableOfContents from '@/components/TableOfContents';
 import Pre from '@/components/Pre';
 import ViewCounter from '@/components/ViewCounter';
-import AiAssistant from '@/components/AiAssistant';
+import AiChatWindow, { AiRole } from '@/components/AiChatWindow';
 import { useState } from 'react';
-import { useChat } from 'ai/react';
-import { Bot } from 'lucide-react';
+import { Bot, BookOpen, Sparkles, X } from 'lucide-react';
 
 interface ArticleClientProps {
   post: Post;
@@ -19,39 +18,43 @@ interface ArticleClientProps {
 }
 
 export default function ArticleClient({ post, headings }: ArticleClientProps) {
-  const [isAiAssistantOpen, setAiAssistantOpen] = useState(false);
-  const chat = useChat({
-    body: {
-      articleContent: post.body.raw,
-    },
-    api: '/api/chat',
-    initialMessages: [
-      {
-        id: 'initial-message',
-        role: 'assistant',
-        content:
-          '你好！我是您的文章 AI 助理，可以幫您快速總結這篇文章的重點，或回答任何相關問題。',
-      },
-    ],
-  });
-
+  const [isChatOpen, setChatOpen] = useState(false);
+  const [chatRole, setChatRole] = useState<AiRole | null>(null);
+  const [isMenuOpen, setMenuOpen] = useState(false);
+  const [startWithSummary, setStartWithSummary] = useState(false);
+  const [promptInput, setPromptInput] = useState('');
+  
   const MDXContent = useMDXComponent(post.body.code);
   const components = { Note, pre: Pre };
 
+  const handleOpenChat = (role: AiRole) => {
+    setChatRole(role);
+    setChatOpen(true);
+    setMenuOpen(false);
+  };
+  
+  const handleCloseChat = () => {
+    setChatOpen(false);
+    setChatRole(null);
+    setStartWithSummary(false);
+  };
+  
+  const handleFabClick = () => {
+    setMenuOpen(!isMenuOpen);
+  };
+  
   const handleSummary = () => {
-    setAiAssistantOpen(true);
-    const hasSummary = chat.messages.some(m => m.content.includes("以下是這篇文章的摘要"));
-    if (!hasSummary) {
-        chat.append({
-            role: 'user',
-            content: '一鍵生成摘要',
-        });
-    }
+    setStartWithSummary(true);
+    handleOpenChat('specialist');
+  };
+  
+  const handleAsk = () => handleOpenChat('specialist');
+
+  const handleSwitchRole = (newRole: AiRole) => {
+    setChatRole(newRole);
   };
 
-  const handleAsk = () => {
-    setAiAssistantOpen(true);
-  };
+  const chatKey = chatRole === 'guide' ? 'guide' : chatRole ? `specialist:${post.slug}` : '';
 
   return (
     <div className="relative">
@@ -106,17 +109,50 @@ export default function ArticleClient({ post, headings }: ArticleClientProps) {
           </article>
         </div>
       </div>
-      {isAiAssistantOpen && (
-        <AiAssistant chat={chat} onClose={() => setAiAssistantOpen(false)} />
+      
+      {isChatOpen && chatRole && (
+        <AiChatWindow 
+          key={chatRole}
+          initialRole={chatRole} 
+          chatKey={chatKey}
+          onClose={handleCloseChat}
+          onSwitchRole={handleSwitchRole}
+          initialInputValue={promptInput}
+          onUnmount={setPromptInput}
+          articleContent={post.body.raw}
+          allowRoleSwitching={true}
+          startWithSummary={startWithSummary}
+        />
       )}
-      {!isAiAssistantOpen && (
-        <div className="fixed bottom-4 right-4 z-40">
+
+      {!isChatOpen && (
+        <div className="fixed bottom-4 right-4 z-40 flex flex-col items-end">
+          {isMenuOpen && (
+            <div className="bg-white dark:bg-slate-800 rounded-lg shadow-lg mb-2 w-64 border border-slate-200 dark:border-slate-700">
+              <button
+                onClick={() => handleOpenChat('specialist')}
+                className="flex items-center gap-3 w-full text-left px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+              >
+                <BookOpen className="h-5 w-5 text-indigo-500" />
+                <span className="text-slate-800 dark:text-slate-200">針對本文提問</span>
+              </button>
+              <div className="border-t border-slate-200 dark:border-slate-600"></div>
+              <button
+                onClick={() => handleOpenChat('guide')}
+                className="flex items-center gap-3 w-full text-left px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors"
+              >
+                <Sparkles className="h-5 w-5 text-amber-500" />
+                <span className="text-slate-800 dark:text-slate-200">與數位分身對話</span>
+              </button>
+            </div>
+          )}
+
           <button
-            onClick={handleAsk}
+            onClick={handleFabClick}
             className="rounded-full bg-blue-600 p-4 text-white shadow-lg transition-transform hover:scale-110"
-            aria-label="Open AI Assistant"
+            aria-label={isMenuOpen ? "關閉 AI 選單" : "開啟 AI 選單"}
           >
-            <Bot className="h-6 w-6" />
+            {isMenuOpen ? <X className="h-6 w-6" /> : <Bot className="h-6 w-6" />}
           </button>
         </div>
       )}

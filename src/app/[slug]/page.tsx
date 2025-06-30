@@ -1,6 +1,6 @@
 // src/app/[slug]/page.tsx
-import { allPosts, Post } from 'contentlayer/generated'; // 確保 Post 型別已包含 computedFields
-import { useMDXComponent } from 'next-contentlayer/hooks';
+
+import { allPosts } from 'contentlayer/generated'; // 確保 Post 型別已包含 computedFields
 import { notFound } from 'next/navigation';
 import { format, parseISO } from 'date-fns'; // 用於格式化日期
 import Link from 'next/link'; // 用於標籤連結
@@ -10,6 +10,7 @@ import Slugger from 'github-slugger';
 import Pre from '@/components/Pre'; // 引入新的 Pre 元件
 import { Metadata } from 'next';
 import ViewCounter from '@/components/ViewCounter';
+import ArticleClient from '@/components/ArticleClient'; // 引入新的 Client Component
 
 // Params 型別保持不變
 type Params = { slug: string }
@@ -75,60 +76,5 @@ export default function PostPage({ params }: { params: Params }) {
     }
   );
 
-  const MDXContent = useMDXComponent(post.body.code);
-  const components = { Note, pre: Pre }; // 將 Pre 元件註冊到 pre 標籤
-
-  return (
-    <div className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 py-10 lg:flex lg:space-x-8">
-      <TableOfContents headings={headings} />
-      <div className="min-w-0">
-        <article className="prose lg:prose-lg mx-auto dark:prose-invert max-w-3xl">
-      {/* 文章標題 */}
-      <h1 className="mb-4 text-3xl font-extrabold tracking-tight text-slate-900 dark:text-slate-100 sm:text-4xl">
-        {post.title}
-      </h1>
-
-      {/* 文章元數據：日期和分類 */}
-      <div className="flex items-center gap-4 mb-6 text-sm text-gray-500 dark:text-gray-400">
-        <time dateTime={post.date}>
-          {format(parseISO(post.date), 'yyyy年MM月dd日')}
-        </time>
-        {post.category && (
-          <>
-            <span className="hidden sm:inline-block">&bull;</span>
-            <Link href={`/categories/${post.category.toLowerCase()}`} className="hover:underline">
-              {post.category}
-            </Link>
-          </>
-        )}
-        <span className="hidden sm:inline-block">&bull;</span>
-        <ViewCounter slug={post.slug} />
-      </div>
-
-      {/* MDX 內容 */}
-         <MDXContent components={components} />
-
-      {/* 文章標籤 */}
-      {post.tags && post.tags.length > 0 && (
-        <div className="mt-10 pt-6 border-t border-gray-200 dark:border-gray-700">
-          <h3 className="text-lg font-semibold mb-3 text-gray-700 dark:text-gray-300">標籤:</h3>
-          <div className="flex flex-wrap gap-2">
-            {post.tags.map((tag: string) => ( // 明確標註 tag 的型別
-              <Link
-                key={tag}
-                href={`/tags/${tag.toLowerCase()}`}
-                className="text-sm bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300 rounded-full px-3 py-1 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-              >
-                #{tag}
-              </Link>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* 可以添加相關文章、留言區等 */}
-    </article>
-      </div>
-    </div>
-  );
+  return <ArticleClient post={post} headings={headings} />;
 }

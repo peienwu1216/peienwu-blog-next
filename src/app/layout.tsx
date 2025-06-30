@@ -8,6 +8,7 @@ import { SpeedInsights } from '@vercel/speed-insights/next';
 import { ThemeProvider } from '@/components/ThemeProvider'; // 引入 ThemeProvider
 import { Toaster } from 'sonner'; // 引入 sonner
 import { ProTipToast } from '@/components/ProTipToast'; // 引入 ProTipToast
+import ConditionalAiButton from '@/components/ConditionalAiButton'; // 引入新的 AI 按鈕元件
 
 // 載入 Inter (主要內文)
 const inter = Inter({
@@ -80,6 +81,7 @@ export default function RootLayout({
           <SpeedInsights />
           <Toaster theme="system" expand={true} />
           <ProTipToast />
+          <ConditionalAiButton />
         </ThemeProvider>
       </body>
     </html>

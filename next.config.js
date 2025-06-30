@@ -30,15 +30,11 @@ const nextConfig = {
   async redirects() {
     return [
       {
-        source: '/sprout10-1',
-        destination: '/posts/sprout10-1',
+        source: '/sprot10-1',
+        destination: '/sprout10-1',
         permanent: true,
       },
-      {
-        source: '/sprot10', 
-        destination: '/posts/sprout10',
-        permanent: true, 
-      },
+      
     ]
   },
 }

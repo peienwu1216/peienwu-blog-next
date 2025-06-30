@@ -44,6 +44,7 @@ export function ProTipToast() {
       toast.custom(() => <CustomToast icon={<ProTipIcon />} message={message} />, {
         duration: 10000, // 10秒後自動消失
         position: 'bottom-right',
+        style: { marginRight: '6rem' },
       });
 
       // 標記已顯示

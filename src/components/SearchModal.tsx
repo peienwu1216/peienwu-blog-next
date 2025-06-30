@@ -334,7 +334,10 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
 
   const copyToClipboard = useCallback(() => {
     navigator.clipboard.writeText(window.location.href).then(() => {
-      toast.custom(() => <CustomToast message="網址已複製到剪貼簿" icon={<CopySuccessIcon />} />);
+      toast.custom(() => <CustomToast message="網址已複製到剪貼簿" icon={<CopySuccessIcon />} />, {
+        position: 'bottom-right',
+        style: { marginRight: '6rem' },
+      });
     });
   }, []);
 

@@ -60,6 +60,7 @@ export default function ArticleClient({ post, headings }: ArticleClientProps) {
 
   const handleSwitchRole = (newRole: AiRole) => {
     setChatRole(newRole);
+    setStartWithSummary(false);
   };
 
   const chatKey = chatRole === 'guide' ? 'guide' : chatRole ? `specialist:${post.slug}` : '';
@@ -134,7 +135,7 @@ export default function ArticleClient({ post, headings }: ArticleClientProps) {
       )}
 
       {!isChatOpen && (
-        <div className="fixed bottom-4 right-4 z-40 flex flex-col items-end">
+        <div className="fixed bottom-8 right-8 z-40 flex flex-col items-end">
           {isMenuOpen && (
             <div className="bg-white dark:bg-slate-800 rounded-lg shadow-lg mb-2 w-64 border border-slate-200 dark:border-slate-700">
               <button

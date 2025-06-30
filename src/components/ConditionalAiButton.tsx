@@ -59,7 +59,7 @@ export default function ConditionalAiButton() {
 
       {/* 懸浮按鈕只在聊天未開啟時顯示 */}
       {!isChatOpen && (
-        <div className="fixed bottom-5 right-5 z-50">
+        <div className="fixed bottom-8 right-8 z-50">
           <button
             onClick={handleOpenChat}
             className="rounded-full bg-gradient-to-br from-blue-500 to-indigo-600 p-5 text-white shadow-2xl ring-4 ring-blue-300 dark:ring-blue-800 transition-transform hover:scale-110 focus:outline-none"

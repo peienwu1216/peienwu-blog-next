@@ -34,13 +34,21 @@ const roleConfig = {
   specialist: {
     icon: <BookOpen className="h-6 w-6 text-indigo-500" />,
     title: '文章 AI 助理',
-    welcomeMessage: '你好！我是您的文章 AI 助理，可以幫您快速總結這篇文章的重點，或回答任何相關問題。',
+    welcomeMessage: '嘿！對這篇文章有什麼好奇的嗎？無論是想快速抓重點，還是深入探討，隨時都能問我！',
     placeholder: '針對這篇文章提問...'
   },
   guide: {
     icon: <Sparkles className="h-6 w-6 text-amber-500" />,
     title: '全站數位分身',
-    welcomeMessage: '你好！我是 Peien 的數位分身，你可以問我任何關於他、他的作品或這個網站的問題。',
+    welcomeMessage: `您好，歡迎來到 Code Lab！我是 Peienwu 的 AI 數位分身，一個由 Gemini AI 驅動的智慧嚮導。我已經學習了這個網站中所有的技術文章、專案與個人背景。
+
+無論您想尋找特定資訊、理解複雜觀念，或對 Peienwu 本人感到好奇，我都樂意提供協助。
+
+**您可以試著這樣問我：**
+- 「Peienwu 是誰？他做過哪些專案？」
+- 「這個網站的 AI 數位分身是怎麼實現的？」
+
+請隨時輸入您的問題，我很樂意為您指引！`,
     placeholder: '與 Peien 的數位分身對話...'
   }
 };
@@ -153,10 +161,10 @@ export default function AiChatWindow({
 
   // 自動觸發摘要
   useEffect(() => {
-    if (startWithSummary && messages.length === 1) {
+    if (startWithSummary && currentRole === 'specialist' && messages.length === 1) {
       append({ role: 'user', content: SUMMARY_PROMPT });
     }
-  }, [startWithSummary]);
+  }, [startWithSummary, currentRole]);
 
   // 按鈕觸發摘要
   const handleGenerateSummaryClick = () => {

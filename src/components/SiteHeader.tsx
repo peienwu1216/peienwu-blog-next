@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation'; // 引入 usePathname
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import SearchButton from './SearchButton';
 import SearchModal from './SearchModal'; // 引入 SearchModal
 import { ThemeToggleButton } from './ThemeToggleButton';
@@ -21,10 +21,11 @@ const CloseIcon = (props: React.SVGProps<SVGSVGElement>) => (
 );
 
 export default function SiteHeader() {
-  const [isScrolled, setIsScrolled] = useState(false);
+  const [isStuck, setIsStuck] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false); // 新增 SearchModal 狀態
   const pathname = usePathname(); // 獲取當前路徑
+  const sentinelRef = useRef<HTMLDivElement>(null);
 
   // --- 新增: 處理 Cmd+K 開啟 SearchModal ---
   useEffect(() => {
@@ -39,13 +40,24 @@ export default function SiteHeader() {
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, []);
 
+  // 使用 IntersectionObserver 取代 scroll 事件，避免臨界點震盪
   useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20);
-    };
+    const sentinel = sentinelRef.current;
+    if (!sentinel) return;
 
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        // 當 sentinel 離開視窗頂端，就代表 Header 已「貼附」
+        setIsStuck(!entry.isIntersecting);
+      },
+      {
+        rootMargin: '-1px 0px 0px 0px', // 提前 1px 觸發
+        threshold: 0,
+      }
+    );
+
+    observer.observe(sentinel);
+    return () => observer.disconnect();
   }, []);
   
   // 當行動版選單開啟時，禁止背景滾動
@@ -67,18 +79,20 @@ export default function SiteHeader() {
 
   return (
     <>
+      {/* 觀察用的 sentinel 必須置於 Header 前 */}
+      <div ref={sentinelRef} className="absolute top-0 h-px w-full" />
+
       <header
         className={`
           sticky top-0 z-50 w-full backdrop-blur-md
-          transition-all duration-300 ease-in-out
-          ${isScrolled ? 'shadow-md bg-white/80 dark:bg-slate-900/80' : 'bg-transparent'}
+          transition-colors duration-300 ease-in-out
+          ${isStuck ? 'shadow-md bg-white/80 dark:bg-slate-900/80' : 'bg-transparent'}
         `}
       >
         <div
           className={`
             container mx-auto flex items-center justify-between px-4 sm:px-6
-            transition-all duration-300 ease-in-out
-            ${isScrolled ? 'py-3' : 'py-5'}
+            transition-all duration-300 ease-in-out py-4
           `}
         >
           <div className="flex flex-col">
@@ -89,7 +103,7 @@ export default function SiteHeader() {
               className={`
                 text-slate-600 dark:text-slate-400
                 transition-all duration-300 ease-in-out
-                ${isScrolled ? 'text-xs' : 'text-sm'}
+                ${isStuck ? 'text-xs' : 'text-sm'}
               `}
             >
               這裡沒有魔法，只有還沒讀懂的 Source Code

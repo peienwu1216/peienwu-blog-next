@@ -55,7 +55,7 @@ export default function ArticleClient({ post, headings }: ArticleClientProps) {
 
   return (
     <div className="relative">
-      <div className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:px-8 py-10 lg:flex lg:space-x-8">
+      <div className="max-w-screen-xl mx-auto px-4 sm:px-6 lg:pl-12 lg:pr-4 py-10 lg:flex lg:space-x-8">
         <TableOfContents
           headings={headings}
           onSummary={handleSummary}

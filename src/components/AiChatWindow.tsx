@@ -4,7 +4,6 @@ import React, { useState, useRef, useEffect, memo } from 'react';
 import { useChat } from 'ai/react';
 import { BookOpen, Sparkles, X, MoreHorizontal, Send, RefreshCw, AlertTriangle, FileText, Eraser } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import 'katex/dist/katex.min.css';
@@ -307,7 +306,7 @@ export default function AiChatWindow({
 
       {/* -- Use Gentle Fade-in & Slide-up Animation -- */}
       <div className={`fixed inset-x-0 top-16 bottom-0 sm:top-auto sm:inset-x-auto sm:right-4 sm:bottom-4 z-50 w-full sm:max-w-md transform-gpu transition-all duration-300 ease-in-out ${isVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-10'}`}>
-        <div className="bg-white dark:bg-slate-900 rounded-t-lg sm:rounded-lg shadow-2xl flex flex-col h-full sm:h-[80vh] sm:max-h-[800px] border-t border-x sm:border border-slate-200 dark:border-slate-700">
+        <div className="bg-white dark:bg-slate-900 rounded-t-lg sm:rounded-lg shadow-2xl flex flex-col h-full sm:h-[80vh] sm:max-h-[800px] sm:border border-slate-200 dark:border-slate-700">
           {/* 標頭 */}
           <header className="flex items-center justify-between border-b border-slate-200 dark:border-slate-700 p-3">
             <div className="flex items-center gap-3">
@@ -384,7 +383,7 @@ export default function AiChatWindow({
                     <div className={`prose prose-sm max-w-full ${isUser ? 'text-white' : 'dark:prose-invert'}`}>
                       {msg.role === 'assistant' ? (
                         <ReactMarkdown 
-                          remarkPlugins={[remarkGfm, remarkMath] as any}
+                          remarkPlugins={[remarkMath] as any}
                           rehypePlugins={[rehypeKatex] as any}
                           components={{
                             code: CodeBlock,

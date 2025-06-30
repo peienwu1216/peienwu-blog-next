@@ -4,7 +4,6 @@ import React, { useState, useRef, useEffect, memo } from 'react';
 import { useChat } from 'ai/react';
 import { BookOpen, Sparkles, X, MoreHorizontal, Send, RefreshCw, AlertTriangle, FileText, Eraser } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
 import 'katex/dist/katex.min.css';
@@ -384,7 +383,7 @@ export default function AiChatWindow({
                     <div className={`prose prose-sm max-w-full ${isUser ? 'text-white' : 'dark:prose-invert'}`}>
                       {msg.role === 'assistant' ? (
                         <ReactMarkdown 
-                          remarkPlugins={[remarkGfm, remarkMath] as any}
+                          remarkPlugins={[remarkMath] as any}
                           rehypePlugins={[rehypeKatex] as any}
                           components={{
                             code: CodeBlock,

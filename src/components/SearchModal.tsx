@@ -1,7 +1,7 @@
 "use client";
 
 import { createPortal } from 'react-dom';
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import { format, parseISO } from 'date-fns';
 import { getSearchSuggestions, highlightText, extractExcerpt } from '@/lib/search';
@@ -11,6 +11,7 @@ import { useTheme } from 'next-themes';
 import { toast } from 'sonner';
 import { CustomToast } from './ProTipToast';
 import { useLockBodyScroll } from '@/lib/use-lock-body-scroll';
+import { Sparkles } from 'lucide-react';
 
 // SVG 圖示元件
 const SearchIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -134,7 +135,7 @@ interface Command {
   name: string;
   icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
   action: () => void;
-  section: '導航' | '命令' | '外部連結';
+  section: 'AI 助理' | '導航' | '命令' | '外部連結';
   data?: any;
 }
 
@@ -331,25 +332,36 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
     setTheme(theme === 'dark' ? 'light' : 'dark');
   };
 
-  const allCommands = React.useMemo(() => {
-    const staticCommands: Command[] = [
-        { name: '首頁', icon: HomeIcon, action: () => router.push('/'), section: '導航' },
-        { name: '關於我', icon: DocumentIcon, action: () => router.push('/about'), section: '導航' },
-        { name: '所有標籤', icon: TagIcon, action: () => router.push('/tags'), section: '導航' },
-        { name: '專案儀表板', icon: ProjectIcon, action: () => router.push('/projects'), section: '導航' },
-        { name: '切換主題', icon: theme === 'dark' ? SunIcon : MoonIcon, action: toggleTheme, section: '命令' },
-        { name: '查看開發計畫...', icon: DevPlanIcon, action: () => setView('github'), section: '命令' },
-        { name: '複製網址', icon: LinkIcon, action: () => {
-          navigator.clipboard.writeText(window.location.href);
-          toast.custom(() => <CustomToast icon={<CopySuccessIcon />} message="已成功複製網址！" />, {
-            duration: 3000,
-            position: 'bottom-right',
-          });
-          onClose();
-        }, section: '命令' },
-        { name: '查看原始碼', icon: GithubIcon, action: () => window.open('https://github.com/peienwu1216/peienwu-blog-next', '_blank'), section: '外部連結' },
-      ];
-      return staticCommands;
+  const copyToClipboard = useCallback(() => {
+    navigator.clipboard.writeText(window.location.href).then(() => {
+      toast.custom(() => <CustomToast message="網址已複製到剪貼簿" icon={<CopySuccessIcon />} />);
+    });
+  }, []);
+
+  const allCommands = useMemo<Command[]>(() => {
+    const commands: Command[] = [
+      {
+        name: '全站數位分身',
+        icon: Sparkles,
+        action: () => {
+          const btn = document.querySelector('button[aria-label="與數位分身對話"]') as HTMLButtonElement | null;
+          if (btn) {
+            btn.click();
+            onClose();
+          }
+        },
+        section: 'AI 助理',
+      },
+      { name: '首頁', icon: HomeIcon, action: () => router.push('/'), section: '導航' },
+      { name: '關於我', icon: DocumentIcon, action: () => router.push('/about'), section: '導航' },
+      { name: '所有標籤', icon: TagIcon, action: () => router.push('/tags'), section: '導航' },
+      { name: '專案儀表板', icon: ProjectIcon, action: () => router.push('/projects'), section: '導航' },
+      { name: '切換主題', icon: theme === 'dark' ? SunIcon : MoonIcon, action: toggleTheme, section: '命令' },
+      { name: '查看開發計畫...', icon: DevPlanIcon, action: () => setView('github'), section: '命令' },
+      { name: '複製網址', icon: LinkIcon, action: copyToClipboard, section: '命令' },
+      { name: '查看原始碼', icon: GithubIcon, action: () => window.open('https://github.com/peienwu1216/peienwu-blog-next', '_blank'), section: '外部連結' },
+    ];
+    return commands;
   }, [theme, router]);
 
   useEffect(() => {
@@ -545,7 +557,7 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
                     })}
                   </div>
                 ))}
-            </div>
+              </div>
             ) : (
               // Search Results
               <div className="py-2">

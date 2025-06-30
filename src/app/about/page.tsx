@@ -105,10 +105,10 @@ export default function AboutPage() {
           <td style={{ width: '50%', verticalAlign: 'top' }}>
             <h3>💡 Code Lab: 全端應用開發與現代網頁技術實踐</h3>
             <p>
-            我將個人網站從零開始，打造成為一個功能完整的<strong>全端應用</strong>，學習並實踐現代網頁開發技術與工程方法。我不僅利用 <strong>Next.js API Routes</strong> 開發了具備智慧快取 (ISR) 的後端服務，安全地與 <strong>GitHub API</strong> 串接以注入即時動態數據；更在前端基於 <strong>FlexSearch.js</strong> 實作了一套專業的客戶端搜尋引擎，其<strong>多重加權索引</strong>與<strong>上下文感知查詢</strong>，確保了毫秒級的資訊獲取效率。
+              我將個人網站視為一個完整的<strong>AI原生全端應用</strong>進行工程實踐。其核心是打造一個能代表我本人的<strong>AI數位分身</strong>，透過建立自動化的知識導入管線，讓AI能存取我所有的文章與專案資料，從而精準地回答關於我技術細節的複雜跨領域問題。
             </p>
             <p>
-            我將所有功能整合於一個應用程式級的 <strong>⌘+K 指揮中心</strong> ，將靜態的瀏覽體驗，升級為流暢、可操作的產品級互動。
+            這個智慧系統，與我基於 <strong>FlexSearch.js</strong> 打造的<strong>專業級搜尋引擎</strong>、以及整合了智慧快取 (ISR) 的<strong>後端 API</strong>（用以安全地串接 <strong>GitHub API</strong> 並注入即時動態）無縫協作，並最終將所有互動體驗，匯集於一個應用程式級的 <strong>`⌘+K` 指揮中心</strong>，將網站從靜態的「頁面」提升為可互動的「智慧產品」。
             </p>
             <p>
               <strong>技術棧：</strong> Next.js, React, TypeScript, Tailwind CSS, Contentlayer, FlexSearch.js, Vercel

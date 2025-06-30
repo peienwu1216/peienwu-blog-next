@@ -31,11 +31,11 @@ export const projectsData: Project[] = [
     title: "💡 Code Lab: 全端應用開發與現代網頁技術實踐",
     description: [
       "我將個人網站融合了現代網頁工程與 AI 技術，旨在打造一個能與使用者深度互動、持續進化的數位分身。",
-        "**雙 AI 智慧助理：** 引入「專家」與「數位分生」雙 AI 架構。文章內的專家助理提供深度內容解析，而全站嚮導則基於 RAG 架構整合所有知識，提供具個人化風格的即時問答，將網站進化為能與訪客對話的數位分身。",
-        "**自動化 AI 知識引擎：** 開發自訂建置腳本，將所有文章與個人資料自動化處理為結構化的 AI 知識庫。透過 Next.js 後端 API 安全串接 Google AI，為 RAG 檢索與生成提供穩定、高效的動力。",
+        "**雙 AI 智慧助理：** 引入「專家」與「數位分生」雙 AI 架構。文章內的專家助理提供深度內容解析，而全站嚮導則透過**長上下文注入 (Long-Context Injection)**，提供具個人化風格的即時問答，將網站進化為能與訪客對話的數位分身。",
+        "**自動化 AI 知識引擎：** 開發自訂建置腳本，將所有文章與個人資料自動化處理為結構化的 AI 知識庫。透過 Next.js 後端 API 安全串接 Google AI，為數位分身的深度應答提供穩定、高效的動力。",
         "**⌘+K 智慧指揮中心：** 打造應用程式級的指令面板，將高精準度搜尋、全站導覽與 AI 助理無縫整合。使用者可在此一鍵喚醒 AI，將網站從傳統頁面瀏覽，升級為流暢的產品級互動體驗。"
     ],
-    techStack: ['Next.js', 'React', 'TypeScript', 'Contentlayer', 'Tailwind CSS','RAG', 'FlexSearch.js', 'Google AI API'],
+    techStack: ['Next.js', 'React', 'TypeScript', 'Contentlayer', 'Tailwind CSS', 'FlexSearch.js', 'Google AI API'],
     repoUrl: 'https://github.com/peienwu1216/peienwu-blog-next',
     liveDemoUrl: 'https://peienwu-blog-next.vercel.app/',
     category: '個人品牌與網頁開發',

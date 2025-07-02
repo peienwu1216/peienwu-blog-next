@@ -40,7 +40,7 @@ const roleConfig = {
   guide: {
     icon: <Sparkles className="h-6 w-6 text-amber-500" />,
     title: '全站數位分身',
-    welcomeMessage: `您好，歡迎來到 Code Lab！我是 Peienwu 的 AI 數位分身，一個由 Gemini AI 驅動的智慧嚮導。我已經學習了這個網站中所有的技術文章、專案與個人背景。
+    welcomeMessage: `您好，歡迎來到 Code Lab！我是 Peienwu 的 AI 數位分身 **Bryan**，一個由 Gemini AI 驅動的智慧嚮導。我已經學習了這個網站中所有的技術文章、專案與個人背景。
 
 無論您想尋找特定資訊、理解複雜觀念，或對 Peienwu 本人感到好奇，我都樂意提供協助。
 

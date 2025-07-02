@@ -9,9 +9,8 @@ import strip from 'strip-markdown';
 const CWD = process.cwd();
 const POSTS_DIR = path.join(CWD, 'content/posts');
 const LEGACY_POSTS_DIR = path.join(CWD, 'legacy_posts');
-const ABOUT_FILE = path.join(CWD, 'content/about/about.mdx');
+const PERSONALITY_FILE = path.join(CWD, 'ai/personality.mdx');
 const PROJECTS_FILE = path.join(CWD, 'src/lib/projects-data.ts');
-const CUSTOM_BACKGROUND_FILE = path.join(CWD, 'src/data/custom-background.json');
 
 const OUTPUT_PERSONALITY_FILE = path.join(CWD, 'public/ai_personality_core.json');
 const OUTPUT_KNOWLEDGE_BASE_FILE = path.join(CWD, 'public/ai_knowledge_base.json');
@@ -33,8 +32,9 @@ async function cleanMdxContent(content) {
  */
 async function processMdxFile(filePath) {
   const rawContent = await fs.readFile(filePath, 'utf-8');
-  const { content } = matter(rawContent);
-  return cleanMdxContent(content);
+  const { content, data } = matter(rawContent);
+  const cleanedContent = await cleanMdxContent(content);
+  return { cleanedContent, frontmatter: data };
 }
 
 /**
@@ -66,9 +66,11 @@ async function parseProjectsData() {
 async function buildPersonalityCore() {
   console.log('🧠 Building AI Personality Core...');
 
-  const aboutContent = await processMdxFile(ABOUT_FILE);
+  // 讀取 personality.mdx，解析 frontmatter 與內容
+  const rawPersonality = await fs.readFile(PERSONALITY_FILE, 'utf-8');
+  const { content: personalityBody, data: customBackgroundContent } = matter(rawPersonality);
+  const aboutContent = await cleanMdxContent(personalityBody);
   const projectsContent = await parseProjectsData();
-  const customBackgroundContent = JSON.parse(await fs.readFile(CUSTOM_BACKGROUND_FILE, 'utf-8'));
 
   const personalityCore = {
     about: aboutContent,
@@ -98,13 +100,20 @@ async function buildKnowledgeBase() {
   console.log(`🔍 Found ${allPostPaths.length} articles.`);
 
   const knowledgeBase = [];
+  const contentDirPath = path.join(CWD, 'content');
+
   for (const postPath of allPostPaths) {
     try {
-      const content = await processMdxFile(postPath);
-      const relativePath = path.relative(CWD, postPath);
+      const { cleanedContent, frontmatter } = await processMdxFile(postPath);
+      
+      // Replicate Contentlayer's URL generation logic
+      const flattenedPath = path.relative(contentDirPath, postPath).replace(/\.mdx?$/, '');
+      const url = `/${flattenedPath.replace(/^posts\/?/, '')}`;
+
       knowledgeBase.push({
-        source: relativePath,
-        content: content,
+        title: frontmatter.title || path.basename(postPath),
+        url: url,
+        content: cleanedContent,
       });
     } catch (error) {
        console.warn(`⚠️ Skipping file ${postPath} due to error:`, error.message);

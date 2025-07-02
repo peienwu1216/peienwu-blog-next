@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useEffect, memo } from 'react';
 import { useChat } from 'ai/react';
-import { BookOpen, Sparkles, X, MoreHorizontal, Send, RefreshCw, AlertTriangle, FileText, Eraser } from 'lucide-react';
+import { BookOpen, Sparkles, X, MoreHorizontal, Send, RefreshCw, AlertTriangle, FileText, Eraser, Loader } from 'lucide-react';
 import ReactMarkdown from 'react-markdown';
 import remarkMath from 'remark-math';
 import rehypeKatex from 'rehype-katex';
@@ -125,6 +125,8 @@ export default function AiChatWindow({
     },
   });
 
+  const isLoading = messages.length > 0 && messages[messages.length - 1].role === 'user';
+
   const inputRef = useRef(input);
   useEffect(() => {
     inputRef.current = input;
@@ -154,7 +156,25 @@ export default function AiChatWindow({
 
   // 自動捲動至最新訊息
   useEffect(() => {
-    if (chatContainerRef.current) {
+    if (!chatContainerRef.current) return;
+
+    const isAtBottom = chatContainerRef.current.scrollHeight - chatContainerRef.current.scrollTop <= chatContainerRef.current.clientHeight + 1; // +1 for tolerance
+    const lastMessage = messages[messages.length - 1];
+    
+    // 條件 1: AI 剛開始回覆 (前一則是 user，現在是 assistant)
+    const isAiStartingToReply = messages.length > 1 && messages[messages.length - 2].role === 'user' && lastMessage.role === 'assistant';
+
+    if (isAiStartingToReply) {
+      const userMessageId = `message-${messages[messages.length - 2].id}`;
+      const userMessageElement = chatContainerRef.current.querySelector(`#${userMessageId}`);
+      if (userMessageElement) {
+        userMessageElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        return; // 捲動到指定位置後就停止
+      }
+    }
+
+    // 條件 2: 使用者自己捲動到底部時，或自己發出訊息時，保持在底部
+    if (isAtBottom || lastMessage.role === 'user') {
       chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight;
     }
   }, [messages]);
@@ -371,7 +391,11 @@ export default function AiChatWindow({
               const isFirstInSequence = !messages[index - 1] || messages[index - 1].role !== msg.role;
 
               return (
-                <div key={msg.id} className={`flex items-end gap-2.5 ${isUser ? 'flex-row-reverse' : ''} ${isFirstInSequence ? 'mt-4' : 'mt-1'}`}>
+                <div 
+                  key={msg.id} 
+                  id={`message-${msg.id}`}
+                  className={`flex items-end gap-2.5 ${isUser ? 'flex-row-reverse' : ''} ${isFirstInSequence ? 'mt-4' : 'mt-1'}`}
+                >
                   {msg.role === 'assistant' && (
                     <div className="flex-shrink-0">
                       {isLastInSequence ? (
@@ -417,6 +441,14 @@ export default function AiChatWindow({
                   <FileText className="h-4 w-4" />
                   一鍵生成本文摘要
                 </button>
+              </div>
+            )}
+
+            {/* --- Loading Indicator --- */}
+            {isLoading && (
+              <div className="flex items-center justify-center p-4">
+                <Loader className="h-6 w-6 text-slate-400 animate-spin" />
+                <p className="ml-2 text-sm text-slate-500">處理中...</p>
               </div>
             )}
           </div>

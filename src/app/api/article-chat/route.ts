@@ -3,8 +3,9 @@ import { google } from '@ai-sdk/google';
 
 export const runtime = 'edge';
 
-// 預設讀 GOOGLE_GENERATIVE_AI_API_KEY
-const geminiModel = google('gemini-2.5-flash-lite-preview-06-17');
+// Tier 1 Strategy: Use the highest quality model as primary, and the fastest as fallback for reliability.
+const primaryModel = google('gemini-2.0-flash'); // Quality and stability first (2,000 RPM on Tier 1)
+const fallbackModel = google('gemini-2.0-flash-lite'); // High-speed fallback (4,000 RPM on Tier 1)
 
 export async function POST(req: Request) {
   try {
@@ -31,21 +32,36 @@ export async function POST(req: Request) {
 ${articleContent}
 ---`;
 
-    const result = await streamText({
-      model: geminiModel,
+    const corePrompt = {
       messages: [
         { role: 'system', content: systemPrompt },
         ...messages.filter((m: Message) => m.role === 'user' || m.role === 'assistant')
       ],
-    });
+    };
 
-    return result.toDataStreamResponse();
+    // --- Fallback Logic Implementation ---
+    try {
+      // 1. Attempt to use the primary, high-quality model first.
+      console.log("Attempting to use primary model: gemini-2.0-flash");
+      const result = await streamText({ model: primaryModel, ...corePrompt });
+      return result.toDataStreamResponse();
+
+    } catch (primaryError) {
+      // 2. If the primary model fails (e.g., due to rate limits, server error), log it and switch to the fallback.
+      console.warn("Primary model (gemini-2.0-flash) failed, switching to fallback.", primaryError);
+
+      // 3. Attempt to use the fallback model.
+      console.log("Attempting to use fallback model: gemini-2.0-flash-lite");
+      const fallbackResult = await streamText({ model: fallbackModel, ...corePrompt });
+      return fallbackResult.toDataStreamResponse();
+    }
 
   } catch (error) {
-    console.error('[API/article-chat] Error:', error);
+    // 4. This block catches errors from the initial setup (req.json) OR if the fallback model also fails.
+    console.error('[API/article-chat] Final error after fallback attempt:', error);
     if (error instanceof Error && error.message.includes('API key')) {
        return new Response('API key is invalid or not set.', { status: 401 });
     }
-    return new Response('Internal Server Error', { status: 500 });
+    return new Response('AI service is currently unavailable after multiple retries.', { status: 503 });
   }
 } 

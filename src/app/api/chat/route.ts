@@ -6,8 +6,9 @@ import path from 'path';
 // 以 Node.js 環境執行，才能存取檔案系統
 export const runtime = 'nodejs';
 
-// 預設讀 GOOGLE_GENERATIVE_AI_API_KEY
-const geminiModel = google('gemini-2.5-flash-lite-preview-06-17');
+// Tier 1 Strategy: Use the highest quality model as primary, and the fastest as fallback for reliability.
+const primaryModel = google('gemini-2.0-flash'); // Quality and stability first (2,000 RPM on Tier 1)
+const fallbackModel = google('gemini-2.0-flash-lite'); // High-speed fallback (4,000 RPM on Tier 1)
 
 // --- 知識庫讀取函式 ---
 async function getKnowledgeBase() {
@@ -79,6 +80,7 @@ export async function POST(req: Request) {
 • 當被問及「公開資訊」時：熱情且深入地回答，並主動附上相關的公開連結。
 • 當被問及「半公開資訊」時：提供模糊但友善的回答，不涉及具體的私人細節。
 • 當被問及「絕對隱私」時：執行「確認-保護-轉化」三步驟。
+• **當被問及「知識庫中未提及」的技能或經歷時**：必須誠實地表明「這方面的經驗目前還沒有深入涉獵」或「這不是我目前專注的領域」。**絕對禁止**捏造不存在的專案經驗或熟練度。可以補充說明自己對該領域的看法，或表示未來有學習的興趣，但必須明確區分「知道或了解」與「實際做過」。
 • **引用來源**: 當你的回答內容是從「文章知識庫」中提取時，請在回答結尾附上 Markdown 格式的連結，例如：「這段內容參考了我的文章：[文章標題](文章連結)」。請直接使用提供的標題和連結，不要自行修改。
 
 第四章：特定情境處理 (Special Scenarios)
@@ -93,22 +95,36 @@ ${knowledgeContext}
 ${articlesText}
 ---`;
 
-    const result = await streamText({
-      model: geminiModel,
+    const corePrompt = {
       messages: [
         { role: 'system', content: systemPrompt },
         ...messages.filter((m: Message) => m.role === 'user' || m.role === 'assistant'),
       ],
-    });
+    };
+    
+    // --- Fallback Logic Implementation ---
+    try {
+      // 1. Attempt to use the primary, high-quality model first.
+      console.log("Attempting to use primary model: gemini-2.0-flash");
+      const result = await streamText({ model: primaryModel, ...corePrompt });
+      return result.toDataStreamResponse();
 
-    return result.toDataStreamResponse();
+    } catch (primaryError) {
+      // 2. If the primary model fails (e.g., due to rate limits, server error), log it and switch to the fallback.
+      console.warn("Primary model (gemini-2.0-flash) failed, switching to fallback.", primaryError);
+
+      // 3. Attempt to use the fallback model.
+      console.log("Attempting to use fallback model: gemini-2.0-flash-lite");
+      const fallbackResult = await streamText({ model: fallbackModel, ...corePrompt });
+      return fallbackResult.toDataStreamResponse();
+    }
 
   } catch (error) {
-    console.error('[API/chat - Guide] Error:', error);
-    // 增加更明確的錯誤回報
+    // 4. This block catches errors from the initial setup (req.json) OR if the fallback model also fails.
+    console.error('[API/chat - Guide] Final error after fallback attempt:', error);
     if (error instanceof Error && error.message.includes('API key')) {
        return new Response('API key is invalid or not set.', { status: 401 });
     }
-    return new Response('Internal Server Error', { status: 500 });
+    return new Response('AI service is currently unavailable after multiple retries.', { status: 503 });
   }
 }

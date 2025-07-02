@@ -102,6 +102,22 @@ async function buildKnowledgeBase() {
   const knowledgeBase = [];
   const contentDirPath = path.join(CWD, 'content');
 
+  // 1. 新增：讀取並處理 README.md
+  try {
+    console.log('📖 Processing README.md...');
+    const readmePath = path.join(CWD, 'README.md');
+    const readmeContent = await fs.readFile(readmePath, 'utf-8');
+    // 我們假設 README 本身就是最重要的內容，不需要 frontmatter
+    const cleanedReadme = await cleanMdxContent(readmeContent);
+    knowledgeBase.push({
+      title: '關於 Code Lab (本專案) 的技術細節與架構',
+      url: 'https://github.com/peienwu1216/peienwu-blog-next',
+      content: cleanedReadme,
+    });
+  } catch (error) {
+    console.warn(`⚠️ Could not process README.md:`, error.message);
+  }
+
   for (const postPath of allPostPaths) {
     try {
       const { cleanedContent, frontmatter } = await processMdxFile(postPath);

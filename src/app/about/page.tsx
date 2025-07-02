@@ -151,7 +151,7 @@ export default function AboutPage() {
         </table>
 
         <div className="flex justify-center my-8">
-            <Link href="/projects" className="inline-flex items-center justify-center rounded-full bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow-lg transition-transform hover:scale-105 hover:bg-blue-700 !text-white">
+            <Link href="/projects" className="inline-flex items-center justify-center rounded-full bg-blue-600 px-4 py-2 text-sm font-medium shadow-lg transition-transform hover:scale-105 hover:bg-blue-700 !text-white">
                 查看我的專案
                 <svg className="ml-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M17.25 8.25 21 12m0 0-3.75 3.75M21 12H3" />

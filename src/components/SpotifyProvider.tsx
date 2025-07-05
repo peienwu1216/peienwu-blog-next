@@ -5,6 +5,7 @@ import { useMusicStore, TrackInfo } from '@/store/music';
 interface SpotifyContextProps {
   playTrack: (track: TrackInfo, isInterrupt?: boolean) => void;
   pauseTrack: () => void;
+  resumeTrack: () => void;
   nextTrack: () => void;
   previousTrack: () => void;
   setVolume: (volume: number) => void;
@@ -81,6 +82,30 @@ export const SpotifyProvider = ({ children }: { children: ReactNode }) => {
     return () => { if (syncIntervalRef.current) clearInterval(syncIntervalRef.current); };
   }, [syncPlaybackState]);
 
+  // ✨ 新增：專門用於恢復播放的函式
+  const resumeTrack = useCallback(async () => {
+    if (!isReady || !deviceIdRef.current) return;
+    try {
+      const tokenRes = await fetch('/api/spotify/access-token');
+      if (!tokenRes.ok) throw new Error('無法獲取 access token');
+      const { accessToken } = await tokenRes.json();
+      
+      const SPOTIFY_PLAY_ENDPOINT = 'https://api.spotify.com/v1/me/player/play';
+      await fetch(`${SPOTIFY_PLAY_ENDPOINT}?device_id=${deviceIdRef.current}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${accessToken}`
+        },
+        // 注意：恢復播放時，不傳送 request body
+      });
+      // 樂觀地更新 UI 狀態
+      if (currentTrack) play(currentTrack);
+    } catch (e) {
+      console.error("恢復播放時發生錯誤:", e);
+    }
+  }, [isReady, play, currentTrack]);
+
+  // ✨ 修改：playTrack 函式，移除進度重設
   const playTrack = useCallback(async (track: TrackInfo, isInterrupt = false) => {
     if (!isReady || !deviceIdRef.current) {
       alert("Spotify 播放器尚未準備就緒。請確認您的 Spotify 帳號是 Premium 會員，並在其他裝置（如手機 App）上選擇 'Peienwu's Code Lab' 作為播放裝置後，重新整理頁面。");
@@ -94,6 +119,7 @@ export const SpotifyProvider = ({ children }: { children: ReactNode }) => {
       const { accessToken } = await tokenRes.json();
       const deviceId = deviceIdRef.current;
       if (!deviceId) throw new Error('No device id');
+      
       const res = await fetch(`${SPOTIFY_PLAY_ENDPOINT}?device_id=${deviceId}`, {
         method: 'PUT',
         headers: {
@@ -102,6 +128,7 @@ export const SpotifyProvider = ({ children }: { children: ReactNode }) => {
         },
         body: JSON.stringify({ uris: [trackUri] })
       });
+
       if (!res.ok) {
         const errorBody = await res.json();
         console.error("Spotify 播放失敗:", errorBody);
@@ -110,17 +137,19 @@ export const SpotifyProvider = ({ children }: { children: ReactNode }) => {
         }
         return;
       }
+      
+      // 核心修改：不再手動重設進度。
+      // 讓 player_state_changed 事件來同步最真實的狀態。
       if (isInterrupt) {
         insertTrack(track);
       } else {
-        play(track);
-        setDuration(track.duration || 0);
-        setProgress(0);
+        // 只更新 zustand store 的狀態，不手動操作進度條
+        play(track); 
       }
     } catch (e) {
         console.error("播放歌曲時發生錯誤:", e);
     }
-  }, [isReady, insertTrack, play, setDuration, setProgress]);
+  }, [isReady, insertTrack, play]);
 
   const initializeDefaultPlaylist = useCallback(async () => {
     setLoading(true);
@@ -239,7 +268,7 @@ export const SpotifyProvider = ({ children }: { children: ReactNode }) => {
   return (
     <SpotifyContext.Provider value={{
       playTrack, pauseTrack, nextTrack, previousTrack, setVolume, seek,
-      loading, isReady, isPlaying, currentTrack, volume, progress, duration
+      loading, isReady, isPlaying, currentTrack, volume, progress, duration, resumeTrack
     }}>
       {children}
     </SpotifyContext.Provider>

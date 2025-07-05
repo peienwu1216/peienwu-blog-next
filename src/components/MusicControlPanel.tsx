@@ -8,38 +8,30 @@ export default function MusicControlPanel() {
   const {
     isPlaying,
     currentTrack,
+    volume,
     progress,
     duration,
-    volume,
-    loading,
-    previousTrack,
-    nextTrack,
     pauseTrack,
-    playTrack,
+    resumeTrack,
+    nextTrack,
+    previousTrack,
     setVolume,
     seek,
   } = useSpotify();
 
   const formatTime = (seconds: number) => {
-    const floorSeconds = Math.floor(seconds);
-    const min = Math.floor(floorSeconds / 60);
-    const sec = floorSeconds % 60;
-    return `${min}:${sec < 10 ? '0' : ''}${sec}`;
+    const mins = Math.floor(seconds / 60);
+    const secs = Math.floor(seconds % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center p-4 gap-2 text-sm text-slate-500 dark:text-slate-400">
-        <Loader className="w-4 h-4 animate-spin" />
-        <span>讀取音樂電台中...</span>
-      </div>
-    );
-  }
 
   if (!currentTrack) {
     return (
-      <div className="text-center p-4 text-sm text-slate-500 dark:text-slate-400">
-        暫無播放音樂。點擊文章中的 ▶️ 開始。
+      <div className="flex items-center justify-center p-4 text-slate-500 dark:text-slate-400">
+        <div className="flex items-center gap-2">
+          <div className="w-4 h-4 border-2 border-slate-300 dark:border-slate-600 border-t-slate-600 dark:border-t-slate-400 rounded-full animate-spin"></div>
+          <span className="text-sm">載入中...</span>
+        </div>
       </div>
     );
   }
@@ -97,7 +89,7 @@ export default function MusicControlPanel() {
           <SkipBack className="w-5 h-5" />
         </button>
         <button
-          onClick={() => (isPlaying ? pauseTrack() : playTrack(currentTrack))}
+          onClick={() => (isPlaying ? pauseTrack() : resumeTrack())}
           className="p-3 bg-slate-800 dark:bg-slate-100 text-white dark:text-slate-900 rounded-full"
         >
           {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}

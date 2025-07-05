@@ -16,10 +16,18 @@ export default function ArticlePlayButton({ trackId, trackTitle }: ArticlePlayBu
 
   const handlePlay = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    const res = await fetch(`/api/spotify/track/${trackId}`);
-    if (!res.ok) return;
-    const trackToPlay = await res.json();
-    playTrack(trackToPlay, true);
+    try {
+      const res = await fetch(`/api/spotify/track/${trackId}`);
+      if (!res.ok) {
+        toast.error('無法載入歌曲資訊');
+        return;
+      }
+      const trackToPlay = await res.json();
+      playTrack(trackToPlay, true);
+      toast.success(`正在播放 ${trackToPlay.title}`);
+    } catch (error) {
+      toast.error('播放失敗，請稍後再試');
+    }
   };
 
   const handlePause = (e: React.MouseEvent) => {

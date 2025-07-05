@@ -6,8 +6,9 @@ export default function NowPlayingCard() {
   const { currentTrack, isPlaying } = useSpotify();
 
   const handleClick = () => {
-    // 之後可整合觸發 ⌘+K 音樂控制中心
-    window.alert('按下 ⌘+K 來控制本站音樂');
+    // 藍圖的最終實現：模擬點擊 SearchButton 來觸發 ⌘+K。
+    const searchButton = document.querySelector('header .flex.items-center.gap-2 button[aria-label="搜尋文章"]') as HTMLButtonElement | null;
+    searchButton?.click();
   };
 
   return (

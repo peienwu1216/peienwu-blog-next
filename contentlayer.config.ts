@@ -19,9 +19,11 @@ export const Post = defineDocumentType(() => ({
     title: { type: 'string', required: true },
     date: { type: 'date', required: true },
     sticky: { type: 'number' }, // 置頂權重，不錯！
-    tags: { type: 'list', of: { type: 'string' } },
+    tags: { type: 'list', of: { type: 'string' }, required: false },
     category: { type: 'string' },
     image: { type: 'string' }, // 文章代表圖
+    trackId: { type: 'string', required: false },
+    trackTitle: { type: 'string', required: false },
   },
   computedFields: {
     url: {

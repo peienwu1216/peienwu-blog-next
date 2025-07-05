@@ -12,6 +12,7 @@ import AiChatWindow, { AiRole } from '@/components/AiChatWindow';
 import { useState, useEffect } from 'react';
 import { Bot, BookOpen, Sparkles, X } from 'lucide-react';
 import { useLockBodyScroll } from '@/lib/use-lock-body-scroll';
+import ArticlePlayButton from './ArticlePlayButton';
 
 interface ArticleClientProps {
   post: Post;
@@ -95,6 +96,9 @@ export default function ArticleClient({ post, headings }: ArticleClientProps) {
               )}
               <span className="hidden sm:inline-block">&bull;</span>
               <ViewCounter slug={post.slug} />
+              {post.trackId && (
+                <ArticlePlayButton trackId={post.trackId} trackTitle={post.trackTitle || '主題曲'} />
+              )}
             </div>
             <MDXContent components={components} />
             {post.tags && post.tags.length > 0 && (

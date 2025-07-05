@@ -85,6 +85,10 @@ export const SpotifyProvider = ({ children }: { children: ReactNode }) => {
   // ✨ 新增：專門用於恢復播放的函式
   const resumeTrack = useCallback(async () => {
     if (!isReady || !deviceIdRef.current) return;
+    
+    // 樂觀更新：立即更新 UI 狀態
+    if (currentTrack) play(currentTrack);
+    
     try {
       const tokenRes = await fetch('/api/spotify/access-token');
       if (!tokenRes.ok) throw new Error('無法獲取 access token');
@@ -98,12 +102,12 @@ export const SpotifyProvider = ({ children }: { children: ReactNode }) => {
         },
         // 注意：恢復播放時，不傳送 request body
       });
-      // 樂觀地更新 UI 狀態
-      if (currentTrack) play(currentTrack);
     } catch (e) {
       console.error("恢復播放時發生錯誤:", e);
+      // 如果失敗，回滾 UI 狀態
+      pause();
     }
-  }, [isReady, play, currentTrack]);
+  }, [isReady, play, currentTrack, pause]);
 
   // ✨ 修改：playTrack 函式，移除進度重設
   const playTrack = useCallback(async (track: TrackInfo, isInterrupt = false) => {
@@ -191,11 +195,19 @@ export const SpotifyProvider = ({ children }: { children: ReactNode }) => {
   const previousTrack = () => changeTrack('previous');
 
   const pauseTrack = useCallback(async () => {
+    // 樂觀更新：立即更新 UI 狀態
+    pause();
+    
     if (playerRef.current) {
-      await playerRef.current.pause();
-      pause();
+      try {
+        await playerRef.current.pause();
+      } catch (e) {
+        console.error("暫停播放時發生錯誤:", e);
+        // 如果失敗，恢復播放狀態
+        if (currentTrack) play(currentTrack);
+      }
     }
-  }, [pause]);
+  }, [pause, currentTrack, play]);
 
   const setVolume = useCallback(async (newVolume: number) => {
       if(playerRef.current) {
@@ -264,6 +276,34 @@ export const SpotifyProvider = ({ children }: { children: ReactNode }) => {
       initializePlayer();
     }
   }, [initializeDefaultPlaylist, pause, play, setProgress, setDuration, setTrack]);
+
+  // ✨ 2. 新增此 useEffect 來管理進度更新的計時器
+  useEffect(() => {
+    // 當 isPlaying 狀態改變時，先清除舊的計時器
+    if (progressIntervalRef.current) {
+      clearInterval(progressIntervalRef.current);
+    }
+
+    // 如果正在播放，就建立一個新的計時器
+    if (isPlaying) {
+      progressIntervalRef.current = setInterval(async () => {
+        if (playerRef.current) {
+          const state = await playerRef.current.getCurrentState();
+          if (state && !state.paused) {
+            // 更新全域狀態中的進度（單位：秒）
+            setProgress(state.position / 1000);
+          }
+        }
+      }, 1000); // 每秒更新一次
+    }
+
+    // 元件卸載或 isPlaying 變為 false 時，清除計時器
+    return () => {
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+      }
+    };
+  }, [isPlaying, setProgress]);
 
   return (
     <SpotifyContext.Provider value={{

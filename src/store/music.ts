@@ -39,7 +39,7 @@ export const useMusicStore = create<MusicState>((set, get) => ({
     const { currentTrack } = get();
     // 檢查是否為新歌曲
     if (currentTrack?.trackId !== track.trackId) {
-      // 如果是新歌，則重設進度
+      // 如果是新歌，則立即更新播放狀態、新歌曲資訊，並重設進度
       set({ isPlaying: true, currentTrack: track, progress: 0, duration: track.duration || 0 });
     } else {
       // 如果是同一首歌（例如：從暫停恢復），則只更新播放狀態

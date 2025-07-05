@@ -12,6 +12,14 @@ if (!client_id || !client_secret || !refresh_token) {
 
 const basic = Buffer.from(`${client_id}:${client_secret}`).toString('base64');
 const TOKEN_ENDPOINT = `https://accounts.spotify.com/api/token`;
+const NOW_PLAYING_ENDPOINT = `https://api.spotify.com/v1/me/player/currently-playing`;
+// New Endpoints
+const PLAYER_ENDPOINT = `https://api.spotify.com/v1/me/player`;
+const PREVIOUS_ENDPOINT = `${PLAYER_ENDPOINT}/previous`;
+const NEXT_ENDPOINT = `${PLAYER_ENDPOINT}/next`;
+const VOLUME_ENDPOINT = `${PLAYER_ENDPOINT}/volume`;
+const SEEK_ENDPOINT = `${PLAYER_ENDPOINT}/seek`;
+
 
 export const getAccessToken = async () => {
   const response = await fetch(TOKEN_ENDPOINT, {
@@ -37,4 +45,11 @@ export const getAccessToken = async () => {
   return data.access_token;
 };
 
-export const NOW_PLAYING_ENDPOINT = `https://api.spotify.com/v1/me/player/currently-playing`; 
+// Export new endpoints
+export {
+  NOW_PLAYING_ENDPOINT,
+  PREVIOUS_ENDPOINT,
+  NEXT_ENDPOINT,
+  VOLUME_ENDPOINT,
+  SEEK_ENDPOINT
+};

@@ -26,14 +26,18 @@ export async function GET() {
 
     const data = {
       isPlaying: song.is_playing,
-      title: song.item.name,
-      artist: song.item.artists
-        .map((artist: { name: string }) => artist.name)
-        .join(', '),
-      album: song.item.album.name,
-      albumImageUrl: song.item.album.images[0]?.url,
-      songUrl: song.item.external_urls.spotify,
-      trackId: song.item.id,
+      progress_ms: song.progress_ms,
+      item: {
+        name: song.item.name,
+        duration_ms: song.item.duration_ms,
+        artists: song.item.artists.map((artist: { name: string }) => artist.name),
+        album: {
+          name: song.item.album.name,
+          images: song.item.album.images,
+        },
+        external_urls: song.item.external_urls,
+        id: song.item.id,
+      },
     };
 
     return NextResponse.json(data);

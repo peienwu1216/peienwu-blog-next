@@ -14,18 +14,12 @@ export default function ArticlePlayButton({ trackId, trackTitle }: ArticlePlayBu
   const { playTrack, pauseTrack, isPlaying, currentTrack } = useSpotify();
   const isThisTrackPlaying = isPlaying && currentTrack?.trackId === trackId;
 
-  const handlePlay = (e: React.MouseEvent) => {
+  const handlePlay = async (e: React.MouseEvent) => {
     e.stopPropagation();
-    const trackToPlay = {
-      trackId,
-      title: trackTitle,
-      artist: '',
-      album: '',
-      albumImageUrl: '',
-      songUrl: '',
-    };
-    playTrack(trackToPlay);
-    toast.info(`正在播放主題曲: ${trackTitle}`);
+    const res = await fetch(`/api/spotify/track/${trackId}`);
+    if (!res.ok) return;
+    const trackToPlay = await res.json();
+    playTrack(trackToPlay, true);
   };
 
   const handlePause = (e: React.MouseEvent) => {

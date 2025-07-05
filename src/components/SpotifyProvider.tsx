@@ -236,21 +236,6 @@ export const SpotifyProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [initializeDefaultPlaylist, pause, play, setProgress, setDuration, setTrack]);
 
-  useEffect(() => {
-    if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
-    if (isPlaying) {
-      progressIntervalRef.current = setInterval(() => {
-        if (duration > 0 && progress >= duration - 1) {
-          nextTrack();
-          setProgress(0);
-        } else {
-          setProgress(progress + 1);
-        }
-      }, 1000);
-    }
-    return () => { if (progressIntervalRef.current) clearInterval(progressIntervalRef.current); };
-  }, [isPlaying, setProgress, duration, nextTrack, progress]);
-
   return (
     <SpotifyContext.Provider value={{
       playTrack, pauseTrack, nextTrack, previousTrack, setVolume, seek,

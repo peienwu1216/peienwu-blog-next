@@ -35,7 +35,17 @@ export const useMusicStore = create<MusicState>((set, get) => ({
   volume: 1,
   progress: 0,
   duration: 0,
-  play: (track) => set({ isPlaying: true, currentTrack: track, progress: 0 }),
+  play: (track) => {
+    const { currentTrack } = get();
+    // 檢查是否為新歌曲
+    if (currentTrack?.trackId !== track.trackId) {
+      // 如果是新歌，則重設進度
+      set({ isPlaying: true, currentTrack: track, progress: 0, duration: track.duration || 0 });
+    } else {
+      // 如果是同一首歌（例如：從暫停恢復），則只更新播放狀態
+      set({ isPlaying: true });
+    }
+  },
   pause: () => set({ isPlaying: false }),
   setTrack: (track) => set({ currentTrack: track }),
   setQueue: (tracks) => set({ queue: tracks }),

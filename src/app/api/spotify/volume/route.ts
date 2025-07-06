@@ -6,13 +6,17 @@ export const dynamic = 'force-dynamic';
 
 export async function PUT(req: NextRequest) {
   try {
-    const { volume } = await req.json();
+    const { volume, deviceId } = await req.json();
     
     if (typeof volume !== 'number' || volume < 0 || volume > 100) {
       return createErrorResponse('Volume must be a number between 0 and 100', 400);
     }
 
-    const result = await setVolume(volume);
+    if (!deviceId) {
+      return createErrorResponse('deviceId is required', 400);
+    }
+
+    const result = await setVolume(volume, deviceId);
     
     if (!result.success) {
       return createSpotifyErrorResponse(result.error, 'Failed to set volume');

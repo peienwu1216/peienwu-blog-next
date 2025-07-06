@@ -1,5 +1,5 @@
 import { NextRequest } from 'next/server';
-import { pausePlayback } from '@/lib/spotifyService';
+import { resumePlayback } from '@/lib/spotifyService';
 import { createSuccessResponse, createErrorResponse, createSpotifyErrorResponse } from '@/lib/apiUtils';
 
 export async function PUT(req: NextRequest) {
@@ -10,15 +10,15 @@ export async function PUT(req: NextRequest) {
       return createErrorResponse('deviceId is required', 400);
     }
 
-    const result = await pausePlayback(deviceId);
+    const result = await resumePlayback(deviceId);
     
     if (!result.success) {
-      return createSpotifyErrorResponse(result.error, 'Failed to pause playback');
+      return createSpotifyErrorResponse(result.error, 'Failed to resume playback');
     }
 
     return createSuccessResponse({ success: true });
   } catch (error) {
-    console.error('Error in /api/spotify/pause:', error);
+    console.error('Error in /api/spotify/resume:', error);
     return createErrorResponse('Invalid request body', 400);
   }
-}
+} 

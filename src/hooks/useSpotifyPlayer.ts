@@ -92,7 +92,8 @@ export function useSpotifyPlayer({ defaultPlaylistId }: UseSpotifyPlayerProps): 
       }
     } catch (error) {
       if (error instanceof Error && error.message.includes('401')) {
-        // Handle auth errors silently
+        // Handle auth errors silently - the retry mechanism will handle this
+        console.warn("Sync state failed due to auth error, will retry on next sync");
       } else {
         console.error("Sync state failed:", error);
       }

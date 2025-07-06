@@ -1,126 +1,132 @@
 import { NowPlayingResponse, MasterDeviceResponse, MasterDeviceConfig, TrackInfo, PlaybackError } from '@/types/spotify';
 
 class SpotifyApiService {
+  // Helper method for making API calls with retry logic
+  private async makeApiCall<T>(
+    url: string, 
+    options: RequestInit = {}, 
+    retries = 1
+  ): Promise<T> {
+    for (let attempt = 0; attempt <= retries; attempt++) {
+      try {
+        const response = await fetch(url, options);
+        
+        if (!response.ok) {
+          // Handle different error types
+          if (response.status === 401 && attempt < retries) {
+            // Token expired, wait briefly and retry
+            await new Promise(resolve => setTimeout(resolve, 500));
+            continue;
+          }
+          
+          // Try to get error details from response
+          let errorMessage = response.statusText;
+          try {
+            const errorData = await response.json();
+            errorMessage = errorData.error?.message || errorData.message || errorMessage;
+          } catch {
+            // If JSON parsing fails, use status text
+          }
+          
+          throw new PlaybackError(errorMessage, { cause: response.status.toString() });
+        }
+        
+        // Handle successful responses
+        const contentType = response.headers.get('content-type');
+        if (response.status === 204 || response.status === 205) {
+          return null as T;
+        }
+        
+        if (contentType && contentType.includes('application/json')) {
+          return await response.json();
+        }
+        
+        return null as T;
+      } catch (error) {
+        if (attempt === retries) {
+          // Last attempt failed, throw the error
+          if (error instanceof PlaybackError) {
+            throw error;
+          }
+          throw new PlaybackError(
+            error instanceof Error ? error.message : 'Unknown error occurred',
+            { cause: error instanceof Error ? error.message : 'Unknown error' }
+          );
+        }
+        
+        // Wait before retry
+        await new Promise(resolve => setTimeout(resolve, 500));
+      }
+    }
+    
+    throw new PlaybackError('Max retries exceeded');
+  }
+
   // Playback Control APIs
   async playPlaylist(deviceId: string, playlistId: string, options: { uris?: string[] } = {}) {
     const body = options.uris 
       ? { uris: options.uris }
       : { context_uri: `spotify:playlist:${playlistId}` };
 
-    const response = await fetch(`/api/spotify/play?deviceId=${deviceId}`, {
+    await this.makeApiCall(`/api/spotify/play?deviceId=${deviceId}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
-    });
-
-    if (!response.ok) {
-      throw new PlaybackError('Failed to play playlist', { cause: response.statusText });
-    }
+    }, 2); // Retry once for token expiration
   }
 
   async playTrackUris(deviceId: string, trackUris: string[]) {
-    const response = await fetch(`/api/spotify/play?deviceId=${deviceId}`, {
+    await this.makeApiCall(`/api/spotify/play?deviceId=${deviceId}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ uris: trackUris }),
-    });
-
-    if (!response.ok) {
-      throw new PlaybackError('Failed to play track URIs', { cause: response.statusText });
-    }
+    }, 2);
   }
 
   async addToQueue(trackUri: string) {
-    const response = await fetch('/api/spotify/add-to-queue', {
+    await this.makeApiCall('/api/spotify/add-to-queue', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ trackUri }),
-    });
-
-    if (!response.ok) {
-      throw new PlaybackError('Failed to add track to queue', { cause: response.statusText });
-    }
+    }, 2);
   }
 
   async nextTrack(deviceId: string) {
-    const response = await fetch(`/api/spotify/next?deviceId=${deviceId}`, { 
+    await this.makeApiCall(`/api/spotify/next?deviceId=${deviceId}`, { 
       method: 'POST' 
-    });
-
-    if (!response.ok) {
-      throw new PlaybackError('Failed to skip to next track', { cause: response.statusText });
-    }
+    }, 2);
   }
 
   // State Management APIs
   async getNowPlaying(): Promise<NowPlayingResponse> {
-    const response = await fetch('/api/spotify/now-playing');
-    
-    if (!response.ok) {
-      if (response.status === 401) {
-        throw new PlaybackError('Authentication expired', { cause: 'UNAUTHORIZED' });
-      }
-      throw new PlaybackError('Failed to get now playing', { cause: response.statusText });
-    }
-
-    return response.json();
+    return await this.makeApiCall<NowPlayingResponse>('/api/spotify/now-playing', {}, 2);
   }
 
   async getAccessToken(): Promise<string> {
-    const response = await fetch('/api/spotify/access-token');
-    
-    if (!response.ok) {
-      throw new PlaybackError('Failed to get access token', { cause: response.statusText });
-    }
-
-    const { accessToken } = await response.json();
-    return accessToken;
+    const result = await this.makeApiCall<{ accessToken: string }>('/api/spotify/access-token', {}, 2);
+    return result.accessToken;
   }
 
   // Master Device Management APIs
   async getMasterDevice(): Promise<MasterDeviceResponse> {
-    const response = await fetch('/api/spotify/master-device');
-    
-    if (!response.ok) {
-      throw new PlaybackError('Failed to get master device', { cause: response.statusText });
-    }
-
-    return response.json();
+    return await this.makeApiCall<MasterDeviceResponse>('/api/spotify/master-device', {}, 2);
   }
 
   async claimMasterDevice(deviceId: string): Promise<MasterDeviceResponse> {
-    const response = await fetch('/api/spotify/master-device', {
+    return await this.makeApiCall<MasterDeviceResponse>('/api/spotify/master-device', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ deviceId }),
-    });
-
-    if (!response.ok) {
-      throw new PlaybackError('Failed to claim master device', { cause: response.statusText });
-    }
-
-    return response.json();
+    }, 2);
   }
 
   async getMasterDeviceConfig(): Promise<MasterDeviceConfig> {
-    const response = await fetch('/api/spotify/master-device/config');
-    
-    if (!response.ok) {
-      throw new PlaybackError('Failed to get master device config', { cause: response.statusText });
-    }
-
-    return response.json();
+    return await this.makeApiCall<MasterDeviceConfig>('/api/spotify/master-device/config', {}, 1);
   }
 
   // Playlist APIs
   async getPlaylist(playlistId: string): Promise<TrackInfo[]> {
-    const response = await fetch(`/api/spotify/playlist/${playlistId}`);
-    
-    if (!response.ok) {
-      throw new PlaybackError('Failed to load playlist', { cause: response.statusText });
-    }
-
-    return response.json();
+    return await this.makeApiCall<TrackInfo[]>(`/api/spotify/playlist/${playlistId}`, {}, 2);
   }
 
   // Utility Methods

@@ -53,6 +53,20 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'deviceId is required' }, { status: 400 });
     }
 
+    // ✨ 先檢查當前的主控裝置
+    const currentMaster = await kv.get(MASTER_DEVICE_KEY);
+
+    // 如果當前裝置已經是主控裝置，直接成功並刷新過期時間
+    if (currentMaster === deviceId) {
+      await kv.expire(MASTER_DEVICE_KEY, MASTER_DEVICE_EXPIRATION_SECONDS);
+      return NextResponse.json({ 
+        success: true, 
+        masterDeviceId: deviceId, 
+        ttl: MASTER_DEVICE_EXPIRATION_SECONDS,
+        message: 'Master device ownership refreshed'
+      });
+    }
+
     // ✨ 使用 setnx (Set if Not Exists) 進行原子操作
     // 如果 MASTER_DEVICE_KEY 不存在，則設定它並返回 1 (成功)
     // 如果 MASTER_DEVICE_KEY 已存在，則什麼都不做並返回 0 (失敗)
@@ -89,7 +103,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ success: true, masterDeviceId: deviceId, ttl: MASTER_DEVICE_EXPIRATION_SECONDS });
     } else {
       // 搶佔失敗！王位已經被佔據
-      const currentMaster = await kv.get(MASTER_DEVICE_KEY);
       const ttl = await kv.ttl(MASTER_DEVICE_KEY);
       return NextResponse.json({ 
         success: false, 

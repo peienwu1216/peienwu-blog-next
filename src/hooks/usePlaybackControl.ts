@@ -65,7 +65,7 @@ export function usePlaybackControl({
     };
   }, []);
 
-  // Permission-checked action wrapper
+  // Permission-checked action wrapper with enhanced error handling
   const createPermissionCheckedAction = useCallback(<T extends any[]>(
     action: (...args: T) => Promise<void>,
     errorMessage: string = "目前由其他裝置控制中，無法執行操作。"
@@ -76,13 +76,32 @@ export function usePlaybackControl({
         return;
       }
 
-      const hasPermission = await hasPermissions();
-      if (!hasPermission) {
-        showHtmlToast(errorMessage, { type: 'error' });
-        return;
-      }
+      try {
+        const hasPermission = await hasPermissions();
+        if (!hasPermission) {
+          showHtmlToast(errorMessage, { type: 'error' });
+          return;
+        }
 
-      await action(...args);
+        await action(...args);
+      } catch (error) {
+        console.error('Action failed:', error);
+        
+        // Handle specific error types
+        if (error instanceof Error) {
+          if (error.message.includes('Authentication expired') || error.message.includes('401')) {
+            showHtmlToast('Spotify 認證已過期，請重新整理頁面', { type: 'error' });
+          } else if (error.message.includes('Premium required')) {
+            showHtmlToast('此功能需要 Spotify Premium 會員', { type: 'error' });
+          } else if (error.message.includes('No active device')) {
+            showHtmlToast('找不到活躍的播放裝置', { type: 'error' });
+          } else {
+            showHtmlToast(`操作失敗: ${error.message}`, { type: 'error' });
+          }
+        } else {
+          showHtmlToast('操作失敗，請稍後再試', { type: 'error' });
+        }
+      }
     };
   }, [isReady, deviceId, hasPermissions]);
 
@@ -109,10 +128,42 @@ export function usePlaybackControl({
     }
   }, [player]);
 
+  // Enhanced master device claiming with retry and smart checking
+  const claimMasterDeviceWithRetry = useCallback(async (maxRetries = 2): Promise<boolean> => {
+    // First, check if we're already the master device
+    const { isMaster } = useMusicStore.getState();
+    if (isMaster) {
+      console.log('Already master device, no need to claim');
+      return true;
+    }
+
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        const hasClaimed = await claimMasterDevice();
+        if (hasClaimed) return true;
+        
+        // If claiming failed but not due to error, don't retry
+        return false;
+      } catch (error) {
+        console.warn(`Master device claim attempt ${attempt + 1} failed:`, error);
+        
+        if (attempt === maxRetries - 1) {
+          // Last attempt, show error
+          showHtmlToast('取得播放主控權失敗，請稍後再試', { type: 'error' });
+          return false;
+        }
+        
+        // Wait before retry
+        await new Promise(resolve => setTimeout(resolve, 1000));
+      }
+    }
+    return false;
+  }, [claimMasterDevice]);
+
   // Main play function
   const handlePlay = useCallback(createPermissionCheckedAction(async () => {
     // Try to claim master device if no master exists
-    const hasClaimed = await claimMasterDevice();
+    const hasClaimed = await claimMasterDeviceWithRetry();
     if (!hasClaimed) return;
 
     if (hasPlaybackInitiatedRef.current) {
@@ -121,38 +172,33 @@ export function usePlaybackControl({
       await playPlaylist(defaultPlaylistId);
       hasPlaybackInitiatedRef.current = true;
     }
-  }, "目前由其他裝置控制中，無法播放。"), [claimMasterDevice, resumeTrack, playPlaylist, defaultPlaylistId]);
+  }, "目前由其他裝置控制中，無法播放。"), [claimMasterDeviceWithRetry, resumeTrack, playPlaylist, defaultPlaylistId]);
 
   // Play specific track
   const playTrack = useCallback(createPermissionCheckedAction(async (track: TrackInfo, isInterrupt = false) => {
     // Try to claim master device if no master exists
-    const hasClaimed = await claimMasterDevice();
+    const hasClaimed = await claimMasterDeviceWithRetry();
     if (!hasClaimed) return;
 
     const trackUri = spotifyApiService.createTrackUri(track.trackId);
 
-    try {
-      if (isInterrupt) {
-        // Add to queue and skip to it
-        insertTrack(track);
-        await spotifyApiService.addToQueue(trackUri);
-        await spotifyApiService.nextTrack(deviceId!);
-      } else {
-        // Replace current playback
-        await spotifyApiService.playTrackUris(deviceId!, [trackUri]);
-      }
-      
-      hasPlaybackInitiatedRef.current = true;
-    } catch (error) {
-      console.error('Failed to play track:', error);
-      showHtmlToast(`播放歌曲失敗: ${error instanceof Error ? error.message : '未知錯誤'}`, { type: 'error' });
+    if (isInterrupt) {
+      // Add to queue and skip to it
+      insertTrack(track);
+      await spotifyApiService.addToQueue(trackUri);
+      await spotifyApiService.nextTrack(deviceId!);
+    } else {
+      // Replace current playback
+      await spotifyApiService.playTrackUris(deviceId!, [trackUri]);
     }
-  }, "目前由其他裝置控制中，無法播放。"), [claimMasterDevice, insertTrack, deviceId]);
+    
+    hasPlaybackInitiatedRef.current = true;
+  }, "目前由其他裝置控制中，無法播放。"), [claimMasterDeviceWithRetry, insertTrack, deviceId]);
 
   // Random playback
   const handlePlayRandom = useCallback(createPermissionCheckedAction(async () => {
     // Try to claim master device if no master exists
-    const hasClaimed = await claimMasterDevice();
+    const hasClaimed = await claimMasterDeviceWithRetry();
     if (!hasClaimed) return;
 
     const currentQueue = get().queue;
@@ -161,22 +207,17 @@ export function usePlaybackControl({
       return;
     }
     
-    try {
-      const shuffledQueue = shuffleArray(currentQueue);
-      const trackUris = shuffledQueue.map(track => spotifyApiService.createTrackUri(track.trackId));
-      
-      await playPlaylist(defaultPlaylistId, { uris: trackUris });
-      setQueue(shuffledQueue);
-      setTrack(shuffledQueue[0]);
-      setIsPlaying(true);
-      hasPlaybackInitiatedRef.current = true;
-      
-      showHtmlToast("已開始隨機播放！");
-    } catch (error) {
-      console.error('Failed to start random playback:', error);
-      showHtmlToast(`隨機播放失敗: ${error instanceof Error ? error.message : '未知錯誤'}`, { type: 'error' });
-    }
-  }, "目前由其他裝置控制中，無法播放。"), [claimMasterDevice, get, setQueue, setTrack, setIsPlaying, playPlaylist, defaultPlaylistId]);
+    const shuffledQueue = shuffleArray(currentQueue);
+    const trackUris = shuffledQueue.map(track => spotifyApiService.createTrackUri(track.trackId));
+    
+    await playPlaylist(defaultPlaylistId, { uris: trackUris });
+    setQueue(shuffledQueue);
+    setTrack(shuffledQueue[0]);
+    setIsPlaying(true);
+    hasPlaybackInitiatedRef.current = true;
+    
+    showHtmlToast("已開始隨機播放！");
+  }, "目前由其他裝置控制中，無法播放。"), [claimMasterDeviceWithRetry, get, setQueue, setTrack, setIsPlaying, playPlaylist, defaultPlaylistId]);
 
   // Pause playback
   const pauseTrack = useCallback(createThrottledAction(createPermissionCheckedAction(async () => {

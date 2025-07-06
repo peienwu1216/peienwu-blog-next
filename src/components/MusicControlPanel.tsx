@@ -23,6 +23,7 @@ export default function MusicControlPanel() {
       }
     };
   }, []);
+
   const {
     isPlaying,
     currentTrack,
@@ -46,6 +47,13 @@ export default function MusicControlPanel() {
       volumeRef.current = volume;
     }
   }, [volume]);
+
+  // 修正：主控權狀態變化時自動重置 loading 狀態，避免未點擊時出現轉圈圈
+  useEffect(() => {
+    if (isTakingControl && (isMaster || isLocked)) {
+      setIsTakingControl(false);
+    }
+  }, [isMaster, isLocked]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);

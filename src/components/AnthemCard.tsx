@@ -1,146 +1,194 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { useSpotify } from './SpotifyProvider';
-import { Play, Pause, Loader2 } from 'lucide-react';
+import { Play, Pause, Loader2, Music4 } from 'lucide-react';
+import { toast } from 'sonner';
 
-// 1. 全新的 SVG 動態頻譜圖示元件
+// 頻譜動畫元件（與文章音樂播放一致）
 const SpectrumIcon = ({ isPlaying }: { isPlaying: boolean }) => (
-  <div className="flex w-6 h-6 items-center justify-center">
-    <div className="flex h-4 w-4 items-end justify-between">
-      {[...Array(4)].map((_, i) => (
-        <span
-          key={i}
-          className="w-[3px] h-full rounded-full bg-current"
-          style={{
-            animation: isPlaying
-              ? `equalize 1.25s infinite ease-in-out ${i * 0.2}s`
-              : 'none',
-          }}
-        />
-      ))}
+  <svg width="32" height="20" viewBox="0 0 32 20" fill="none" className="block" aria-hidden>
+    {[0, 1, 2, 3].map((i) => (
+      <rect
+        key={i}
+        x={i * 8 + 2}
+        y={4}
+        width={4}
+        height={12}
+        rx={2}
+        className="fill-sky-500/80 dark:fill-sky-400/80"
+        style={{
+          animation: isPlaying ? `equalize 1.2s infinite ease-in-out ${i * 0.18}s` : 'none',
+        }}
+      />
+    ))}
+  </svg>
+);
+
+// 標準作法：引導使用者啟動播放器的提示元件
+const ActivationToast = () => (
+  <div className="flex items-center gap-3 p-2">
+    <Music4 className="h-5 w-5 text-sky-500" />
+    <div>
+      <div className="font-bold">請先啟動音樂播放器</div>
+      <div className="text-xs text-slate-500">按下 <kbd className="rounded border px-1">⌘+K</kbd> 並點擊音樂面板的播放鍵，即可啟用。</div>
     </div>
   </div>
 );
 
-interface AnthemCardProps {
-  className?: string;
-}
+const ANTHEM_TRACK: import('@/store/music').TrackInfo = {
+  trackId: '19GqnCuVdOlSPHp6rHdYR2',
+  title: 'The Nights',
+  artist: 'Avicii',
+  album: 'The Days / Nights',
+  albumImageUrl: '/images/anthem-cover.jpg',
+  songUrl: 'https://open.spotify.com/track/19GqnCuVdOlSPHp6rHdYR2',
+  duration: 234,
+};
 
-export default function AnthemCard({ className = '' }: AnthemCardProps) {
-  // 2. 狀態管理簡化
-  const { 
-    handlePlay, 
-    pauseTrack, 
-    isPlaying: isAnthemPlaying, 
-    currentTrack, 
-    progress: spotifyProgress, 
-    duration: spotifyDuration,
-    isReady
+export default function AnthemCard({ className = '' }: { className?: string }) {
+  const {
+    playTrack,
+    pauseTrack,
+    resumeTrack,
+    isPlaying,
+    currentTrack,
+    progress,
+    duration,
+    isReady,
+    hasPlaybackInitiated,
+    isControllable,
+    expirationText,
   } = useSpotify();
-  
   const [isLoading, setIsLoading] = useState(false);
-  const ANTHEM_TRACK_ID = "6gU9OKjOE7ghfxe5F75T7s"; // Avicii - The Nights
 
-  // 判斷當前播放的是否正是這首主題曲
-  const isCurrentlyPlayingThisAnthem = useMemo(() => {
-    return isAnthemPlaying && currentTrack?.trackId === ANTHEM_TRACK_ID;
-  }, [isAnthemPlaying, currentTrack]);
+  // 是否正在播放主題曲
+  const isThisTrackPlaying = isPlaying && currentTrack?.trackId === ANTHEM_TRACK.trackId;
+  const isThisTrackPaused = !isPlaying && currentTrack?.trackId === ANTHEM_TRACK.trackId;
 
-  const formatTime = (seconds: number) => {
-    const mins = Math.floor(seconds / 60);
-    const secs = Math.floor(seconds % 60);
-    return `${mins}:${secs.toString().padStart(2, '0')}`;
-  };
+  // 插播主題曲 - 按照文章音樂播放的邏輯
+  const handlePlayClick = useCallback(async () => {
+    // 冷啟動檢查
+    if (!isReady || !hasPlaybackInitiated) {
+      toast.custom(() => <ActivationToast />, {
+        duration: 6000,
+        position: 'bottom-right',
+      });
+      return;
+    }
 
-  const handlePlayClick = async () => {
+    // 權限檢查 - 友善的提示
+    if (!isControllable) {
+      toast.info(
+        `🎵 目前由其他訪客控制播放中\n\n您可以等待 ${expirationText} 後重新取得控制權，或等待當前播放結束。`,
+        {
+          duration: 5000,
+          position: 'bottom-right',
+        }
+      );
+      return;
+    }
+
     setIsLoading(true);
     try {
-      if (isCurrentlyPlayingThisAnthem) {
+      if (isThisTrackPlaying) {
         await pauseTrack();
+      } else if (isThisTrackPaused) {
+        await resumeTrack();
       } else {
-        await handlePlay(); 
+        await playTrack(ANTHEM_TRACK, true); // 插播
       }
     } catch (error) {
-      console.error('播放失敗:', error);
+      console.error('Failed to play anthem track:', error);
+      toast.error(`播放失敗: ${error instanceof Error ? error.message : '未知錯誤'}`);
     } finally {
-      setTimeout(() => setIsLoading(false), 500);
+      setTimeout(() => setIsLoading(false), 400);
     }
-  };
-  
-  // 3. 播放中狀態 UI 全面升級
-  if (isCurrentlyPlayingThisAnthem) {
-    return (
-      <div className={`rounded-xl p-4 shadow-lg backdrop-blur-md bg-white/60 dark:bg-slate-800/60 border border-slate-200/80 dark:border-slate-700/80 transition-all duration-300 ${className}`}>
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-gradient-to-br from-sky-500 to-blue-600 rounded-lg flex items-center justify-center shadow-md">
+  }, [
+    isReady,
+    hasPlaybackInitiated,
+    isControllable,
+    isThisTrackPlaying,
+    isThisTrackPaused,
+    playTrack,
+    pauseTrack,
+    resumeTrack,
+    expirationText,
+  ]);
+
+  // loading 狀態自動歸零
+  useEffect(() => {
+    if (!isThisTrackPlaying && isLoading) setIsLoading(false);
+  }, [isThisTrackPlaying, isLoading]);
+
+  // 進度顯示
+  const showProgress = isThisTrackPlaying || isThisTrackPaused;
+  const cardProgress = showProgress ? progress : 0;
+  const cardDuration = showProgress ? duration : ANTHEM_TRACK.duration || 0;
+
+  const formatTime = (s: number) => `${Math.floor(s / 60)}:${(Math.floor(s % 60)).toString().padStart(2, '0')}`;
+
+  return (
+    <div className={`relative rounded-2xl p-5 shadow-2xl border border-white/30 dark:border-slate-700/60 bg-white/60 dark:bg-slate-900/60 backdrop-blur-lg transition-all duration-300 max-w-[350px] ${className}`}> 
+      <div className="flex items-center gap-4">
+        {/* 專輯封面 */}
+        <div className="relative w-16 h-16 flex-shrink-0">
+          <img
+            src={ANTHEM_TRACK.albumImageUrl}
+            alt={ANTHEM_TRACK.album}
+            className="w-16 h-16 rounded-xl object-cover shadow-lg border-2 border-white/60 dark:border-slate-800/60"
+            draggable={false}
+          />
+          {/* 頻譜動畫 */}
+          {isThisTrackPlaying && (
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
               <SpectrumIcon isPlaying={true} />
             </div>
-            <div>
-              <p className="text-lg font-bold text-slate-800 dark:text-slate-100">
-                The Nights
-              </p>
-              <p className="text-sm text-slate-500 dark:text-slate-400">Avicii</p>
-            </div>
-          </div>
-          <button
-            onClick={handlePlayClick}
-            disabled={isLoading}
-            className="flex h-10 w-10 items-center justify-center rounded-full bg-slate-700 text-white transition hover:bg-slate-900 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-200 disabled:opacity-50"
-          >
-            {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : <Pause className="w-5 h-5" />}
-          </button>
+          )}
         </div>
-
-        <div className="mt-3">
-          <div className="w-full bg-slate-200 dark:bg-slate-600 rounded-full h-1.5 overflow-hidden">
-            <div 
-              className="bg-sky-500 h-full rounded-full transition-all duration-1000 linear"
-              style={{ width: `${spotifyDuration > 0 ? (spotifyProgress / spotifyDuration) * 100 : 0}%` }}
+        {/* 歌曲資訊 */}
+        <div className="flex-1 min-w-0">
+          <div className="font-bold text-lg text-slate-900 dark:text-white truncate">{ANTHEM_TRACK.title}</div>
+          <div className="text-slate-500 dark:text-slate-300 text-sm truncate">{ANTHEM_TRACK.artist}</div>
+          <div className="italic text-slate-600 dark:text-slate-400 text-xs mt-1 truncate">"He said, one day you'll leave this world behind, so live a life you will remember."</div>
+        </div>
+        {/* 控制按鈕 */}
+        <button
+          onClick={handlePlayClick}
+          disabled={isLoading || !isControllable}
+          className={`ml-2 flex items-center justify-center w-11 h-11 rounded-full shadow-lg bg-gradient-to-br from-sky-500 to-blue-600 text-white hover:scale-110 active:scale-95 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-sky-400 disabled:opacity-50 disabled:cursor-not-allowed ${isThisTrackPlaying ? 'ring-2 ring-sky-400/40' : ''}`}
+          aria-label={
+            !isControllable 
+              ? '目前由其他訪客控制中，無法播放' 
+              : isThisTrackPlaying 
+                ? '暫停播放' 
+                : '播放主題曲'
+          }
+          title={!isControllable ? '目前由其他訪客控制中' : undefined}
+        >
+          {isLoading ? <Loader2 className="w-6 h-6 animate-spin" /> : isThisTrackPlaying ? <Pause className="w-6 h-6" /> : <Play className="w-6 h-6" />}
+        </button>
+      </div>
+      {/* 進度條 */}
+      <div className="mt-5">
+        <div className="relative w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden">
+          <div
+            className="absolute top-0 left-0 h-2 bg-gradient-to-r from-sky-400 to-blue-500 rounded-full transition-all duration-500"
+            style={{ width: `${cardDuration > 0 ? (cardProgress / cardDuration) * 100 : 0}%` }}
+          />
+          {/* 動態光點 */}
+          {cardDuration > 0 && (
+            <div
+              className="absolute top-0 h-2 w-2 bg-white/80 rounded-full shadow-lg transition-all duration-500"
+              style={{ left: `calc(${cardDuration > 0 ? (cardProgress / cardDuration) * 100 : 0}% - 0.5rem)` }}
             />
-          </div>
-          <div className="flex justify-between text-xs text-slate-500 dark:text-slate-400 mt-1">
-            <span>{formatTime(spotifyProgress)}</span>
-            <span>{formatTime(spotifyDuration)}</span>
-          </div>
+          )}
+        </div>
+        <div className="flex justify-between text-xs text-slate-500 dark:text-slate-400 mt-1">
+          <span>{formatTime(cardProgress)}</span>
+          <span>{formatTime(cardDuration)}</span>
         </div>
       </div>
-    );
-  }
-
-  // 4. 初始狀態 UI 全面升級
-  return (
-    <div className={`group rounded-xl p-6 shadow-lg backdrop-blur-md bg-white/50 hover:bg-white/70 dark:bg-slate-800/50 dark:hover:bg-slate-800/80 border border-slate-200/80 dark:border-slate-700/80 transition-all duration-300 ${className}`}>
-        <div className="flex items-start gap-4">
-            <div className="w-16 h-16 bg-gradient-to-br from-slate-700 to-slate-900 rounded-lg flex items-center justify-center shadow-lg transition-transform duration-500 group-hover:scale-105">
-                <svg className="w-8 h-8 text-white opacity-80" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M18 3a1 1 0 00-1.196-.98l-10 2A1 1 0 006 5v9.114A4.369 4.369 0 005 14c-1.657 0-3 1.343-3 3s1.343 3 3 3 3-1.343 3-3V7.82l8-1.6v5.894A4.37 4.37 0 0015 12c-1.657 0-3 1.343-3 3s1.343 3 3 3 3-1.343 3-3V4a1 1 0 00-.804-.98zM5 19a2.369 2.369 0 01-2-2.25 2.369 2.369 0 012-2.25c1.076 0 2 .874 2 2.25A2.369 2.369 0 015 19zm10-2a2.369 2.369 0 01-2-2.25A2.369 2.369 0 0115 12.5c1.076 0 2 .874 2 2.25A2.369 2.369 0 0115 17z"/>
-                </svg>
-            </div>
-            <div className="flex-1">
-                <blockquote className="text-slate-600 dark:text-slate-300 italic text-base leading-relaxed border-l-2 border-slate-300 dark:border-slate-600 pl-4">
-                    "He said, one day you'll leave this world behind, so live a life you will remember."
-                </blockquote>
-                <div className="text-right text-sm text-slate-500 dark:text-slate-400 mt-2 font-medium">
-                    — Avicii, The Nights
-                </div>
-            </div>
-        </div>
-        <div className="mt-5 text-center">
-            <button
-                onClick={handlePlayClick}
-                disabled={!isReady || isLoading}
-                className="inline-flex items-center gap-2 px-8 py-2.5 bg-slate-800 hover:bg-slate-950 disabled:bg-slate-400 text-white font-semibold rounded-full shadow-lg transition-all duration-300 hover:scale-105 disabled:cursor-not-allowed group-hover:bg-sky-600 dark:bg-slate-200 dark:text-slate-900 dark:hover:bg-white dark:disabled:bg-slate-600"
-            >
-                {isLoading ? (
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                ) : (
-                    <Play className="w-5 h-5" />
-                )}
-                <span>播放主題曲</span>
-            </button>
-        </div>
     </div>
   );
 } 

@@ -13,13 +13,13 @@ export async function PUT(req: NextRequest) {
       return createErrorResponse('deviceId is required', 400);
     }
 
-    // 從請求 body 獲取 trackUri
-    const { trackUri } = await req.json();
-    if (!trackUri) {
-      return createErrorResponse('trackUri is required', 400);
+    // 從請求 body 獲取 trackUri 或 contextUri
+    const { trackUri, contextUri } = await req.json();
+    if (!trackUri && !contextUri) {
+      return createErrorResponse('trackUri or contextUri is required', 400);
     }
 
-    const result = await playTrack(trackUri, deviceId);
+    const result = await playTrack(trackUri || contextUri, deviceId);
     
     if (!result.success) {
       return createSpotifyErrorResponse(result.error, 'Failed to play track');

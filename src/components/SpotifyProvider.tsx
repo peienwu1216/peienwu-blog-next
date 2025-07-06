@@ -6,6 +6,7 @@ import { useApi } from '@/hooks/useApi';
 
 interface SpotifyContextProps {
   playTrack: (track: TrackInfo, isInterrupt?: boolean) => void;
+  handlePlay: () => void; // 新增智慧播放函式
   pauseTrack: () => void;
   resumeTrack: () => void;
   nextTrack: () => void;
@@ -72,6 +73,9 @@ export const SpotifyProvider = ({ children }: { children: ReactNode }) => {
     setVolume: setVolumeState
   } = useMusicStore();
   
+  // 直接從 store 取得 get 方法
+  const get = useMusicStore.getState;
+  
   // 將播放器狀態移至 Provider 的本地 state
   const [loading, setLoading] = useState(true);
   
@@ -137,6 +141,62 @@ export const SpotifyProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [isReady]);
 
+  // ✨ 新增：智慧播放函式
+  const handlePlay = useCallback(async () => {
+    if (!isReady || !deviceIdRef.current) {
+      alert('播放器尚未準備好');
+      return;
+    }
+
+    // 1. 確保播放清單已在 Spotify 上建立或同步
+    const playlistId = playlistIdRef.current || DEFAULT_PLAYLIST_ID;
+    const playlistUri = `spotify:playlist:${playlistId}`;
+
+    // 2. 取得 Spotify 當前的播放狀態
+    try {
+      const res = await fetch('/api/spotify/player-state');
+
+      // 情況 A：Spotify 當前沒有任何播放活動
+      if (res.status === 204) {
+        console.log('No active player state. Starting playlist from beginning.');
+        await playPlaylist(playlistId);
+        return;
+      }
+
+      const playerState = await res.json();
+      
+      // 情況 B：當前播放的內容是我們的清單，且處於暫停狀態
+      if (playerState.context?.uri === playlistUri && !playerState.is_playing) {
+        console.log('Resuming playlist.');
+        await resumeTrack();
+      } else {
+      // 情況 C：正在播放別的歌曲，或根本不是我們的清單
+        console.log('Different context is active. Starting our playlist from beginning.');
+        await playPlaylist(playlistId);
+      }
+    } catch (error) {
+      console.error('Error handling play action:', error);
+      // 如果出錯，做為備用方案，直接開始播放
+      await playPlaylist(playlistId);
+    }
+  }, [isReady, resumeTrack]);
+
+  // ✨ 新增：播放播放清單的輔助函式
+  const playPlaylist = useCallback(async (playlistId: string) => {
+    if (!deviceIdRef.current) return;
+    try {
+      await fetch(`/api/spotify/play?deviceId=${deviceIdRef.current}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contextUri: `spotify:playlist:${playlistId}`,
+        }),
+      });
+    } catch (error) {
+      console.error('Failed to play playlist:', error);
+    }
+  }, []);
+
   // ✨ 新增：插播功能（中斷當前播放並播放新歌）
   const interruptPlay = useCallback(async (track: TrackInfo, deviceId: string) => {
     try {
@@ -198,6 +258,7 @@ export const SpotifyProvider = ({ children }: { children: ReactNode }) => {
 
   // ✨ 新增：記錄 queue 是否已同步到 Spotify
   const queueSyncedRef = useRef(false);
+  const playlistIdRef = useRef<string | null>(null); // 新增：記住播放清單 ID
 
   // ✨ 修改：將 playlist 載入時只設置 queue，不自動播放
   const initializeDefaultPlaylist = useCallback(async () => {
@@ -402,25 +463,55 @@ export const SpotifyProvider = ({ children }: { children: ReactNode }) => {
           setIsReady(false);
         });
         player.addListener('player_state_changed', (state) => {
-            console.log('Player state changed:', state);
+            // 只在開發環境下記錄詳細的狀態變化，減少生產環境的 log
+            if (process.env.NODE_ENV === 'development') {
+              console.log('Player state changed:', state);
+            }
+            
             if (!state) {
-                setIsPlaying(false);
+                // 只有當目前正在播放時才更新狀態
+                if (get().isPlaying) {
+                  setIsPlaying(false);
+                }
                 return;
             }
+
             const sdkTrack = state.track_window.current_track;
-            const trackInfo: TrackInfo = {
-                trackId: sdkTrack.id ?? '',
-                title: sdkTrack.name,
-                artist: sdkTrack.artists.map(a => a.name).join(', '),
-                album: sdkTrack.album.name,
-                albumImageUrl: sdkTrack.album.images[0].url,
-                songUrl: `https://open.spotify.com/track/${sdkTrack.id}`,
-                duration: state.duration / 1000,
-            };
-            setTrack(trackInfo);
-            setProgress(state.position / 1000);
-            setDuration(state.duration / 1000);
-            setIsPlaying(!state.paused);
+            const currentStoreTrack = get().currentTrack;
+            const currentIsPlaying = get().isPlaying;
+
+            // ✨ 優化 1：只有在歌曲 ID 不同時才更新歌曲資訊
+            if (sdkTrack.id && sdkTrack.id !== currentStoreTrack?.trackId) {
+              const trackInfo: TrackInfo = {
+                  trackId: sdkTrack.id ?? '',
+                  title: sdkTrack.name,
+                  artist: sdkTrack.artists.map(a => a.name).join(', '),
+                  album: sdkTrack.album.name,
+                  albumImageUrl: sdkTrack.album.images[0].url,
+                  songUrl: `https://open.spotify.com/track/${sdkTrack.id}`,
+                  duration: state.duration / 1000,
+              };
+              setTrack(trackInfo);
+              setDuration(state.duration / 1000);
+              
+              // 只在歌曲切換時記錄
+              if (process.env.NODE_ENV === 'development') {
+                console.log('Track changed to:', trackInfo.title);
+              }
+            }
+            
+            // ✨ 優化 2：只有在播放/暫停狀態改變時才更新
+            if (state.paused === currentIsPlaying) {
+              setIsPlaying(!state.paused);
+              
+              // 只在播放狀態改變時記錄
+              if (process.env.NODE_ENV === 'development') {
+                console.log('Playback state changed:', !state.paused ? 'Playing' : 'Paused');
+              }
+            }
+
+            // ✨ 優化 3：移除進度更新，因為我們已經有專門的進度更新計時器
+            // 進度更新由 useEffect 中的計時器處理，避免重複更新
         });
         console.log('Connecting to Spotify...');
         await player.connect();
@@ -438,7 +529,7 @@ export const SpotifyProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [initializeDefaultPlaylist, setTrack, setProgress, setDuration]);
 
-  // ✨ 2. 新增此 useEffect 來管理進度更新的計時器
+  // ✨ 2. 優化進度更新的計時器
   useEffect(() => {
     // 當 isPlaying 狀態改變時，先清除舊的計時器
     if (progressIntervalRef.current) {
@@ -451,11 +542,17 @@ export const SpotifyProvider = ({ children }: { children: ReactNode }) => {
         if (playerRef.current) {
           const state = await playerRef.current.getCurrentState();
           if (state && !state.paused) {
-            // 更新全域狀態中的進度（單位：秒）
-            setProgress(state.position / 1000);
+            // 只有當進度確實改變時才更新
+            const newProgress = state.position / 1000;
+            const currentProgress = get().progress;
+            
+            // 避免過於頻繁的更新，只在進度差異超過 0.5 秒時更新
+            if (Math.abs(newProgress - currentProgress) >= 0.5) {
+              setProgress(newProgress);
+            }
           }
         }
-      }, 1000); // 每秒更新一次
+      }, 1000); // 每秒檢查一次
     }
 
     // 元件卸載或 isPlaying 變為 false 時，清除計時器
@@ -464,14 +561,14 @@ export const SpotifyProvider = ({ children }: { children: ReactNode }) => {
         clearInterval(progressIntervalRef.current);
       }
     };
-  }, [isPlaying, setProgress]);
+  }, [isPlaying, setProgress, get]);
 
   // 組合所有 loading 狀態
   const isAnyLoading = false;
 
   return (
     <SpotifyContext.Provider value={{
-      playTrack, pauseTrack, nextTrack, previousTrack, handleSetVolume, seek,
+      playTrack, handlePlay, pauseTrack, nextTrack, previousTrack, handleSetVolume, seek,
       loading: loading || isAnyLoading, isReady, isPlaying, currentTrack, 
       volume, progress, duration, resumeTrack
     }}>

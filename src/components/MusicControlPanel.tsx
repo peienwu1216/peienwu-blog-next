@@ -12,7 +12,7 @@ export default function MusicControlPanel() {
     progress,
     duration,
     pauseTrack,
-    resumeTrack,
+    handlePlay,
     nextTrack,
     previousTrack,
     handleSetVolume,
@@ -89,7 +89,7 @@ export default function MusicControlPanel() {
           <SkipBack className="w-5 h-5" />
         </button>
         <button
-          onClick={() => (isPlaying ? pauseTrack() : resumeTrack())}
+          onClick={() => (isPlaying ? pauseTrack() : handlePlay())}
           className="p-3 bg-slate-800 dark:bg-slate-100 text-white dark:text-slate-900 rounded-full"
         >
           {isPlaying ? <Pause className="w-5 h-5" /> : <Play className="w-5 h-5" />}

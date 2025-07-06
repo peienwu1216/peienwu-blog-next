@@ -115,12 +115,32 @@ async function fetchFromSpotify(endpoint: string, options: RequestInit = {}) {
 // 取得目前播放歌曲
 export const getNowPlaying = () => fetchFromSpotify('me/player/currently-playing');
 
-// 播放指定歌曲
-export const playTrack = (trackUri: string, deviceId: string) => 
-  fetchFromSpotify(`me/player/play?device_id=${deviceId}`, {
-    method: 'PUT',
-    body: JSON.stringify({ uris: [trackUri] }),
-  });
+// 播放指定歌曲或播放清單
+export const playTrack = (uri: string, deviceId: string) => {
+  // 判斷是播放清單還是單一歌曲
+  const isPlaylist = uri.includes('spotify:playlist:');
+  const isTrack = uri.includes('spotify:track:');
+  
+  if (isPlaylist) {
+    // 播放播放清單
+    return fetchFromSpotify(`me/player/play?device_id=${deviceId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ context_uri: uri }),
+    });
+  } else if (isTrack) {
+    // 播放單一歌曲
+    return fetchFromSpotify(`me/player/play?device_id=${deviceId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ uris: [uri] }),
+    });
+  } else {
+    // 預設當作歌曲處理
+    return fetchFromSpotify(`me/player/play?device_id=${deviceId}`, {
+      method: 'PUT',
+      body: JSON.stringify({ uris: [uri] }),
+    });
+  }
+};
 
 // 暫停播放
 export const pausePlayback = (deviceId?: string) => {
@@ -178,4 +198,7 @@ export const addToQueue = (trackUri: string, deviceId?: string) => {
     ? `me/player/queue?uri=${encodeURIComponent(trackUri)}&device_id=${deviceId}`
     : `me/player/queue?uri=${encodeURIComponent(trackUri)}`;
   return fetchFromSpotify(endpoint, { method: 'POST' });
-}; 
+};
+
+// 取得播放器狀態
+export const getPlayerState = () => fetchFromSpotify('me/player'); 

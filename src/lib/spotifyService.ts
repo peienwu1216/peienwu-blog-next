@@ -116,19 +116,20 @@ async function fetchFromSpotify(endpoint: string, options: RequestInit = {}) {
 export const getNowPlaying = () => fetchFromSpotify('me/player/currently-playing');
 
 // 播放指定歌曲、多首歌曲或播放清單
-export const playTrack = (playOptions: { uris?: string[]; context_uri?: string } | string, deviceId: string) => {
-  const body: { uris?: string[]; context_uri?: string } = {};
+export const playTrack = (playOptions: { uris?: string[]; context_uri?: string, trackUri?: string }, deviceId: string) => {
+  const body: { uris?: string[]; context_uri?: string, position_ms?: number } = {};
 
-  // 處理新的物件格式
-  if (typeof playOptions === 'object') {
-    if (playOptions.uris) {
-      body.uris = playOptions.uris;
-    } else if (playOptions.context_uri) {
-      body.context_uri = playOptions.context_uri;
-    }
+  // 根據傳入的參數，建構送往 Spotify API 的 body
+  if (playOptions.uris) {
+    body.uris = playOptions.uris;
+  } else if (playOptions.context_uri) {
+    body.context_uri = playOptions.context_uri;
+  } else if (playOptions.trackUri) {
+    // 處理單一歌曲插播的情況
+    body.uris = [playOptions.trackUri];
   } else {
-    // 舊版相容：如果傳入的是字串，當作單一歌曲處理
-    const uri = playOptions;
+    // 如果 playOptions 是一個字串（為了相容舊版呼叫）
+    const uri = playOptions as unknown as string;
     if (uri.includes('spotify:playlist:')) {
       body.context_uri = uri;
     } else {

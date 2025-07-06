@@ -53,7 +53,8 @@ export default function MusicControlPanel() {
         <div className="text-sm text-slate-500 dark:text-slate-400 truncate">
           {currentTrack.artist}
         </div>
-        <div className="flex items-center gap-2 mt-1">
+        {/* 桌面版：顯示進度條 */}
+        <div className="hidden md:flex items-center gap-2 mt-1">
           <span className="text-xs text-slate-400">{formatTime(progress)}</span>
           <input
             type="range"
@@ -65,9 +66,16 @@ export default function MusicControlPanel() {
           />
           <span className="text-xs text-slate-400">{formatTime(duration)}</span>
         </div>
+        {/* 行動版：只顯示時間 */}
+        <div className="md:hidden mt-1">
+          <span className="text-xs text-slate-400">
+            {formatTime(progress)} / {formatTime(duration)}
+          </span>
+        </div>
       </div>
       <div className="flex items-center gap-1 flex-shrink-0">
-        <div className="group relative flex items-center">
+        {/* 桌面版：顯示音量控制 */}
+        <div className="hidden lg:block group relative flex items-center">
           <button className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700">
             {volume === 0 ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
           </button>

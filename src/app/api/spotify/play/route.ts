@@ -1,6 +1,6 @@
-import { NextRequest } from 'next/server';
-import { playTrack as playSpotify } from '@/lib/spotifyService';
-import { createSuccessResponse, createErrorResponse, createSpotifyErrorResponse } from '@/lib/apiUtils';
+import { NextRequest, NextResponse } from 'next/server';
+import { playTrack as spotifyPlay } from '@/lib/spotifyService'; // 避免命名衝突
+import { createErrorResponse, createSpotifyErrorResponse } from '@/lib/apiUtils';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,22 +12,26 @@ export async function PUT(req: NextRequest) {
       return createErrorResponse('deviceId is required', 400);
     }
 
-    // ✨ 修改：解析整個 body
+    // 直接解析整個請求的 body
     const body = await req.json();
 
-    // ✨ 修改：直接將 body 傳遞給 spotifyService
-    //    這樣它就能處理 uris (陣列) 或 context_uri (單一字串)
-    const result = await playSpotify(body, deviceId);
+    // 驗證 body 中是否包含任何一種有效的播放指令
+    if (!body.uris && !body.context_uri && !body.trackUri) {
+      return createErrorResponse('A track URI, context URI, or URIs array is required', 400);
+    }
+
+    // 將整個 body 物件傳遞給服務層函式
+    const result = await spotifyPlay(body, deviceId);
 
     if (!result.success) {
       return createSpotifyErrorResponse(result.error, 'Failed to start playback');
     }
 
-    return createSuccessResponse({ message: 'Playback started' });
+    // 對於成功的操作，回傳 204 No Content
+    return new NextResponse(null, { status: 204 });
 
   } catch (error) {
     console.error('Error in /api/spotify/play:', error);
-    // 處理 JSON 解析錯誤
     if (error instanceof SyntaxError) {
       return createErrorResponse('Invalid JSON in request body', 400);
     }

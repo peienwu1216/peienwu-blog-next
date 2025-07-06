@@ -267,51 +267,46 @@ export const SpotifyProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
-    if (!queue.length) {
+    const currentQueue = get().queue;
+    if (!currentQueue.length) {
       alert('播放清單為空，無法隨機播放');
       return;
     }
 
     try {
-      // 1. 打亂播放清單
-      const shuffledQueue = shuffleArray(queue);
-      
-      // 2. 先播放第一首歌曲（這會清除現有的佇列並開始播放新歌）
-      const firstTrackUri = `spotify:track:${shuffledQueue[0].trackId}`;
+      // 1. 從當前佇列建立一個新的打亂後的版本
+      const shuffledQueue = shuffleArray(currentQueue);
+      const trackUris = shuffledQueue.map(track => `spotify:track:${track.trackId}`);
+
+      // 2. 一次性發送整個打亂後的播放清單給 Spotify
+      //    這會清除當前的遠端佇列並用新的順序取代
       const playResponse = await fetch(`/api/spotify/play?deviceId=${deviceIdRef.current}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ trackUri: firstTrackUri }),
+        body: JSON.stringify({ uris: trackUris }),
       });
-      
+
       if (!playResponse.ok) {
-        throw new Error('Failed to start random playback');
+        const errorData = await playResponse.json().catch(() => ({}));
+        const errorMessage = errorData.error?.message || `隨機播放失敗，狀態碼: ${playResponse.status}`;
+        throw new Error(errorMessage);
       }
-      
-      // 3. 將剩餘的歌曲依序加入佇列
-      for (let i = 1; i < shuffledQueue.length; i++) {
-        const trackUri = `spotify:track:${shuffledQueue[i].trackId}`;
-        const queueResponse = await fetch(`/api/spotify/queue?deviceId=${deviceIdRef.current}`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ trackUri }),
-        });
-        if (!queueResponse.ok) {
-          console.warn(`Failed to add track ${i} to queue`);
-        }
-      }
-      
+
+      // 3. 同步更新本地 Zustand store 的狀態以反映新的播放順序
+      setQueue(shuffledQueue);
+      setTrack(shuffledQueue[0]);
+      setIsPlaying(true); // 確保播放狀態為 true
       queueSyncedRef.current = true;
+
       console.log('Random playlist started with', shuffledQueue.length, 'tracks');
     } catch (error) {
       console.error('Failed to start random playback:', error);
-      alert('隨機播放失敗，請稍後再試');
+      const errorMessage = error instanceof Error ? error.message : '未知錯誤';
+      alert(`隨機播放失敗: ${errorMessage}`);
     }
-  }, [isReady, queue]);
+  }, [isReady, get, setQueue, setTrack, setIsPlaying]);
 
   // ✨ 新增：記錄 queue 是否已同步到 Spotify
   const queueSyncedRef = useRef(false);

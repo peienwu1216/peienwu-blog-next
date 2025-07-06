@@ -115,31 +115,31 @@ async function fetchFromSpotify(endpoint: string, options: RequestInit = {}) {
 // 取得目前播放歌曲
 export const getNowPlaying = () => fetchFromSpotify('me/player/currently-playing');
 
-// 播放指定歌曲或播放清單
-export const playTrack = (uri: string, deviceId: string) => {
-  // 判斷是播放清單還是單一歌曲
-  const isPlaylist = uri.includes('spotify:playlist:');
-  const isTrack = uri.includes('spotify:track:');
-  
-  if (isPlaylist) {
-    // 播放播放清單
-    return fetchFromSpotify(`me/player/play?device_id=${deviceId}`, {
-      method: 'PUT',
-      body: JSON.stringify({ context_uri: uri }),
-    });
-  } else if (isTrack) {
-    // 播放單一歌曲
-    return fetchFromSpotify(`me/player/play?device_id=${deviceId}`, {
-      method: 'PUT',
-      body: JSON.stringify({ uris: [uri] }),
-    });
+// 播放指定歌曲、多首歌曲或播放清單
+export const playTrack = (playOptions: { uris?: string[]; context_uri?: string } | string, deviceId: string) => {
+  const body: { uris?: string[]; context_uri?: string } = {};
+
+  // 處理新的物件格式
+  if (typeof playOptions === 'object') {
+    if (playOptions.uris) {
+      body.uris = playOptions.uris;
+    } else if (playOptions.context_uri) {
+      body.context_uri = playOptions.context_uri;
+    }
   } else {
-    // 預設當作歌曲處理
-    return fetchFromSpotify(`me/player/play?device_id=${deviceId}`, {
-      method: 'PUT',
-      body: JSON.stringify({ uris: [uri] }),
-    });
+    // 舊版相容：如果傳入的是字串，當作單一歌曲處理
+    const uri = playOptions;
+    if (uri.includes('spotify:playlist:')) {
+      body.context_uri = uri;
+    } else {
+      body.uris = [uri];
+    }
   }
+
+  return fetchFromSpotify(`me/player/play?device_id=${deviceId}`, {
+    method: 'PUT',
+    body: JSON.stringify(body),
+  });
 };
 
 // 暫停播放

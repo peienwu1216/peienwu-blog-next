@@ -83,27 +83,20 @@ export default function RootLayout({
             </footer>
             <Analytics />
             <SpeedInsights />
-            <Toaster 
-              theme="system" 
-              expand={true}
+            
+            {/* Unified Notification System with Glassmorphism */}
+            <Toaster
               position="bottom-right"
-              closeButton={true}
-              duration={4000}
-              containerAriaLabel="Global Toaster"
-              className="!bg-white dark:!bg-slate-800 !border !border-slate-200 dark:!border-slate-700 !shadow-lg"
+              closeButton={false}
+              expand={false}
+              richColors={false}
               toastOptions={{
-                style: {
-                  background: 'var(--toast-background)',
-                  color: 'var(--toast-color)',
-                  border: '1px solid var(--toast-border)',
-                  borderRadius: '8px',
-                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
-                  marginRight: '6rem',
-                  marginBottom: '1.5rem',
-                },
-                className: '!bg-white dark:!bg-slate-800 !border !border-slate-200 dark:!border-slate-700 !shadow-lg',
+                unstyled: true,
+                duration: 3000,
               }}
+              className="z-[9999]"
             />
+
             <ProTipToast />
             <ConditionalAiButton />
           </SpotifyProvider>

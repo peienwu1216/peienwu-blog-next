@@ -131,7 +131,7 @@ samp /* sample output */ {
 /* 針對 rehype-pretty-code 產生的 pre 元素 */
 pre[data-theme] { /* rehype-pretty-code 會為 pre 標籤加上 data-theme 屬性 */
   padding: 1rem;      /* 內邊距 */
-  border-radius: 8px; /* 圓角 */
+  border-radius: 8px;
   overflow-x: auto;   /* 內容過長時顯示水平捲動條 */
   margin-top: 1.5em;
   margin-bottom: 1.5em;
@@ -210,7 +210,7 @@ pre[data-theme] code {
   --medium: 500;
   --semibold: 600;
   --bold: 700;
-  --radius: 8px;
+  --radius: 12px;
   --font-size: 14px;
   --line-height: 1.4;
   z-index: 9999 !important;
@@ -220,40 +220,115 @@ pre[data-theme] code {
 @media (max-width: 768px) {
   [data-sonner-toaster] {
     padding-right: 0 !important;
-    margin-right: 1rem !important;
-  }
-  [data-sonner-toast] {
-    margin-top: 0.5rem !important;
-    margin-bottom: 0 !important;
-    font-size: 16px !important;
-    font-weight: 600 !important;
-    color: #222 !important;
-    background: #fff !important;
-    border-radius: 8px !important;
-    padding: 16px 18px !important;
-    box-shadow: 0 6px 24px rgba(0,0,0,0.18) !important;
-    z-index: 9999 !important;
-    border: none !important;
-    border-bottom: none !important;
-    border-top: none !important;
-    border-image: none !important;
-    border-width: 0 !important;
-  }
-  .dark [data-sonner-toast] {
-    color: #f1f5f9 !important;
-    background: #1e293b !important;
+    margin-right: 0 !important;
   }
 }
 
+/* 基礎 toast 樣式 - 現代簡潔風格 */
 [data-sonner-toast] {
-  margin-top: 0.75rem !important;
-  margin-bottom: 0 !important;
-  z-index: 9999 !important;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.10) !important;
-  border-bottom: none !important;
-  border-top: none !important;
-  border-image: none !important;
-  border-width: 0 !important;
+  /* padding controlled by Tailwind classes */
+  background: transparent !important;
+  border: none !important;
+  /* 移除毛玻璃效果，採用現代簡潔風格 */
+  box-shadow: none !important;
+  color: inherit !important;
+  font-weight: 400 !important;
+  min-height: 48px !important;
+  max-width: none !important;
+  width: fit-content !important;
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  word-break: break-word !important;
+  white-space: nowrap !important;
+}
+
+/* 深色模式下保持簡潔 */
+.dark [data-sonner-toast] {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  color: inherit !important;
+}
+
+/* 為不同類型的通知添加圖標 */
+[data-sonner-toast][data-type="success"]::before {
+  content: "✓";
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background-color: #10b981;
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+  flex-shrink: 0;
+}
+
+[data-sonner-toast][data-type="error"]::before {
+  content: "✕";
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background-color: #ef4444;
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+  flex-shrink: 0;
+}
+
+[data-sonner-toast][data-type="warning"]::before {
+  content: "!";
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background-color: #f59e0b;
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+  flex-shrink: 0;
+}
+
+[data-sonner-toast][data-type="info"]::before {
+  content: "i";
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background-color: #3b82f6;
+  color: white;
+  font-size: 12px;
+  font-weight: bold;
+  flex-shrink: 0;
+}
+
+/* 移除所有類型特定的背景和邊框樣式 */
+[data-sonner-toast][data-type="success"],
+[data-sonner-toast][data-type="error"],
+[data-sonner-toast][data-type="warning"],
+[data-sonner-toast][data-type="info"] {
+  background: transparent !important;
+  border: none !important;
+  color: inherit !important;
+}
+
+.dark [data-sonner-toast][data-type="success"],
+.dark [data-sonner-toast][data-type="error"],
+.dark [data-sonner-toast][data-type="warning"],
+.dark [data-sonner-toast][data-type="info"] {
+  background: transparent !important;
+  border: none !important;
+  color: inherit !important;
 }
 
 /* ====================================
@@ -336,6 +411,43 @@ mark {
   animation-name: zoom-in-95;
 }
 
+/* Toast notification slide animations */
+@keyframes slide-in-from-bottom {
+  from {
+    opacity: 0;
+    transform: translateY(calc(100% + 1rem));
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slide-out-to-bottom {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(calc(100% + 1rem));
+  }
+}
+
+.slide-in-from-bottom-2 {
+  animation-name: slide-in-from-bottom;
+  animation-duration: 200ms;
+  animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+  animation-fill-mode: both;
+}
+
+.slide-out-to-bottom-2 {
+  animation-name: slide-out-to-bottom;
+  animation-duration: 150ms;
+  animation-timing-function: cubic-bezier(0.4, 0, 1, 1);
+  animation-fill-mode: both;
+}
+
 /* 搜尋模態專用陰影 */
 .search-modal-shadow {
   box-shadow: 
@@ -379,22 +491,60 @@ mark {
 }
 
 /* 確保 Toaster 容器本身在任何情況下都有一個不透明的背景層 */
-[aria-label="Global Toaster"] {
+[data-sonner-toaster] {
   /* 設定一個極高的 z-index，確保它在所有物件之上 */
   z-index: 99999 !important; 
+  /* 桌面版：調整 Toaster 容器的位置，避免與 AI 按鈕重疊 */
+  bottom: 1rem !important;
+  right: 1rem !important;
+  /* padding disabled */
 }
 
-/* 針對單個 toast，我們可以讓它的背景帶有模糊效果 */
-[data-sonner-toast] {
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-}
-
-/* 確保 toast 的背景在任何情況下都是不透明的 */
-[data-sonner-toast] {
-    background: var(--toast-background) !important;
-    color: var(--toast-color) !important;
-    border: 1px solid var(--toast-border) !important;
+/* 響應式設計，確保在手機上完美右對齊 */
+@media (max-width: 768px) {
+  /* 讓整個通知容器占滿寬度並右對齊 */
+  [data-sonner-toaster] {
+    width: 100vw !important;
+    max-width: 100vw !important;
+    right: 0 !important;
+    bottom: 0.5rem !important;
+    left: 0 !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-end !important;
+    padding-right: 1rem !important;
+    padding-left: 1rem !important;
+  }
+  
+  /* 強制所有通知右對齊到同一位置 */
+  [data-sonner-toast] {
+    margin-bottom: 0.5rem !important;
+    margin-right: 0 !important;
+    margin-left: auto !important;
+    /* 讓通知寬度自適應內容，但確保最小寬度 */
+    width: fit-content !important;
+    min-width: 200px !important;
+    max-width: calc(100vw - 2rem) !important;
+    /* 確保文字正確換行 */
+    word-wrap: break-word !important;
+    overflow-wrap: break-word !important;
+    line-height: 1.4 !important;
+    font-size: 14px !important;
+    padding: 12px 16px !important;
+    /* 確保右邊界完全對齊 */
+    position: relative !important;
+    right: 0 !important;
+  }
+  
+        /* 移除任何可能造成對齊問題的變換和定位 */
+   [data-sonner-toast] * {
+     text-align: left !important;
+   }
+   
+   /* 確保通知內容區域不會影響整體對齊 */
+   [data-sonner-toast] > div {
+     width: 100% !important;
+   }
 }
 
 @keyframes equalize {

@@ -9,7 +9,8 @@ const NO_CONTENT_ENDPOINTS = [
   'me/player/next',
   'me/player/previous',
   'me/player/seek',
-  'me/player/volume'
+  'me/player/volume',
+  'me/player/queue'
 ];
 
 // 封裝 fetch 邏輯，自動加入 Authorization header
@@ -168,4 +169,12 @@ export const getPlaylist = (playlistId: string) => {
 
 // 取得單一歌曲資訊
 export const getTrack = (trackId: string) => 
-  fetchFromSpotify(`tracks/${trackId}`); 
+  fetchFromSpotify(`tracks/${trackId}`);
+
+// 新增：將歌曲加入 Spotify queue
+export const addToQueue = (trackUri: string, deviceId?: string) => {
+  const endpoint = deviceId
+    ? `me/player/queue?uri=${encodeURIComponent(trackUri)}&device_id=${deviceId}`
+    : `me/player/queue?uri=${encodeURIComponent(trackUri)}`;
+  return fetchFromSpotify(endpoint, { method: 'POST' });
+}; 

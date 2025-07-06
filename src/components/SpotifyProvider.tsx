@@ -3,10 +3,12 @@ import React, { createContext, useContext, useEffect, useCallback, useState, Rea
 import { useMusicStore, TrackInfo } from '@/store/music';
 import { clientConfig } from '@/config/spotify';
 import { useApi } from '@/hooks/useApi';
+import { shuffleArray } from '@/lib/utils';
 
 interface SpotifyContextProps {
   playTrack: (track: TrackInfo, isInterrupt?: boolean) => void;
   handlePlay: () => void; // 新增智慧播放函式
+  handlePlayRandom: () => void; // 新增隨機播放函式
   pauseTrack: () => void;
   resumeTrack: () => void;
   nextTrack: () => void;
@@ -197,6 +199,8 @@ export const SpotifyProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
+
+
   // ✨ 新增：插播功能（中斷當前播放並播放新歌）
   const interruptPlay = useCallback(async (track: TrackInfo, deviceId: string) => {
     try {
@@ -255,6 +259,59 @@ export const SpotifyProvider = ({ children }: { children: ReactNode }) => {
       console.error('Failed to sync playlist to Spotify:', error);
     }
   }, []);
+
+  // ✨ 新增：隨機播放函式
+  const handlePlayRandom = useCallback(async () => {
+    if (!isReady || !deviceIdRef.current) {
+      alert('播放器尚未準備好');
+      return;
+    }
+
+    if (!queue.length) {
+      alert('播放清單為空，無法隨機播放');
+      return;
+    }
+
+    try {
+      // 1. 打亂播放清單
+      const shuffledQueue = shuffleArray(queue);
+      
+      // 2. 先播放第一首歌曲（這會清除現有的佇列並開始播放新歌）
+      const firstTrackUri = `spotify:track:${shuffledQueue[0].trackId}`;
+      const playResponse = await fetch(`/api/spotify/play?deviceId=${deviceIdRef.current}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ trackUri: firstTrackUri }),
+      });
+      
+      if (!playResponse.ok) {
+        throw new Error('Failed to start random playback');
+      }
+      
+      // 3. 將剩餘的歌曲依序加入佇列
+      for (let i = 1; i < shuffledQueue.length; i++) {
+        const trackUri = `spotify:track:${shuffledQueue[i].trackId}`;
+        const queueResponse = await fetch(`/api/spotify/queue?deviceId=${deviceIdRef.current}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ trackUri }),
+        });
+        if (!queueResponse.ok) {
+          console.warn(`Failed to add track ${i} to queue`);
+        }
+      }
+      
+      queueSyncedRef.current = true;
+      console.log('Random playlist started with', shuffledQueue.length, 'tracks');
+    } catch (error) {
+      console.error('Failed to start random playback:', error);
+      alert('隨機播放失敗，請稍後再試');
+    }
+  }, [isReady, queue]);
 
   // ✨ 新增：記錄 queue 是否已同步到 Spotify
   const queueSyncedRef = useRef(false);
@@ -568,7 +625,7 @@ export const SpotifyProvider = ({ children }: { children: ReactNode }) => {
 
   return (
     <SpotifyContext.Provider value={{
-      playTrack, handlePlay, pauseTrack, nextTrack, previousTrack, handleSetVolume, seek,
+      playTrack, handlePlay, handlePlayRandom, pauseTrack, nextTrack, previousTrack, handleSetVolume, seek,
       loading: loading || isAnyLoading, isReady, isPlaying, currentTrack, 
       volume, progress, duration, resumeTrack
     }}>

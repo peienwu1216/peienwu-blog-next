@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { useSpotify } from './SpotifyProvider';
-import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Loader } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Loader, Shuffle } from 'lucide-react';
 
 export default function MusicControlPanel() {
   const {
@@ -13,6 +13,7 @@ export default function MusicControlPanel() {
     duration,
     pauseTrack,
     handlePlay,
+    handlePlayRandom,
     nextTrack,
     previousTrack,
     handleSetVolume,
@@ -96,6 +97,13 @@ export default function MusicControlPanel() {
         </button>
         <button onClick={nextTrack} className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700">
           <SkipForward className="w-5 h-5" />
+        </button>
+        <button 
+          onClick={handlePlayRandom} 
+          className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700"
+          title="隨機播放"
+        >
+          <Shuffle className="w-5 h-5" />
         </button>
       </div>
     </div>

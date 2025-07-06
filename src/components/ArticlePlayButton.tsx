@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useState } from 'react';
 import { useSpotify } from './SpotifyProvider';
 import { Play, Pause, Loader, Music4 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -11,6 +11,24 @@ interface ArticlePlayButtonProps {
   trackId: string;
   trackTitle: string;
 }
+
+// 動態 Equalizer SVG 組件
+const EqualizerIcon = ({ className = "w-4 h-4" }: { className?: string }) => (
+  <svg 
+    className={className} 
+    viewBox="0 0 24 24" 
+    fill="currentColor"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    {/* 頻譜條 - 使用自定義 CSS 動畫 */}
+    <rect x="2" y="8" width="2" height="8" className="equalizer-bar" />
+    <rect x="6" y="6" width="2" height="12" className="equalizer-bar" />
+    <rect x="10" y="4" width="2" height="16" className="equalizer-bar" />
+    <rect x="14" y="7" width="2" height="10" className="equalizer-bar" />
+    <rect x="18" y="5" width="2" height="14" className="equalizer-bar" />
+    <rect x="22" y="9" width="2" height="6" className="equalizer-bar" />
+  </svg>
+);
 
 // 標準作法：引導使用者啟動播放器的提示元件
 const ActivationToast = () => (
@@ -32,14 +50,17 @@ export default function ArticlePlayButton({ trackId, trackTitle }: ArticlePlayBu
     currentTrack,
     isReady,
     hasPlaybackInitiated,
-    isControllable, // ✨ 取得是否可控制的狀態
-    expirationText // ✨ 取得動態過期時間
+    isControllable,
+    expirationText
   } = useSpotify();
   
   const { exec: getTrackApi, isLoading: isTrackInfoLoading } = useApi<TrackInfo>('GET', `/api/spotify/track/${trackId}`);
 
   const isThisTrackCurrentlyPlaying = isPlaying && currentTrack?.trackId === trackId;
   const isThisTrackCurrentlyPaused = !isPlaying && currentTrack?.trackId === trackId;
+
+  // 懸停狀態管理
+  const [isHovered, setIsHovered] = useState(false);
 
   const handleClick = useCallback(async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -53,7 +74,7 @@ export default function ArticlePlayButton({ trackId, trackTitle }: ArticlePlayBu
       return;
     }
 
-    // ✨ 權限檢查 - 友善的提示
+    // 權限檢查 - 友善的提示
     if (!isControllable) {
       toast.info(
         `🎵 目前由其他訪客控制播放中\n\n您可以等待 ${expirationText} 後重新取得控制權，或等待當前播放結束。`,
@@ -87,7 +108,7 @@ export default function ArticlePlayButton({ trackId, trackTitle }: ArticlePlayBu
   }, [
     isReady,
     hasPlaybackInitiated,
-    isControllable, // ✨ 加入權限檢查依賴
+    isControllable,
     isThisTrackCurrentlyPlaying,
     isThisTrackCurrentlyPaused,
     playTrack, 
@@ -98,15 +119,66 @@ export default function ArticlePlayButton({ trackId, trackTitle }: ArticlePlayBu
 
   if (!trackId) return null;
 
+  // 決定顯示的圖示和文字
+  const getIconAndText = () => {
+    if (isTrackInfoLoading) {
+      return { icon: <Loader size={16} className="animate-spin" />, text: '載入中...' };
+    }
+    
+    if (!isControllable) {
+      return { icon: <Play size={16} />, text: '等待控制權' };
+    }
+    
+    if (isThisTrackCurrentlyPlaying) {
+      // 播放中：懸停時顯示 Pause + 歌曲名稱 + 律動符號，否則顯示動態 Equalizer + 歌曲名稱
+      if (isHovered) {
+        return { 
+          icon: <Pause size={16} />, 
+          text: `${trackTitle} 🎵`,
+          showEqualizer: false
+        };
+      } else {
+        return { 
+          icon: <EqualizerIcon />, 
+          text: trackTitle,
+          showEqualizer: true
+        };
+      }
+    }
+    
+    // 暫停或未播放：懸停時圖示變主題色
+    return { 
+      icon: <Play size={16} className={isHovered ? "text-blue-500 dark:text-blue-400" : ""} />, 
+      text: isThisTrackCurrentlyPaused ? '繼續播放' : '播放主題曲',
+      showEqualizer: false
+    };
+  };
+
+  const { icon, text, showEqualizer } = getIconAndText();
+
   return (
     <button
       onClick={handleClick}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
       disabled={isTrackInfoLoading || !isControllable}
-      className={`flex items-center gap-2 text-sm transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${
-        !isControllable 
-          ? 'text-slate-400 dark:text-slate-500 cursor-not-allowed' 
-          : 'text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400'
-      }`}
+      className={`
+        inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium
+        transition-all duration-200 ease-in-out
+        ${isThisTrackCurrentlyPlaying 
+          ? 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800' 
+          : 'bg-slate-50 dark:bg-slate-800/50 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700'
+        }
+        ${isHovered && isControllable 
+          ? 'scale-105 shadow-md transform' 
+          : 'hover:scale-105 hover:shadow-md hover:transform'
+        }
+        ${!isControllable 
+          ? 'opacity-50 cursor-not-allowed' 
+          : 'cursor-pointer hover:bg-blue-100 dark:hover:bg-blue-900/30'
+        }
+        disabled:opacity-50 disabled:cursor-not-allowed
+      `}
       aria-label={
         !isControllable 
           ? '目前由其他訪客控制中，無法播放' 
@@ -116,23 +188,12 @@ export default function ArticlePlayButton({ trackId, trackTitle }: ArticlePlayBu
       }
       title={!isControllable ? '目前由其他訪客控制中' : undefined}
     >
-      {isTrackInfoLoading ? (
-        <Loader size={16} className="animate-spin" />
-      ) : !isControllable ? (
-        <Play size={16} className="text-slate-400" />
-      ) : isThisTrackCurrentlyPlaying ? (
-        <Pause size={16} className="text-blue-500" />
-      ) : (
-        <Play size={16} />
+      {icon}
+      <span className="hidden sm:inline">{text}</span>
+      {/* 播放中時顯示額外的律動符號 */}
+      {isThisTrackCurrentlyPlaying && !isHovered && (
+        <span className="hidden sm:inline text-blue-500 dark:text-blue-400">🎵</span>
       )}
-      <span className="hidden sm:inline">
-        {!isControllable 
-          ? '等待控制權' 
-          : isThisTrackCurrentlyPlaying 
-            ? '暫停播放' 
-            : '播放主題曲'
-        }
-      </span>
     </button>
   );
-} 
+}

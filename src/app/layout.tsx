@@ -87,9 +87,9 @@ export default function RootLayout({
               theme="system" 
               expand={true}
               position="bottom-right"
-              richColors={true}
               closeButton={true}
               duration={4000}
+              containerAriaLabel="Global Toaster"
               className="!bg-white dark:!bg-slate-800 !border !border-slate-200 dark:!border-slate-700 !shadow-lg"
               toastOptions={{
                 style: {
@@ -107,9 +107,9 @@ export default function RootLayout({
             <ProTipToast />
             <ConditionalAiButton />
           </SpotifyProvider>
+          <Script src="https://sdk.scdn.co/spotify-player.js" />
         </ThemeProvider>
       </body>
-      <Script src="https://sdk.scdn.co/spotify-player.js" />
     </html>
   );
 }

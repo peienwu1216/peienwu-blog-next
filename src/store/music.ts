@@ -22,6 +22,11 @@ interface MusicState {
   currentTrack: TrackInfo | null;
   queue: TrackInfo[];
   
+  // 控制權狀態
+  isMaster: boolean;
+  isLocked: boolean;
+  countdown: number;
+
   // Actions
   setTrack: (track: TrackInfo | null) => void;
   setQueue: (tracks: TrackInfo[]) => void;
@@ -34,6 +39,10 @@ interface MusicState {
   setDuration: (duration: number) => void;
   setVolume: (volume: number) => void;
   
+  // 控制權 Actions
+  setMasterInfo: (info: { isMaster: boolean; isLocked: boolean; ttl?: number }) => void;
+  setCountdown: (seconds: number) => void;
+
   // 便利方法
   resetPlayer: () => void;
 }
@@ -47,7 +56,10 @@ export const useMusicStore = create<MusicState>((set, get) => ({
   volume: 1,
   currentTrack: null,
   queue: [],
-  
+  isMaster: false,
+  isLocked: false,
+  countdown: 0,
+
   // 歌曲資料 Actions
   setTrack: (track) => set({ currentTrack: track }),
   
@@ -86,7 +98,17 @@ export const useMusicStore = create<MusicState>((set, get) => ({
   setDuration: (duration) => set({ duration }),
   
   setVolume: (volume) => set({ volume }),
-  
+
+  // 控制權 Actions
+  setMasterInfo: (info) => {
+    set({
+      isMaster: info.isMaster,
+      isLocked: info.isLocked,
+      countdown: info.ttl || 0,
+    });
+  },
+  setCountdown: (seconds) => set({ countdown: seconds }),
+
   // 便利方法：重置播放器狀態
   resetPlayer: () => set({
     isPlaying: false,

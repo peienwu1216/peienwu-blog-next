@@ -75,7 +75,12 @@ export const SpotifyProvider = ({ children }: { children: ReactNode }) => {
     setIsReady,
     setProgress,
     setDuration,
-    setVolume: setVolumeState
+    setVolume: setVolumeState,
+    setMasterInfo,
+    setCountdown,
+    isMaster,
+    isLocked,
+    countdown
   } = useMusicStore();
   
   const get = useMusicStore.getState;
@@ -136,67 +141,104 @@ export const SpotifyProvider = ({ children }: { children: ReactNode }) => {
   // ✨ 新增狀態來儲存過期時間配置
   const [expirationText, setExpirationText] = useState<string>('5 分鐘');
 
-  // ✨ 在元件載入時，獲取當前的主控裝置和配置
+  // ✨ 取得主控裝置與 TTL，並設置控制權狀態
   useEffect(() => {
     const fetchMasterDeviceAndConfig = async () => {
       try {
-        // 並行獲取主控裝置和配置
         const [masterRes, configRes] = await Promise.all([
           fetch('/api/spotify/master-device'),
           fetch('/api/spotify/master-device/config')
         ]);
-        
         const masterData = await masterRes.json();
         const configData = await configRes.json();
-        
         setMasterDeviceId(masterData.masterDeviceId);
         setExpirationText(configData.expirationText);
+        // ✨ 狀態管理
+        const deviceId = deviceIdRef.current;
+        setMasterInfo({
+          isMaster: !!deviceId && masterData.masterDeviceId === deviceId,
+          isLocked: !!masterData.masterDeviceId && masterData.masterDeviceId !== deviceId,
+          ttl: masterData.ttl,
+        });
       } catch (e) {
         console.error("Failed to fetch master device or config", e);
       }
     };
     fetchMasterDeviceAndConfig();
-  }, []);
+  }, [setMasterInfo]);
+
+  // ✨ 新增狀態來追蹤通知顯示
+  const [hasShownLockedNotification, setHasShownLockedNotification] = useState(false);
+  const [hasShownExpiredNotification, setHasShownExpiredNotification] = useState(false);
+
+  // ✨ 即時檢查主控裝置狀態的函數
+  const checkMasterDeviceStatus = useCallback(async () => {
+    try {
+      const res = await fetch('/api/spotify/master-device');
+      const data = await res.json();
+      const deviceId = deviceIdRef.current;
+      const wasMaster = masterDeviceId === deviceId;
+      const isNowMaster = !!deviceId && data.masterDeviceId === deviceId;
+      const isNowLocked = !!data.masterDeviceId && data.masterDeviceId !== deviceId;
+      
+      setMasterDeviceId(data.masterDeviceId);
+      // ✨ 狀態管理
+      setMasterInfo({
+        isMaster: isNowMaster,
+        isLocked: isNowLocked,
+        ttl: data.ttl,
+      });
+      // ✨ 即時更新 countdown
+      setCountdown(data.ttl || 0);
+
+      // ✨ 只在狀態變化時顯示通知
+      if (!data.masterDeviceId) {
+        // 主控裝置過期
+        if (wasMaster && !hasShownExpiredNotification) {
+          toast.info("您的播放控制權已過期，其他裝置現在可以取得控制權。");
+          setHasShownExpiredNotification(true);
+          setHasShownLockedNotification(false); // 重置鎖定通知狀態
+        } else if (!wasMaster && !hasShownExpiredNotification) {
+          toast.info("主控裝置已過期，現在可以播放了！");
+          setHasShownExpiredNotification(true);
+          setHasShownLockedNotification(false); // 重置鎖定通知狀態
+        }
+      } else if (isNowLocked && !hasShownLockedNotification) {
+        // 被其他裝置鎖定
+        toast.error("目前由其他裝置控制中，無法播放。");
+        setHasShownLockedNotification(true);
+        setHasShownExpiredNotification(false); // 重置過期通知狀態
+      } else if (isNowMaster) {
+        // 成為主控裝置，重置所有通知狀態
+        setHasShownLockedNotification(false);
+        setHasShownExpiredNotification(false);
+      }
+    } catch (error) {
+      console.error('Failed to check master device status:', error);
+    }
+  }, [masterDeviceId, setMasterInfo, hasShownLockedNotification, hasShownExpiredNotification]);
+
+  // ✨ 定期同步主控裝置狀態與 TTL
+  useEffect(() => {
+    const masterDeviceCheckInterval = setInterval(checkMasterDeviceStatus, 7000); // 改為 7 秒
+    return () => clearInterval(masterDeviceCheckInterval);
+  }, [checkMasterDeviceStatus]);
+
+  // ✨ 建立倒數計時器
+  useEffect(() => {
+    if (countdown > 0) {
+      const timer = setInterval(() => {
+        setCountdown(countdown - 1);
+      }, 1000);
+      return () => clearInterval(timer);
+    }
+  }, [countdown, setCountdown]);
 
   useEffect(() => {
     if (syncIntervalRef.current) clearInterval(syncIntervalRef.current);
     syncIntervalRef.current = setInterval(syncPlaybackState, 5000);
     return () => { if (syncIntervalRef.current) clearInterval(syncIntervalRef.current); };
   }, [syncPlaybackState]);
-
-  // ✨ 定期檢查主控裝置狀態
-  useEffect(() => {
-    const checkMasterDeviceStatus = async () => {
-      if (!masterDeviceId) return;
-      
-      try {
-        const res = await fetch('/api/spotify/master-device');
-        const data = await res.json();
-        
-        if (!data.masterDeviceId) {
-          // 主控裝置已過期，清除本地狀態
-          setMasterDeviceId(null);
-          // ✨ 根據是否為主控裝置顯示不同通知
-          if (deviceIdRef.current === masterDeviceId) {
-            toast.info("您的播放控制權已過期，其他裝置現在可以取得控制權。");
-          } else {
-            toast.info("主控裝置已過期，現在可以播放了！");
-          }
-        } else if (data.masterDeviceId !== deviceIdRef.current) {
-          toast.error("目前由其他裝置控制中，無法播放。");
-          return;
-        } else {
-          // 我們就是主控裝置，清除過期的本地狀態
-          setMasterDeviceId(data.masterDeviceId);
-        }
-      } catch (error) {
-        console.error('Failed to check master device status:', error);
-      }
-    };
-
-    const masterDeviceCheckInterval = setInterval(checkMasterDeviceStatus, 10000); // 每 10 秒檢查一次
-    return () => clearInterval(masterDeviceCheckInterval);
-  }, [masterDeviceId]);
 
   const playPlaylist = useCallback(async (playlistId: string, options: { uris?: string[] } = {}) => {
     if (!deviceIdRef.current) return;
@@ -252,13 +294,28 @@ export const SpotifyProvider = ({ children }: { children: ReactNode }) => {
         if (!data.masterDeviceId) {
           // 主控裝置已過期，清除本地狀態
           setMasterDeviceId(null);
-          toast.info("主控裝置已過期，現在可以播放了！");
+          // ✨ 根據是否為主控裝置顯示不同通知
+          if (deviceIdRef.current === masterDeviceId && !hasShownExpiredNotification) {
+            toast.info("您的播放控制權已過期，其他裝置現在可以取得控制權。");
+            setHasShownExpiredNotification(true);
+            setHasShownLockedNotification(false);
+          } else if (deviceIdRef.current !== masterDeviceId && !hasShownExpiredNotification) {
+            toast.info("主控裝置已過期，現在可以播放了！");
+            setHasShownExpiredNotification(true);
+            setHasShownLockedNotification(false);
+          }
         } else if (data.masterDeviceId !== deviceIdRef.current) {
-          toast.error("目前由其他裝置控制中，無法播放。");
+          if (!hasShownLockedNotification) {
+            toast.error("目前由其他裝置控制中，無法播放。");
+            setHasShownLockedNotification(true);
+            setHasShownExpiredNotification(false);
+          }
           return;
         } else {
           // 我們就是主控裝置，清除過期的本地狀態
           setMasterDeviceId(data.masterDeviceId);
+          setHasShownLockedNotification(false);
+          setHasShownExpiredNotification(false);
         }
       } catch (error) {
         console.error('Failed to check master device status:', error);
@@ -281,11 +338,18 @@ export const SpotifyProvider = ({ children }: { children: ReactNode }) => {
           // 搶佔成功！更新本地狀態
           setMasterDeviceId(data.masterDeviceId);
           toast.success("已取得播放主控權！點按播放鍵開始播放");
+          // ✨ 重置通知狀態
+          setHasShownLockedNotification(false);
+          setHasShownExpiredNotification(false);
+          // ✨ 立即檢查狀態，確保其他裝置能即時更新
+          setTimeout(() => checkMasterDeviceStatus(), 500);
         } else {
           // ✨ 搶佔失敗！處理被拒絕的情況
           toast.info("哎呀！就在您點擊的瞬間，其他人搶先一步了！");
           // ✨ 立刻同步到最新的主控狀態，禁用按鈕
           setMasterDeviceId(data.currentMasterId); 
+          // ✨ 立即檢查狀態，確保 UI 即時更新
+          setTimeout(() => checkMasterDeviceStatus(), 500);
           return; // 終止後續的播放操作
         }
       } catch (error) {
@@ -337,17 +401,27 @@ export const SpotifyProvider = ({ children }: { children: ReactNode }) => {
           // 主控裝置已過期，清除本地狀態
           setMasterDeviceId(null);
           // ✨ 根據是否為主控裝置顯示不同通知
-          if (deviceIdRef.current === masterDeviceId) {
+          if (deviceIdRef.current === masterDeviceId && !hasShownExpiredNotification) {
             toast.info("您的播放控制權已過期，其他裝置現在可以取得控制權。");
-          } else {
+            setHasShownExpiredNotification(true);
+            setHasShownLockedNotification(false);
+          } else if (deviceIdRef.current !== masterDeviceId && !hasShownExpiredNotification) {
             toast.info("主控裝置已過期，現在可以播放了！");
+            setHasShownExpiredNotification(true);
+            setHasShownLockedNotification(false);
           }
         } else if (data.masterDeviceId !== deviceIdRef.current) {
-          toast.error("目前由其他裝置控制中，無法播放。");
+          if (!hasShownLockedNotification) {
+            toast.error("目前由其他裝置控制中，無法播放。");
+            setHasShownLockedNotification(true);
+            setHasShownExpiredNotification(false);
+          }
           return;
         } else {
           // 我們就是主控裝置，清除過期的本地狀態
           setMasterDeviceId(data.masterDeviceId);
+          setHasShownLockedNotification(false);
+          setHasShownExpiredNotification(false);
         }
       } catch (error) {
         console.error('Failed to check master device status:', error);
@@ -368,6 +442,11 @@ export const SpotifyProvider = ({ children }: { children: ReactNode }) => {
         if (data.success) {
           setMasterDeviceId(data.masterDeviceId);
           toast.success("已取得播放主控權！點按播放鍵開始播放");
+          // ✨ 重置通知狀態
+          setHasShownLockedNotification(false);
+          setHasShownExpiredNotification(false);
+          // ✨ 立即檢查狀態，確保其他裝置能即時更新
+          setTimeout(() => checkMasterDeviceStatus(), 500);
         } else {
           throw new Error('Failed to claim master device status');
         }
@@ -598,8 +677,10 @@ export const SpotifyProvider = ({ children }: { children: ReactNode }) => {
   const handleSetVolume = useCallback(async (newVolume: number) => {
     if(playerRef.current) {
       await playerRef.current.setVolume(newVolume);
+      // 更新 store 中的 volume 狀態
+      setVolumeState(newVolume);
     }
-  }, []);
+  }, [setVolumeState]);
 
   const seek = useCallback(async (newPosition: number) => {
     if(playerRef.current) {
@@ -609,31 +690,45 @@ export const SpotifyProvider = ({ children }: { children: ReactNode }) => {
   }, [setProgress]);
 
   useEffect(() => {
+    // 如果在伺服器端，或 player 已經被建立，就直接返回
     if (typeof window === 'undefined' || playerRef.current) return;
 
-    window.onSpotifyWebPlaybackSDKReady = () => {
-      initializePlayer();
-    };
-
+    // ✨ 核心修改：將初始化邏輯完整地封裝起來
     const initializePlayer = async () => {
       try {
-        const tokenRes = await fetch('/api/spotify/access-token');
-        if (!tokenRes.ok) throw new Error('Failed to get access token');
-        const { accessToken } = await tokenRes.json();
+        console.log('Starting Spotify Player initialization...');
         
         const player = new window.Spotify.Player({
           name: "Peienwu's Code Lab",
-          getOAuthToken: cb => { cb(accessToken); },
-          volume: 0.5
+          // ✨ 核心修改：將獲取 token 的邏輯完整地放在這個回呼函式中
+          getOAuthToken: async (cb) => {
+            console.log('Spotify SDK is requesting a new token...');
+            try {
+              const response = await fetch('/api/spotify/access-token');
+              if (!response.ok) {
+                throw new Error(`Failed to fetch access token, status: ${response.status}`);
+              }
+              const { accessToken } = await response.json();
+              console.log('New token received by SDK.');
+              cb(accessToken); // ✨ 將"新鮮"的 token 交給 SDK
+            } catch (error) {
+              console.error('Error in getOAuthToken callback:', error);
+              cb(''); // 發生錯誤時回傳空字串，讓 SDK 知道失敗了
+            }
+          },
+          volume: 0.5,
         });
 
+        // --- 保持您所有的事件監聽邏輯 ---
         player.addListener('ready', ({ device_id }) => {
+          console.log('Spotify Player is ready with Device ID:', device_id);
           deviceIdRef.current = device_id;
           setIsReady(true);
           initializeDefaultPlaylist();
         });
 
-        player.addListener('not_ready', () => {
+        player.addListener('not_ready', ({ device_id }) => {
+          console.warn('Device ID has gone offline:', device_id);
           setIsReady(false);
         });
 
@@ -671,18 +766,29 @@ export const SpotifyProvider = ({ children }: { children: ReactNode }) => {
             // 同步進度
             setProgress(state.position / 1000);
         });
+        // --- 事件監聽邏輯結束 ---
 
         await player.connect();
         playerRef.current = player;
+        console.log('Spotify Player connected successfully.');
       } catch (error) {
-        console.error('[Spotify SDK] Initialization failed:', error);
+        console.error('[Spotify SDK] Player initialization failed:', error);
       }
     };
 
-    if (window.Spotify) {
-      initializePlayer();
-    }
-  }, [initializeDefaultPlaylist, get, setIsPlaying, setTrack, setDuration, setProgress, setIsReady]);
+    // ✨ 創建一個輪詢來檢查 Spotify SDK 是否已載入
+    const checkSpotifySDK = setInterval(() => {
+      if (window.Spotify) {
+        console.log('Spotify SDK has loaded.');
+        clearInterval(checkSpotifySDK); // 找到 SDK 後，清除輪詢
+        initializePlayer(); // ✨ 安全地執行初始化
+      }
+    }, 500); // 每 500 毫秒檢查一次
+
+    // 在元件卸載時清除輪詢，防止記憶體洩漏
+    return () => clearInterval(checkSpotifySDK);
+
+  }, [initializeDefaultPlaylist, get, setIsPlaying, setTrack, setDuration, setProgress, setIsReady]); // ✨ 簡化依賴項
   
   useEffect(() => {
     if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);

@@ -1,19 +1,42 @@
 import { kv } from '@vercel/kv';
 import { NextRequest, NextResponse } from 'next/server';
+import { getPlayerState, transferPlayback } from '@/lib/spotifyService';
 
 const MASTER_DEVICE_KEY = 'spotify:master_device';
 
 // ✨ 可配置的主控裝置過期時間（秒）
 // 測試時可以設定為 20 秒，正式環境建議設定為 300 秒（5 分鐘）
-const MASTER_DEVICE_EXPIRATION_SECONDS = 30;
+const MASTER_DEVICE_EXPIRATION_SECONDS = 60;
 
 /**
- * 取得目前的主控裝置 ID
+ * 取得目前的主控裝置 ID 及剩餘 TTL，並在非主控時回傳 Spotify 狀態
  */
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
     const masterDeviceId = await kv.get(MASTER_DEVICE_KEY);
-    return NextResponse.json({ masterDeviceId });
+    const ttl = await kv.ttl(MASTER_DEVICE_KEY);
+    // 支援 deviceId 查詢
+    const { searchParams } = new URL(req.url);
+    const currentDeviceId = searchParams.get('deviceId');
+    const isMaster = masterDeviceId && currentDeviceId && masterDeviceId === currentDeviceId;
+    if (!masterDeviceId) {
+      return NextResponse.json({ masterDeviceId: null, isMaster: false, isLocked: false, ttl: 0 });
+    }
+    if (!isMaster && ttl > 0) {
+      try {
+        const stateResult = await getPlayerState();
+        return NextResponse.json({
+          masterDeviceId,
+          isMaster: false,
+          isLocked: true,
+          ttl,
+          spectatorState: stateResult.success ? stateResult.data : null,
+        });
+      } catch (error) {
+        return NextResponse.json({ masterDeviceId, isMaster: false, isLocked: true, ttl, spectatorState: null });
+      }
+    }
+    return NextResponse.json({ masterDeviceId, isMaster: !!isMaster, isLocked: false, ttl });
   } catch (error) {
     return NextResponse.json({ error: 'Failed to fetch master device ID' }, { status: 500 });
   }
@@ -37,14 +60,25 @@ export async function POST(req: NextRequest) {
     if (result === 1) {
       // 成功搶佔！設定過期時間
       await kv.expire(MASTER_DEVICE_KEY, MASTER_DEVICE_EXPIRATION_SECONDS);
-      return NextResponse.json({ success: true, masterDeviceId: deviceId });
+
+      // ✨ 核心修改：在成功搶佔 KV 鎖後，立刻通知 Spotify 轉移播放裝置
+      const transferResult = await transferPlayback(deviceId, false);
+
+      if (!transferResult.success) {
+        // 即使轉移失敗，主控權仍在我們系統中，可以稍後再試
+        console.warn(`KV lock acquired, but Spotify playback transfer failed: ${transferResult.error}`);
+      }
+
+      return NextResponse.json({ success: true, masterDeviceId: deviceId, ttl: MASTER_DEVICE_EXPIRATION_SECONDS });
     } else {
       // 搶佔失敗！王位已經被佔據
       const currentMaster = await kv.get(MASTER_DEVICE_KEY);
+      const ttl = await kv.ttl(MASTER_DEVICE_KEY);
       return NextResponse.json({ 
         success: false, 
         message: 'Failed to claim master device status, it is already taken.',
-        currentMasterId: currentMaster // ✨ 告訴前端現在是誰在做主
+        currentMasterId: currentMaster,
+        ttl
       }, { status: 409 }); // 409 Conflict 是一個很適合的 HTTP 狀態碼
     }
   } catch (error) {

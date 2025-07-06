@@ -350,3 +350,78 @@ mark {
     0 0 0 1px rgba(255, 255, 255, 0.05),
     inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
+
+/* 自定義 Equalizer 動畫 */
+@keyframes equalizer {
+  0%, 100% {
+    transform: scaleY(0.3);
+  }
+  50% {
+    transform: scaleY(1);
+  }
+}
+
+.equalizer-bar {
+  transform-origin: bottom;
+  animation: equalizer 1.2s ease-in-out infinite;
+}
+
+.equalizer-bar:nth-child(1) { animation-delay: 0ms; }
+.equalizer-bar:nth-child(2) { animation-delay: 150ms; }
+.equalizer-bar:nth-child(3) { animation-delay: 300ms; }
+.equalizer-bar:nth-child(4) { animation-delay: 450ms; }
+.equalizer-bar:nth-child(5) { animation-delay: 600ms; }
+.equalizer-bar:nth-child(6) { animation-delay: 750ms; }
+
+/* 確保動畫在暗黑模式下也能正常顯示 */
+.dark .equalizer-bar {
+  animation: equalizer 1.2s ease-in-out infinite;
+}
+
+/* 確保 Toaster 容器本身在任何情況下都有一個不透明的背景層 */
+[aria-label="Global Toaster"] {
+  /* 設定一個極高的 z-index，確保它在所有物件之上 */
+  z-index: 99999 !important; 
+}
+
+/* 針對單個 toast，我們可以讓它的背景帶有模糊效果 */
+[data-sonner-toast] {
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+/* 確保 toast 的背景在任何情況下都是不透明的 */
+[data-sonner-toast] {
+    background: var(--toast-background) !important;
+    color: var(--toast-color) !important;
+    border: 1px solid var(--toast-border) !important;
+}
+
+@keyframes equalize {
+  0% { height: 60%; }
+  4% { height: 50%; }
+  8% { height: 40%; }
+  12% { height: 30%; }
+  16% { height: 20%; }
+  20% { height: 30%; }
+  24% { height: 40%; }
+  28% { height: 50%; }
+  32% { height: 60%; }
+  36% { height: 50%; }
+  40% { height: 20%; }
+  44% { height: 40%; }
+  48% { height: 60%; }
+  52% { height: 70%; }
+  56% { height: 80%; }
+  60% { height: 70%; }
+  64% { height: 60%; }
+  68% { height: 50%; }
+  72% { height: 60%; }
+  76% { height: 70%; }
+  80% { height: 80%; }
+  84% { height: 70%; }
+  88% { height: 60%; }
+  92% { height: 50%; }
+  96% { height: 40%; }
+  100% { height: 30%; }
+}

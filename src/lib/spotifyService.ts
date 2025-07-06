@@ -201,5 +201,21 @@ export const addToQueue = (trackUri: string, deviceId?: string) => {
   return fetchFromSpotify(endpoint, { method: 'POST' });
 };
 
+/**
+ * 將播放狀態明確轉移到指定的裝置。
+ * @param deviceId 要轉移到的裝置 ID
+ * @param play 是否在轉移後立即播放。通常設為 false，只轉移控制權。
+ * @returns 服務操作結果
+ */
+export const transferPlayback = (deviceId: string, play: boolean = false) => {
+  return fetchFromSpotify('me/player', {
+    method: 'PUT',
+    body: JSON.stringify({
+      device_ids: [deviceId],
+      play: play
+    }),
+  });
+};
+
 // 取得播放器狀態
 export const getPlayerState = () => fetchFromSpotify('me/player'); 

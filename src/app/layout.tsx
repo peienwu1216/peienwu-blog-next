@@ -83,7 +83,27 @@ export default function RootLayout({
             </footer>
             <Analytics />
             <SpeedInsights />
-            <Toaster theme="system" expand={true} />
+            <Toaster 
+              theme="system" 
+              expand={true}
+              position="bottom-right"
+              richColors={true}
+              closeButton={true}
+              duration={4000}
+              className="!bg-white dark:!bg-slate-800 !border !border-slate-200 dark:!border-slate-700 !shadow-lg"
+              toastOptions={{
+                style: {
+                  background: 'var(--toast-background)',
+                  color: 'var(--toast-color)',
+                  border: '1px solid var(--toast-border)',
+                  borderRadius: '8px',
+                  boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+                  marginRight: '6rem',
+                  marginBottom: '1.5rem',
+                },
+                className: '!bg-white dark:!bg-slate-800 !border !border-slate-200 dark:!border-slate-700 !shadow-lg',
+              }}
+            />
             <ProTipToast />
             <ConditionalAiButton />
           </SpotifyProvider>

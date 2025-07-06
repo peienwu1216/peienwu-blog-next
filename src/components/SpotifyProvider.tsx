@@ -267,7 +267,7 @@ export const SpotifyProvider = ({ children }: { children: ReactNode }) => {
       }
     }
 
-    // 如果沒有主控裝置，此裝置將成為新的主控！
+    // ✨ 嘗試搶佔主控權 - 使用原子操作避免競爭條件
     if (!masterDeviceId) {
       try {
         const res = await fetch('/api/spotify/master-device', {
@@ -276,13 +276,20 @@ export const SpotifyProvider = ({ children }: { children: ReactNode }) => {
           body: JSON.stringify({ deviceId: deviceIdRef.current }),
         });
         const data = await res.json();
+
         if (data.success) {
+          // 搶佔成功！更新本地狀態
           setMasterDeviceId(data.masterDeviceId);
-          toast.success("已取得播放主控權！");
+          toast.success("已取得播放主控權！點按播放鍵開始播放");
         } else {
-          throw new Error('Failed to claim master device status');
+          // ✨ 搶佔失敗！處理被拒絕的情況
+          toast.info("哎呀！就在您點擊的瞬間，其他人搶先一步了！");
+          // ✨ 立刻同步到最新的主控狀態，禁用按鈕
+          setMasterDeviceId(data.currentMasterId); 
+          return; // 終止後續的播放操作
         }
       } catch (error) {
+        console.error('Failed to claim master device status:', error);
         toast.error("取得播放主控權失敗。");
         return;
       }
@@ -360,7 +367,7 @@ export const SpotifyProvider = ({ children }: { children: ReactNode }) => {
         const data = await res.json();
         if (data.success) {
           setMasterDeviceId(data.masterDeviceId);
-          toast.success("已取得播放主控權！");
+          toast.success("已取得播放主控權！點按播放鍵開始播放");
         } else {
           throw new Error('Failed to claim master device status');
         }
@@ -462,7 +469,7 @@ export const SpotifyProvider = ({ children }: { children: ReactNode }) => {
         const data = await res.json();
         if (data.success) {
           setMasterDeviceId(data.masterDeviceId);
-          toast.success("已取得播放主控權！");
+          toast.success("已取得播放主控權！點按播放鍵開始播放");
         } else {
           throw new Error('Failed to claim master device status');
         }

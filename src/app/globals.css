@@ -10,6 +10,11 @@
   --background: #ffffff;
   --foreground: #000000;
 
+  /* Toast 通知樣式變數 */
+  --toast-background: #ffffff;
+  --toast-color: #1f2937;
+  --toast-border: #e5e7eb;
+
   /* 舊的 --font-geist-sans 和 --font-geist-mono 變數可以移除了，
     因為我們現在透過 next/font 和 tailwind.config.js 來管理字體。
     next/font 會自動產生類似 --font-noto-sans-tc 和 --font-jetbrains-mono 的變數，
@@ -33,6 +38,11 @@
     /* 保留你的暗色模式顏色變數 */
     --background: #0a0a0a;
     --foreground: #ededed;
+    
+    /* 暗色模式下的 Toast 通知樣式變數 */
+    --toast-background: #1e293b;
+    --toast-color: #f1f5f9;
+    --toast-border: #334155;
   }
 }
 
@@ -189,6 +199,55 @@ pre[data-theme] code {
   .prose a {
     @apply text-blue-600 hover:text-blue-700 underline;
   }
+}
+
+/* ====================================
+   Toast 通知樣式優化
+   ==================================== */
+/* 確保 toast 在行動裝置上有適當的間距和樣式 */
+[data-sonner-toaster] {
+  --normal: 400;
+  --medium: 500;
+  --semibold: 600;
+  --bold: 700;
+  --radius: 8px;
+  --font-size: 14px;
+  --line-height: 1.4;
+  z-index: 9999 !important;
+}
+
+/* 行動裝置上的 toast 樣式 */
+@media (max-width: 768px) {
+  [data-sonner-toaster] {
+    padding-right: 0 !important;
+    margin-right: 1rem !important;
+  }
+  [data-sonner-toast] {
+    margin-top: 0.5rem !important;
+    margin-bottom: 0 !important;
+    font-size: 16px !important;
+    font-weight: 600 !important;
+    color: #222 !important;
+    background: #fff !important;
+    border-radius: 8px !important;
+    padding: 16px 18px !important;
+    box-shadow: 0 6px 24px rgba(0,0,0,0.18) !important;
+    z-index: 9999 !important;
+    border: none !important;
+  }
+  .dark [data-sonner-toast] {
+    color: #f1f5f9 !important;
+    background: #1e293b !important;
+  }
+}
+
+[data-sonner-toast] {
+  margin-top: 0.75rem !important;
+  margin-bottom: 0 !important;
+  z-index: 9999 !important;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.10) !important; /* 稍微減弱陰影 */
+  border-bottom: none !important; /* 移除底下的線 */
+  border-top: none !important;    /* 保險：移除頂部線 */
 }
 
 /* ====================================

@@ -234,6 +234,10 @@ pre[data-theme] code {
     box-shadow: 0 6px 24px rgba(0,0,0,0.18) !important;
     z-index: 9999 !important;
     border: none !important;
+    border-bottom: none !important;
+    border-top: none !important;
+    border-image: none !important;
+    border-width: 0 !important;
   }
   .dark [data-sonner-toast] {
     color: #f1f5f9 !important;
@@ -245,9 +249,11 @@ pre[data-theme] code {
   margin-top: 0.75rem !important;
   margin-bottom: 0 !important;
   z-index: 9999 !important;
-  box-shadow: 0 4px 12px rgba(0,0,0,0.10) !important; /* 稍微減弱陰影 */
-  border-bottom: none !important; /* 移除底下的線 */
-  border-top: none !important;    /* 保險：移除頂部線 */
+  box-shadow: 0 4px 12px rgba(0,0,0,0.10) !important;
+  border-bottom: none !important;
+  border-top: none !important;
+  border-image: none !important;
+  border-width: 0 !important;
 }
 
 /* ====================================

@@ -59,7 +59,7 @@ export class MasterDeviceNotificationHandler {
   private handleMasterDeviceExpired(wasMaster: boolean, deviceId: string | null): void {
     if (!this.notificationState.hasShownExpired) {
       if (wasMaster) {
-        showHtmlToast("您的播放控制權已過期，其他裝置現在可以取得控制權。");
+        showHtmlToast("您的播放控制權已釋放！");
       } else {
         showHtmlToast("主控裝置已過期，現在可以播放了！");
       }

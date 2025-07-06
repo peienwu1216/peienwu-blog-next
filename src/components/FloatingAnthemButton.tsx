@@ -37,8 +37,8 @@ export default function FloatingAnthemButton() {
 
   return (
     <>
-      {/* 懸浮徽章 - 重新設計 */}
-      <div className="fixed z-50 bottom-28 right-8 md:bottom-24 md:right-8 lg:bottom-28 lg:right-8">
+      {/* 懸浮徽章 - 移到左側與AI按鈕對齊 */}
+      <div className="fixed z-50 bottom-8 left-8">
         {/* 背景光暈效果 */}
         {!isAboutPage && (
           <div 
@@ -85,17 +85,17 @@ export default function FloatingAnthemButton() {
         </button>
       </div>
 
-      {/* Popover 卡片 - 調整位置適應右側 */}
+      {/* Popover 卡片 - 調整位置適應左側 */}
       {open && (
         <div
           ref={popoverRef}
-          className="fixed z-50 bottom-36 right-8 md:bottom-48 md:right-8 lg:bottom-52 lg:right-8"
+          className="fixed z-50 bottom-28 left-8"
         >
-          {/* 箭頭 - 調整方向適應右側 */}
-          <div className="flex justify-end pr-6 mb-1">
+          {/* 箭頭 - 調整方向適應左側 */}
+          <div className="flex justify-start pl-6 mb-1">
             <div className="relative">
-              <div className="w-0 h-0 border-l-8 border-r-8 border-b-8 border-l-transparent border-r-transparent border-b-white/80 dark:border-b-slate-800/80 backdrop-blur-sm" />
-              <div className="absolute top-0 left-0 w-0 h-0 border-l-8 border-r-8 border-b-8 border-l-transparent border-r-transparent border-b-sky-500/20" />
+              <div className="w-0 h-0 border-l-8 border-r-8 border-t-8 border-l-transparent border-r-transparent border-t-white/80 dark:border-t-slate-800/80 backdrop-blur-sm" />
+              <div className="absolute bottom-0 left-0 w-0 h-0 border-l-8 border-r-8 border-t-8 border-l-transparent border-r-transparent border-t-sky-500/20" />
             </div>
           </div>
           

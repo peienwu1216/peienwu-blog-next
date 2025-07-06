@@ -31,7 +31,8 @@ export default function ArticlePlayButton({ trackId, trackTitle }: ArticlePlayBu
     isPlaying, 
     currentTrack,
     isReady,
-    hasPlaybackInitiated
+    hasPlaybackInitiated,
+    isControllable // ✨ 取得是否可控制的狀態
   } = useSpotify();
   
   const { exec: getTrackApi, isLoading: isTrackInfoLoading } = useApi<TrackInfo>('GET', `/api/spotify/track/${trackId}`);
@@ -48,6 +49,18 @@ export default function ArticlePlayButton({ trackId, trackTitle }: ArticlePlayBu
         duration: 6000,
         position: 'bottom-right',
       });
+      return;
+    }
+
+    // ✨ 權限檢查 - 友善的提示
+    if (!isControllable) {
+      toast.info(
+        "🎵 目前由其他訪客控制播放中\n\n您可以等待 5 分鐘後重新取得控制權，或等待當前播放結束。",
+        {
+          duration: 5000,
+          position: 'bottom-right',
+        }
+      );
       return;
     }
 
@@ -73,6 +86,7 @@ export default function ArticlePlayButton({ trackId, trackTitle }: ArticlePlayBu
   }, [
     isReady,
     hasPlaybackInitiated,
+    isControllable, // ✨ 加入權限檢查依賴
     isThisTrackCurrentlyPlaying,
     isThisTrackCurrentlyPaused,
     playTrack, 
@@ -86,19 +100,37 @@ export default function ArticlePlayButton({ trackId, trackTitle }: ArticlePlayBu
   return (
     <button
       onClick={handleClick}
-      disabled={isTrackInfoLoading}
-      className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-      aria-label={isThisTrackCurrentlyPlaying ? `暫停播放 ${trackTitle}` : `播放主題曲 ${trackTitle}`}
+      disabled={isTrackInfoLoading || !isControllable}
+      className={`flex items-center gap-2 text-sm transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed ${
+        !isControllable 
+          ? 'text-slate-400 dark:text-slate-500 cursor-not-allowed' 
+          : 'text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400'
+      }`}
+      aria-label={
+        !isControllable 
+          ? '目前由其他訪客控制中，無法播放' 
+          : isThisTrackCurrentlyPlaying 
+            ? `暫停播放 ${trackTitle}` 
+            : `播放主題曲 ${trackTitle}`
+      }
+      title={!isControllable ? '目前由其他訪客控制中' : undefined}
     >
       {isTrackInfoLoading ? (
         <Loader size={16} className="animate-spin" />
+      ) : !isControllable ? (
+        <Play size={16} className="text-slate-400" />
       ) : isThisTrackCurrentlyPlaying ? (
         <Pause size={16} className="text-blue-500" />
       ) : (
         <Play size={16} />
       )}
       <span className="hidden sm:inline">
-        {isThisTrackCurrentlyPlaying ? '暫停播放' : '播放主題曲'}
+        {!isControllable 
+          ? '等待控制權' 
+          : isThisTrackCurrentlyPlaying 
+            ? '暫停播放' 
+            : '播放主題曲'
+        }
       </span>
     </button>
   );

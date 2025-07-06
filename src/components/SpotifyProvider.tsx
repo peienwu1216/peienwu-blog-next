@@ -85,6 +85,9 @@ export const SpotifyProvider = ({ children }: { children: ReactNode }) => {
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const syncIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const hasPlaybackInitiatedRef = useRef(false);
+  
+  // ✨ 新增節流控制，防止快速重複操作
+  const isThrottledRef = useRef(false);
 
   const { exec: nowPlayingApi } = useApi<NowPlayingResponse>('GET', '/api/spotify/now-playing');
 
@@ -150,24 +153,22 @@ export const SpotifyProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const resumeTrack = useCallback(async () => {
-    if (!isReady || !deviceIdRef.current) return;
+    if (!isReady || !playerRef.current) return;
     try {
-      const response = await fetch(`/api/spotify/resume?deviceId=${deviceIdRef.current}`, {
-        method: 'PUT',
-      });
-      if (!response.ok) {
-        console.warn('Resume command failed, possibly no active track.');
-      }
+      await playerRef.current.resume();
     } catch (error) {
       console.error('Failed to resume playback:', error);
     }
   }, [isReady]);
 
   const handlePlay = useCallback(async () => {
-    if (!isReady || !deviceIdRef.current) {
-      alert('播放器尚未準備好');
+    if (!isReady || !deviceIdRef.current || isThrottledRef.current) {
+      toast.error('播放器尚未準備好');
       return;
     }
+
+    isThrottledRef.current = true;
+    setTimeout(() => { isThrottledRef.current = false; }, 500);
 
     if (hasPlaybackInitiatedRef.current) {
       await resumeTrack();
@@ -192,15 +193,19 @@ export const SpotifyProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const handlePlayRandom = useCallback(async () => {
-    if (!isReady || !deviceIdRef.current) {
-        alert('播放器尚未準備好');
+    if (!isReady || !deviceIdRef.current || isThrottledRef.current) {
+        toast.error('播放器尚未準備好');
         return;
     }
     const currentQueue = get().queue;
     if (!currentQueue.length) {
-        alert('播放清單為空，無法隨機播放');
+        toast.error('播放清單為空，無法隨機播放');
         return;
     }
+    
+    isThrottledRef.current = true;
+    setTimeout(() => { isThrottledRef.current = false; }, 1000); // 隨機播放需要更長時間
+    
     try {
         const shuffledQueue = shuffleArray(currentQueue);
         const trackUris = shuffledQueue.map(track => `spotify:track:${track.trackId}`);
@@ -212,7 +217,7 @@ export const SpotifyProvider = ({ children }: { children: ReactNode }) => {
         toast.success('已開始隨機播放！');
     } catch (error) {
         console.error('Failed to start random playback:', error);
-        alert(`隨機播放失敗: ${error instanceof Error ? error.message : '未知錯誤'}`);
+        toast.error(`隨機播放失敗: ${error instanceof Error ? error.message : '未知錯誤'}`);
     }
   }, [isReady, get, setQueue, setTrack, setIsPlaying, playPlaylist]);
   
@@ -236,17 +241,21 @@ export const SpotifyProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [setQueue, setTrack, setDuration]);
 
+  // ✨ 移除樂觀更新，讓狀態完全由 player_state_changed 事件驅動
   const playTrack = useCallback(async (track: TrackInfo, isInterrupt = false) => {
-    if (!isReady || !deviceIdRef.current) {
-      alert("Spotify 播放器尚未準備就緒。");
+    if (!isReady || !deviceIdRef.current || isThrottledRef.current) {
+      toast.error("Spotify 播放器尚未準備就緒。");
       return;
     }
+    
+    isThrottledRef.current = true;
+    setTimeout(() => { isThrottledRef.current = false; }, 500);
     
     const trackUri = `spotify:track:${track.trackId}`;
 
     try {
       if (isInterrupt) {
-        // ✨ 新的插播邏輯
+        // ✨ 新的插播邏輯 - 移除樂觀更新
         // 1. 在本地佇列中預先插入歌曲
         insertTrack(track);
 
@@ -280,35 +289,51 @@ export const SpotifyProvider = ({ children }: { children: ReactNode }) => {
     } catch (error) {
       console.error('Failed to play track:', error);
       toast.error(`播放歌曲失敗: ${error instanceof Error ? error.message : '未知錯誤'}`);
+      // ✨ 注意：這裡也不再需要還原狀態，因為我們沒有樂觀更新
     }
-  }, [isReady, insertTrack]); // ✨ 移除了 setTrack 和 setIsPlaying
+  }, [isReady, insertTrack]); // ✨ 移除了 setTrack 和 setIsPlaying 的依賴
 
+  // ✨ 修正：直接呼叫 player 實例的方法
   const nextTrack = useCallback(async () => {
-    if (!deviceIdRef.current) return;
+    if (!isReady || !playerRef.current || isThrottledRef.current) return;
+    
+    isThrottledRef.current = true;
+    setTimeout(() => { isThrottledRef.current = false; }, 500); // 500ms 內最多執行一次
+    
     try {
-      await fetch(`/api/spotify/next?deviceId=${deviceIdRef.current}`, { method: 'POST' });
+      await playerRef.current.nextTrack();
     } catch (error) {
       console.error('Failed to call next track:', error);
     }
-  }, []);
+  }, [isReady]);
 
+  // ✨ 修正：直接呼叫 player 實例的方法
   const previousTrack = useCallback(async () => {
-    if (!deviceIdRef.current) return;
+    if (!isReady || !playerRef.current || isThrottledRef.current) return;
+    
+    isThrottledRef.current = true;
+    setTimeout(() => { isThrottledRef.current = false; }, 500);
+    
     try {
-      await fetch(`/api/spotify/previous?deviceId=${deviceIdRef.current}`, { method: 'POST' });
+      await playerRef.current.previousTrack();
     } catch (error) {
       console.error('Failed to call previous track:', error);
     }
-  }, []);
+  }, [isReady]);
 
+  // ✨ 修正：直接呼叫 player 實例的方法
   const pauseTrack = useCallback(async () => {
-    if (!deviceIdRef.current) return;
+    if (!isReady || !playerRef.current || isThrottledRef.current) return;
+    
+    isThrottledRef.current = true;
+    setTimeout(() => { isThrottledRef.current = false; }, 300);
+    
     try {
-      await fetch(`/api/spotify/pause?deviceId=${deviceIdRef.current}`, { method: 'PUT' });
+      await playerRef.current.pause();
     } catch (error) {
       console.error('Failed to pause track:', error);
     }
-  }, []);
+  }, [isReady]);
 
   const handleSetVolume = useCallback(async (newVolume: number) => {
     if(playerRef.current) {
@@ -352,8 +377,10 @@ export const SpotifyProvider = ({ children }: { children: ReactNode }) => {
           setIsReady(false);
         });
 
+        // ✨ 精確的狀態同步 - 這是更新 UI 的唯一管道
         player.addListener('player_state_changed', (state) => {
             if (!state) {
+                // 如果沒有狀態，可能代表播放器已關閉或沒有活躍裝置
                 if (get().isPlaying) setIsPlaying(false);
                 return;
             }
@@ -361,6 +388,7 @@ export const SpotifyProvider = ({ children }: { children: ReactNode }) => {
             const sdkTrack = state.track_window.current_track;
             const currentStoreTrack = get().currentTrack;
 
+            // 當歌曲 ID 改變時，更新曲目資訊
             if (sdkTrack.id && sdkTrack.id !== currentStoreTrack?.trackId) {
               const trackInfo: TrackInfo = {
                   trackId: sdkTrack.id,
@@ -375,9 +403,12 @@ export const SpotifyProvider = ({ children }: { children: ReactNode }) => {
               setDuration(state.duration / 1000);
             }
             
+            // 同步播放/暫停狀態
             if (state.paused === get().isPlaying) {
               setIsPlaying(!state.paused);
             }
+
+            // 同步進度
             setProgress(state.position / 1000);
         });
 

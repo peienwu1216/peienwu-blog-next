@@ -1,8 +1,8 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useCallback } from 'react';
 import { useSpotify } from './SpotifyProvider';
-import { Play, Pause, Loader } from 'lucide-react';
+import { Play, Pause, Loader, Music4 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useApi } from '@/hooks/useApi';
 import { TrackInfo } from '@/store/music';
@@ -12,66 +12,93 @@ interface ArticlePlayButtonProps {
   trackTitle: string;
 }
 
+// 標準作法：引導使用者啟動播放器的提示元件
+const ActivationToast = () => (
+  <div className="flex items-center gap-3 p-2">
+    <Music4 className="h-5 w-5 text-sky-500" />
+    <div>
+      <div className="font-bold">請先啟動音樂播放器</div>
+      <div className="text-xs text-slate-500">按下 <kbd className="rounded border px-1">⌘+K</kbd> 並點擊音樂面板的播放鍵，即可啟用。</div>
+    </div>
+  </div>
+);
+
 export default function ArticlePlayButton({ trackId, trackTitle }: ArticlePlayButtonProps) {
-  const { playTrack, pauseTrack, resumeTrack, isPlaying, currentTrack } = useSpotify();
-  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { 
+    playTrack, 
+    pauseTrack, 
+    resumeTrack, 
+    isPlaying, 
+    currentTrack,
+    isReady,
+    hasPlaybackInitiated
+  } = useSpotify();
+  
+  const { exec: getTrackApi, isLoading: isTrackInfoLoading } = useApi<TrackInfo>('GET', `/api/spotify/track/${trackId}`);
 
-  const { exec: getTrackApi, isLoading: isTrackLoading } = useApi<TrackInfo>('GET', `/api/spotify/track/${trackId}`);
-
-  const isThisTrackPlaying = isPlaying && currentTrack?.trackId === trackId;
+  const isThisTrackCurrentlyPlaying = isPlaying && currentTrack?.trackId === trackId;
+  const isThisTrackCurrentlyPaused = !isPlaying && currentTrack?.trackId === trackId;
 
   const handleClick = useCallback(async (e: React.MouseEvent) => {
     e.stopPropagation();
 
-    if (isThisTrackPlaying) {
-      pauseTrack();
-      toast.info('音樂已暫停');
-      return;
-    }
-    
-    if (currentTrack?.trackId === trackId && !isPlaying) {
-      resumeTrack();
-      toast.info(`繼續播放: ${currentTrack.title}`);
+    // 冷啟動檢查
+    if (!isReady || !hasPlaybackInitiated) {
+      toast.custom(() => <ActivationToast />, {
+        duration: 6000,
+        position: 'bottom-right',
+      });
       return;
     }
 
-    setIsSubmitting(true);
+    if (isThisTrackCurrentlyPlaying) {
+      pauseTrack();
+      return;
+    }
+    if (isThisTrackCurrentlyPaused) {
+      resumeTrack();
+      return;
+    }
     try {
       const trackToPlay = await getTrackApi();
       if (trackToPlay) {
-        await playTrack(trackToPlay, true);
-        toast.success(`正在播放 ${trackToPlay.title}`);
+        await playTrack(trackToPlay, true); 
       } else {
         toast.error('無法載入歌曲資訊');
       }
     } catch (error) {
       console.error('Failed to play track from article:', error);
-      toast.error('播放失敗，請稍後再試');
-    } finally {
-      setIsSubmitting(false);
+      toast.error(`播放失敗: ${error instanceof Error ? error.message : '未知錯誤'}`);
     }
-  }, [isThisTrackPlaying, trackId, currentTrack, isPlaying, playTrack, pauseTrack, resumeTrack, getTrackApi]);
+  }, [
+    isReady,
+    hasPlaybackInitiated,
+    isThisTrackCurrentlyPlaying,
+    isThisTrackCurrentlyPaused,
+    playTrack, 
+    pauseTrack, 
+    resumeTrack, 
+    getTrackApi
+  ]);
 
   if (!trackId) return null;
-
-  const isLoading = isSubmitting || isTrackLoading;
 
   return (
     <button
       onClick={handleClick}
-      disabled={isLoading}
+      disabled={isTrackInfoLoading}
       className="flex items-center gap-2 text-sm text-slate-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-      aria-label={isThisTrackPlaying ? `暫停播放 ${trackTitle}` : `播放主題曲 ${trackTitle}`}
+      aria-label={isThisTrackCurrentlyPlaying ? `暫停播放 ${trackTitle}` : `播放主題曲 ${trackTitle}`}
     >
-      {isLoading ? (
+      {isTrackInfoLoading ? (
         <Loader size={16} className="animate-spin" />
-      ) : isThisTrackPlaying ? (
+      ) : isThisTrackCurrentlyPlaying ? (
         <Pause size={16} className="text-blue-500" />
       ) : (
         <Play size={16} />
       )}
       <span className="hidden sm:inline">
-        {isLoading ? '載入中...' : isThisTrackPlaying ? '暫停音樂' : '播放主題曲'}
+        {isThisTrackCurrentlyPlaying ? '暫停播放' : '播放主題曲'}
       </span>
     </button>
   );

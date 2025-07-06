@@ -23,6 +23,7 @@ interface SpotifyContextProps {
   volume: number;
   progress: number;
   duration: number;
+  hasPlaybackInitiated: boolean;
 }
 
 interface NowPlayingResponse {
@@ -245,8 +246,11 @@ export const SpotifyProvider = ({ children }: { children: ReactNode }) => {
 
     try {
       if (isInterrupt) {
-        // ✨ 全新的插播邏輯
-        // 1. 呼叫後端 API，將歌曲新增至 Spotify 的遠端佇列
+        // ✨ 新的插播邏輯
+        // 1. 在本地佇列中預先插入歌曲
+        insertTrack(track);
+
+        // 2. 呼叫後端 API，將歌曲新增至 Spotify 的遠端佇列
         const queueResponse = await fetch('/api/spotify/add-to-queue', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -254,35 +258,30 @@ export const SpotifyProvider = ({ children }: { children: ReactNode }) => {
         });
 
         if (!queueResponse.ok) {
-          const errorData = await queueResponse.json().catch(() => ({}));
-          throw new Error(errorData.message || '新增歌曲至佇列失敗');
+          throw new Error('新增歌曲至佇列失敗');
         }
 
-        // 2. 呼叫「下一首」API，讓播放器立即跳到我們剛剛新增的歌曲
+        // 3. 呼叫「下一首」API，讓播放器跳到我們剛剛新增的歌曲
+        // 這一系列操作會觸發 player_state_changed 事件，由該事件監聽器去更新 UI
         await fetch(`/api/spotify/next?deviceId=${deviceIdRef.current}`, { method: 'POST' });
 
-        // 3. 更新本地的 Zustand 狀態，保持與遠端同步
-        insertTrack(track);
-
       } else {
-        // 如果不是插播，則維持原本的邏輯 (取代整個佇列)
+        // 對於非插播，維持原本的取代佇列邏輯
         await fetch(`/api/spotify/play?deviceId=${deviceIdRef.current}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ uris: [trackUri] }),
         });
-        setTrack(track);
       }
-
-      // 無論是哪種方式，都將播放狀態設為 true，並標記為已開始播放
-      setIsPlaying(true);
+      
+      // 無論如何，都標記為已觸發過播放
       hasPlaybackInitiatedRef.current = true;
 
     } catch (error) {
       console.error('Failed to play track:', error);
       toast.error(`播放歌曲失敗: ${error instanceof Error ? error.message : '未知錯誤'}`);
     }
-  }, [isReady, insertTrack, setTrack, setIsPlaying]); // 移除 nextTrack 依賴
+  }, [isReady, insertTrack]); // ✨ 移除了 setTrack 和 setIsPlaying
 
   const nextTrack = useCallback(async () => {
     if (!deviceIdRef.current) return;
@@ -409,7 +408,8 @@ export const SpotifyProvider = ({ children }: { children: ReactNode }) => {
     <SpotifyContext.Provider value={{
       playTrack, handlePlay, handlePlayRandom, pauseTrack, nextTrack, previousTrack, handleSetVolume, seek,
       loading, isReady, isPlaying, currentTrack, 
-      volume, progress, duration, resumeTrack
+      volume, progress, duration, resumeTrack,
+      hasPlaybackInitiated: hasPlaybackInitiatedRef.current,
     }}>
       {children}
     </SpotifyContext.Provider>

@@ -53,24 +53,26 @@ export const useMusicStore = create<MusicState>((set, get) => ({
   
   setQueue: (tracks) => set({ queue: tracks }),
   
-  // ✨ 插播邏輯 - 只處理歌曲資料，不處理播放狀態
+  // ✨ 核心修改：讓 insertTrack 只處理佇列，不改變當前播放的歌曲
   insertTrack: (track) => {
-    const { queue, currentTrack } = get();
-    if (!currentTrack) {
-      // 如果當前沒有歌曲，就直接設定這首歌為當前歌曲
-      set({ queue: [track], currentTrack: track });
-      return;
-    }
+    set((state) => {
+      const { queue, currentTrack } = state;
 
-    const currentIndex = queue.findIndex(t => t.trackId === currentTrack.trackId);
-    const newQueue = [...queue];
-    
-    // 將新歌插入到目前歌曲的下一首
-    newQueue.splice(currentIndex + 1, 0, track);
-    
-    set({
-      queue: newQueue,
-      currentTrack: track, // 立刻切換到新歌
+      // 如果當前沒有歌曲，則直接設定為新佇列並播放
+      if (!currentTrack) {
+        return { queue: [track], currentTrack: track, isPlaying: true };
+      }
+
+      // 否則，找到目前歌曲的位置並將新歌插入到它後面
+      const currentIndex = queue.findIndex(t => t.trackId === currentTrack.trackId);
+      const newQueue = [...queue];
+      
+      // 如果找不到目前歌曲，就插在最前面
+      const insertionIndex = currentIndex === -1 ? 0 : currentIndex + 1;
+      newQueue.splice(insertionIndex, 0, track);
+      
+      // 只更新佇列，currentTrack 和 isPlaying 留給 Spotify 事件來更新
+      return { queue: newQueue };
     });
   },
   

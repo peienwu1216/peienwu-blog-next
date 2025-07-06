@@ -34,13 +34,25 @@ export function useApi<T>(method: ApiMethod, url: string): UseApiReturn<T> {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({ message: 'An unknown error occurred' }));
-        throw new Error(errorData.error?.message || `Request failed with status ${response.status}`);
+        const errorMessage = errorData.error?.message || `Request failed with status ${response.status}`;
+        setError(errorMessage);
+        throw new Error(errorMessage);
       }
       
-      // 處理沒有回傳內容的 204 No Content 狀況
-      if (response.status === 204) {
-        setData(null);
+      // ✨ 改善：處理沒有回傳內容的 HTTP 狀態碼
+      // 204 No Content, 205 Reset Content, 304 Not Modified 等
+      if (response.status === 204 || response.status === 205 || response.status === 304) {
+        setData(null as T);
         return null;
+      }
+
+      // 檢查 Content-Type 是否為 JSON
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        // 非 JSON 回應，可能是純文字或其他格式
+        const text = await response.text();
+        setData(text as T);
+        return text as T;
       }
 
       const result: T = await response.json();
@@ -48,9 +60,10 @@ export function useApi<T>(method: ApiMethod, url: string): UseApiReturn<T> {
       return result;
 
     } catch (err: any) {
-      setError(err.message);
+      const errorMessage = err.message || 'An unknown error occurred';
+      setError(errorMessage);
       console.error(`API call failed for ${method} ${url}:`, err);
-      return null;
+      throw err; // 重新拋出錯誤，讓呼叫者可以 catch
     } finally {
       setIsLoading(false);
     }

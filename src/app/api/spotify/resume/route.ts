@@ -1,11 +1,14 @@
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { resumePlayback } from '@/lib/spotifyService';
 import { createSuccessResponse, createErrorResponse, createSpotifyErrorResponse } from '@/lib/apiUtils';
 
+export const dynamic = 'force-dynamic';
+
 export async function PUT(req: NextRequest) {
   try {
-    const { deviceId } = await req.json();
-    
+    // 從 URL 的 searchParams 獲取 deviceId
+    const deviceId = req.nextUrl.searchParams.get('deviceId');
+
     if (!deviceId) {
       return createErrorResponse('deviceId is required', 400);
     }
@@ -16,9 +19,9 @@ export async function PUT(req: NextRequest) {
       return createSpotifyErrorResponse(result.error, 'Failed to resume playback');
     }
 
-    return createSuccessResponse({ success: true });
+    return new NextResponse(null, { status: 204 });
   } catch (error) {
     console.error('Error in /api/spotify/resume:', error);
-    return createErrorResponse('Invalid request body', 400);
+    return createErrorResponse('An internal server error occurred', 500);
   }
 } 

@@ -1,4 +1,4 @@
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { nextTrack } from '@/lib/spotifyService';
 import { createSuccessResponse, createErrorResponse, createSpotifyErrorResponse } from '@/lib/apiUtils';
 
@@ -6,8 +6,9 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(req: NextRequest) {
   try {
-    const { deviceId } = await req.json();
-    
+    // 從 URL 的 searchParams 獲取 deviceId
+    const deviceId = req.nextUrl.searchParams.get('deviceId');
+
     if (!deviceId) {
       return createErrorResponse('deviceId is required', 400);
     }
@@ -18,9 +19,9 @@ export async function POST(req: NextRequest) {
       return createSpotifyErrorResponse(result.error, 'Failed to skip to next track');
     }
 
-    return createSuccessResponse({ success: true });
+    return new NextResponse(null, { status: 204 });
   } catch (error) {
     console.error('Error in /api/spotify/next:', error);
-    return createErrorResponse('Invalid request body', 400);
+    return createErrorResponse('An internal server error occurred', 500);
   }
 }

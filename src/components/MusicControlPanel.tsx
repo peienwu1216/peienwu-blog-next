@@ -15,7 +15,7 @@ export default function MusicControlPanel() {
     resumeTrack,
     nextTrack,
     previousTrack,
-    setVolume,
+    handleSetVolume,
     seek,
   } = useSpotify();
 
@@ -77,7 +77,7 @@ export default function MusicControlPanel() {
               max="1"
               step="0.05"
               value={volume}
-              onChange={(e) => setVolume(Number(e.target.value))}
+              onChange={(e) => handleSetVolume(Number(e.target.value))}
               className="w-20 h-1 appearance-none cursor-pointer accent-sky-500"
               style={{
                 background: `linear-gradient(to right, #0ea5e9 0%, #0ea5e9 ${volume * 100}%, #e5e7eb ${volume * 100}%, #e5e7eb 100%)`

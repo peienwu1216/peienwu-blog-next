@@ -11,54 +11,28 @@ export interface TrackInfo {
 }
 
 interface MusicState {
-  isPlaying: boolean;
   currentTrack: TrackInfo | null;
   queue: TrackInfo[];
-  volume: number;
-  progress: number;
-  duration: number;
-  play: (track: TrackInfo) => void;
-  pause: () => void;
   setTrack: (track: TrackInfo | null) => void;
   setQueue: (tracks: TrackInfo[]) => void;
-  setVolume: (volume: number) => void;
-  setProgress: (progress: number) => void;
-  setDuration: (duration: number) => void;
-  // ✨ 新增：專門處理插播的 action
+  // ✨ 專門處理插播的 action
   insertTrack: (track: TrackInfo) => void;
 }
 
 export const useMusicStore = create<MusicState>((set, get) => ({
-  isPlaying: false,
   currentTrack: null,
   queue: [],
-  volume: 1,
-  progress: 0,
-  duration: 0,
-  play: (track) => {
-    const { currentTrack } = get();
-    // 檢查是否為新歌曲
-    if (currentTrack?.trackId !== track.trackId) {
-      // 如果是新歌，則立即更新播放狀態、新歌曲資訊，並重設進度
-      set({ isPlaying: true, currentTrack: track, progress: 0, duration: track.duration || 0 });
-    } else {
-      // 如果是同一首歌（例如：從暫停恢復），則只更新播放狀態
-      set({ isPlaying: true });
-    }
-  },
-  pause: () => set({ isPlaying: false }),
-  setTrack: (track) => set({ currentTrack: track }),
-  setQueue: (tracks) => set({ queue: tracks }),
-  setVolume: (volume) => set({ volume }),
-  setProgress: (progress) => set({ progress }),
-  setDuration: (duration) => set({ duration }),
   
-  // ✨ 新增的插播邏輯
+  setTrack: (track) => set({ currentTrack: track }),
+  
+  setQueue: (tracks) => set({ queue: tracks }),
+  
+  // ✨ 插播邏輯 - 只處理歌曲資料，不處理播放狀態
   insertTrack: (track) => {
     const { queue, currentTrack } = get();
     if (!currentTrack) {
-      // 如果當前沒有歌曲，就直接播放這首歌
-      set({ queue: [track], currentTrack: track, isPlaying: true, progress: 0, duration: track.duration || 0 });
+      // 如果當前沒有歌曲，就直接設定這首歌為當前歌曲
+      set({ queue: [track], currentTrack: track });
       return;
     }
 
@@ -71,9 +45,6 @@ export const useMusicStore = create<MusicState>((set, get) => ({
     set({
       queue: newQueue,
       currentTrack: track, // 立刻切換到新歌
-      isPlaying: true,
-      progress: 0,
-      duration: track.duration || 0,
     });
   },
 }));

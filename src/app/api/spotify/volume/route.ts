@@ -1,27 +1,26 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getAccessToken, VOLUME_ENDPOINT } from '@/lib/spotify';
+import { NextRequest } from 'next/server';
+import { setVolume } from '@/lib/spotifyService';
+import { createSuccessResponse, createErrorResponse, createSpotifyErrorResponse } from '@/lib/apiUtils';
 
 export const dynamic = 'force-dynamic';
 
 export async function PUT(req: NextRequest) {
   try {
-    const { volume_percent } = await req.json();
-    const accessToken = await getAccessToken();
-    const url = new URL(VOLUME_ENDPOINT);
-    url.searchParams.append('volume_percent', volume_percent);
+    const { volume } = await req.json();
     
-    const response = await fetch(url.toString(), {
-      method: 'PUT',
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    });
-
-    if (response.ok) {
-      return NextResponse.json({ success: true });
+    if (typeof volume !== 'number' || volume < 0 || volume > 100) {
+      return createErrorResponse('Volume must be a number between 0 and 100', 400);
     }
-    return new NextResponse('Failed to set volume', { status: response.status });
+
+    const result = await setVolume(volume);
+    
+    if (!result.success) {
+      return createSpotifyErrorResponse(result.error, 'Failed to set volume');
+    }
+
+    return createSuccessResponse({ success: true });
   } catch (error) {
-    return new NextResponse('Internal Server Error', { status: 500 });
+    console.error('Error in /api/spotify/volume:', error);
+    return createErrorResponse('Invalid request body', 400);
   }
 }

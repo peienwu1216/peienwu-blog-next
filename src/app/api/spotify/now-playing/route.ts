@@ -1,51 +1,38 @@
 import { NextResponse } from 'next/server';
-import { getAccessToken, NOW_PLAYING_ENDPOINT } from '@/lib/spotify';
+import { getNowPlaying } from '@/lib/spotifyService';
+import { createSuccessResponse, createSpotifyErrorResponse } from '@/lib/apiUtils';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
-  try {
-    const accessToken = await getAccessToken();
-
-    const response = await fetch(NOW_PLAYING_ENDPOINT, {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-      cache: 'no-store',
-    });
-
-    if (response.status === 204 || response.status > 400) {
-      return NextResponse.json({ isPlaying: false });
-    }
-
-    const song = await response.json();
-
-    if (song === null || song.item === null) {
-      return NextResponse.json({ isPlaying: false });
-    }
-
-    const data = {
-      isPlaying: song.is_playing,
-      progress_ms: song.progress_ms,
-      item: {
-        name: song.item.name,
-        duration_ms: song.item.duration_ms,
-        artists: song.item.artists.map((artist: { name: string }) => artist.name),
-        album: {
-          name: song.item.album.name,
-          images: song.item.album.images,
-        },
-        external_urls: song.item.external_urls,
-        id: song.item.id,
-      },
-    };
-
-    return NextResponse.json(data);
-  } catch (error) {
-    console.error('Error in /api/spotify/now-playing:', error);
-    return NextResponse.json(
-      { isPlaying: false, error: 'Internal Server Error' },
-      { status: 500 }
-    );
+  const result = await getNowPlaying();
+  
+  if (!result.success) {
+    return createSpotifyErrorResponse(result.error, 'Failed to get current track');
   }
+
+  const data = result.data;
+  
+  if (!data || !data.item) {
+    return createSuccessResponse({
+      isPlaying: false,
+      item: null,
+      progress_ms: 0,
+      duration_ms: 0,
+    });
+  }
+
+  return createSuccessResponse({
+    isPlaying: !data.is_playing ? false : true,
+    item: {
+      id: data.item.id,
+      name: data.item.name,
+      artists: data.item.artists,
+      album: data.item.album,
+      external_urls: data.item.external_urls,
+      duration_ms: data.item.duration_ms,
+    },
+    progress_ms: data.progress_ms || 0,
+    duration_ms: data.item.duration_ms,
+  });
 } 

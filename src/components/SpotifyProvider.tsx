@@ -1,6 +1,8 @@
 'use client';
 import React, { createContext, useContext, useEffect, useCallback, useState, ReactNode, useRef } from 'react';
 import { useMusicStore, TrackInfo } from '@/store/music';
+import { clientConfig } from '@/config/spotify';
+import { useApi } from '@/hooks/useApi';
 
 interface SpotifyContextProps {
   playTrack: (track: TrackInfo, isInterrupt?: boolean) => void;
@@ -22,26 +24,39 @@ interface SpotifyContextProps {
 const SpotifyContext = createContext<SpotifyContextProps | undefined>(undefined);
 
 export const useSpotify = () => {
-  const ctx = useContext(SpotifyContext);
-  if (!ctx) throw new Error('useSpotify must be used within a SpotifyProvider');
-  return ctx;
+  const context = useContext(SpotifyContext);
+  if (!context) {
+    throw new Error('useSpotify must be used within a SpotifyProvider');
+  }
+  return context;
 };
 
-// 🚨 請在此處填入您想要的預設播放列表 Spotify ID
-const DEFAULT_PLAYLIST_ID = '0EUdsblGUaGfNvwPES3qka'; // 例如：Spotify 的 "Lofi Beats"
+// 🚨 使用設定檔中的預設播放列表 ID
+const DEFAULT_PLAYLIST_ID = clientConfig.defaultPlaylistId;
 
 export const SpotifyProvider = ({ children }: { children: ReactNode }) => {
-  const {
-    isPlaying, currentTrack, volume, progress, duration, queue,
-    play, pause, setTrack, setQueue, setVolume: setVolumeInStore, setProgress, setDuration, insertTrack
-  } = useMusicStore();
+  const { currentTrack, queue, setTrack, setQueue, insertTrack } = useMusicStore();
   
+  // 將播放器狀態移至 Provider 的本地 state
   const [loading, setLoading] = useState(true);
   const [isReady, setIsReady] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [volume, setVolumeState] = useState(1);
+  
   const playerRef = useRef<Spotify.Player | null>(null);
   const deviceIdRef = useRef<string | null>(null);
   const progressIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const syncIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // 使用 useApi Hook 來準備好我們的 API 呼叫函式
+  const { exec: playApi, isLoading: isPlayLoading } = useApi('PUT', '/api/spotify/play');
+  const { exec: pauseApi, isLoading: isPauseLoading } = useApi('PUT', '/api/spotify/pause');
+  const { exec: nextApi, isLoading: isNextLoading } = useApi('POST', '/api/spotify/next');
+  const { exec: previousApi, isLoading: isPreviousLoading } = useApi('POST', '/api/spotify/previous');
+  const { exec: volumeApi, isLoading: isVolumeLoading } = useApi('PUT', '/api/spotify/volume');
+  const { exec: seekApi, isLoading: isSeekLoading } = useApi('PUT', '/api/spotify/seek');
 
   // ✨ --- 新增：主動同步狀態的函式 --- ✨
   const syncPlaybackState = useCallback(async () => {
@@ -67,14 +82,14 @@ export const SpotifyProvider = ({ children }: { children: ReactNode }) => {
             }
             setDuration(track.duration || 0);
             setProgress(data.progress_ms / 1000);
-            if(!isPlaying) play(track);
+            if(!isPlaying) setIsPlaying(true);
         } else {
-            if(isPlaying) pause();
+            if(isPlaying) setIsPlaying(false);
         }
     } catch (error) {
         console.error("Sync state failed:", error)
     }
-  }, [currentTrack, isPlaying, play, pause, setTrack, setProgress, setDuration]);
+  }, [currentTrack, isPlaying, setTrack, setProgress, setDuration]);
 
   useEffect(() => {
     if (syncIntervalRef.current) clearInterval(syncIntervalRef.current);
@@ -87,7 +102,7 @@ export const SpotifyProvider = ({ children }: { children: ReactNode }) => {
     if (!isReady || !deviceIdRef.current) return;
     
     // 樂觀更新：立即更新 UI 狀態
-    if (currentTrack) play(currentTrack);
+    if (currentTrack) setIsPlaying(true);
     
     try {
       const tokenRes = await fetch('/api/spotify/access-token');
@@ -105,55 +120,87 @@ export const SpotifyProvider = ({ children }: { children: ReactNode }) => {
     } catch (e) {
       console.error("恢復播放時發生錯誤:", e);
       // 如果失敗，回滾 UI 狀態
-      pause();
+      setIsPlaying(false);
     }
-  }, [isReady, play, currentTrack, pause]);
+  }, [isReady, currentTrack]);
 
-  // ✨ 修改：playTrack 函式，移除進度重設
+  // ✨ 修改：playTrack 函式，使用 useApi
   const playTrack = useCallback(async (track: TrackInfo, isInterrupt = false) => {
     if (!isReady || !deviceIdRef.current) {
-      alert("Spotify 播放器尚未準備就緒。請確認您的 Spotify 帳號是 Premium 會員，並在其他裝置（如手機 App）上選擇 'Peienwu's Code Lab' 作為播放裝置後，重新整理頁面。");
+      alert("Spotify 播放器尚未準備就緒。");
       return;
     }
+    
     const trackUri = `spotify:track:${track.trackId}`;
-    const SPOTIFY_PLAY_ENDPOINT = 'https://api.spotify.com/v1/me/player/play';
-    try {
-      const tokenRes = await fetch('/api/spotify/access-token');
-      if (!tokenRes.ok) throw new Error('無法獲取 access token');
-      const { accessToken } = await tokenRes.json();
-      const deviceId = deviceIdRef.current;
-      if (!deviceId) throw new Error('No device id');
-      
-      const res = await fetch(`${SPOTIFY_PLAY_ENDPOINT}?device_id=${deviceId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken}`
-        },
-        body: JSON.stringify({ uris: [trackUri] })
-      });
+    
+    // 直接呼叫 exec 函式，傳入需要的 body
+    const result = await playApi({ trackUri, deviceId: deviceIdRef.current });
 
-      if (!res.ok) {
-        const errorBody = await res.json();
-        console.error("Spotify 播放失敗:", errorBody);
-        if (errorBody.error?.reason === 'PREMIUM_REQUIRED') {
-            alert('此功能需要 Spotify Premium 會員資格。');
-        }
-        return;
-      }
-      
-      // 核心修改：不再手動重設進度。
-      // 讓 player_state_changed 事件來同步最真實的狀態。
+    if (result) {
+      // 成功時，由 Spotify SDK 的 'player_state_changed' 事件來更新狀態，
+      // 我們只需在 store 中處理播放列表邏輯
       if (isInterrupt) {
         insertTrack(track);
       } else {
-        // 只更新 zustand store 的狀態，不手動操作進度條
-        play(track); 
+        setTrack(track);
       }
-    } catch (e) {
-        console.error("播放歌曲時發生錯誤:", e);
     }
-  }, [isReady, insertTrack, play]);
+  }, [isReady, playApi, insertTrack, setTrack]);
+
+  const changeTrack = useCallback((direction: 'next' | 'previous') => {
+    if (!currentTrack || queue.length === 0) return;
+    const currentIndex = queue.findIndex(t => t.trackId === currentTrack.trackId);
+    if (currentIndex === -1) {
+      if(queue.length > 0) playTrack(queue[0]);
+      return;
+    };
+    let nextIndex;
+    if (direction === 'next') {
+      nextIndex = (currentIndex + 1) % queue.length;
+    } else {
+      nextIndex = (currentIndex - 1 + queue.length) % queue.length;
+    }
+    playTrack(queue[nextIndex]);
+  }, [currentTrack, queue, playTrack]);
+
+  const nextTrack = useCallback(async () => {
+    const result = await nextApi();
+    if (result) {
+      // 成功時，由 SDK 事件更新狀態
+      changeTrack('next');
+    }
+  }, [nextApi, changeTrack]);
+
+  const previousTrack = useCallback(async () => {
+    const result = await previousApi();
+    if (result) {
+      // 成功時，由 SDK 事件更新狀態
+      changeTrack('previous');
+    }
+  }, [previousApi, changeTrack]);
+
+  const pauseTrack = useCallback(async () => {
+    setIsPlaying(false); // 樂觀更新
+    await pauseApi(); // 呼叫 API，錯誤處理已在 Hook 中完成
+  }, [pauseApi]);
+
+  const setVolume = useCallback(async (newVolume: number) => {
+    if(playerRef.current) {
+      await playerRef.current.setVolume(newVolume);
+      setVolumeState(newVolume);
+    }
+    // 同時呼叫 API 同步到 Spotify
+    await volumeApi({ volume: newVolume * 100 });
+  }, [volumeApi]);
+
+  const seek = useCallback(async (newPosition: number) => {
+    if(playerRef.current) {
+      await playerRef.current.seek(newPosition * 1000);
+      setProgress(newPosition);
+    }
+    // 同時呼叫 API 同步到 Spotify
+    await seekApi({ position: newPosition * 1000 });
+  }, [seekApi]);
 
   const initializeDefaultPlaylist = useCallback(async () => {
     setLoading(true);
@@ -174,54 +221,6 @@ export const SpotifyProvider = ({ children }: { children: ReactNode }) => {
       setLoading(false);
     }
   }, [setQueue, setTrack, setDuration]);
-
-  const changeTrack = useCallback((direction: 'next' | 'previous') => {
-    if (!currentTrack || queue.length === 0) return;
-    const currentIndex = queue.findIndex(t => t.trackId === currentTrack.trackId);
-    if (currentIndex === -1) {
-      if(queue.length > 0) playTrack(queue[0]);
-      return;
-    };
-    let nextIndex;
-    if (direction === 'next') {
-      nextIndex = (currentIndex + 1) % queue.length;
-    } else {
-      nextIndex = (currentIndex - 1 + queue.length) % queue.length;
-    }
-    playTrack(queue[nextIndex]);
-  }, [currentTrack, queue, playTrack]);
-
-  const nextTrack = () => changeTrack('next');
-  const previousTrack = () => changeTrack('previous');
-
-  const pauseTrack = useCallback(async () => {
-    // 樂觀更新：立即更新 UI 狀態
-    pause();
-    
-    if (playerRef.current) {
-      try {
-        await playerRef.current.pause();
-      } catch (e) {
-        console.error("暫停播放時發生錯誤:", e);
-        // 如果失敗，恢復播放狀態
-        if (currentTrack) play(currentTrack);
-      }
-    }
-  }, [pause, currentTrack, play]);
-
-  const setVolume = useCallback(async (newVolume: number) => {
-      if(playerRef.current) {
-        await playerRef.current.setVolume(newVolume);
-        setVolumeInStore(newVolume);
-      }
-  }, [setVolumeInStore]);
-
-  const seek = useCallback(async (newPosition: number) => {
-    if(playerRef.current) {
-      await playerRef.current.seek(newPosition * 1000);
-      setProgress(newPosition);
-    }
-  }, [setProgress]);
 
   useEffect(() => {
     if (typeof window === 'undefined' || playerRef.current) return;
@@ -248,7 +247,7 @@ export const SpotifyProvider = ({ children }: { children: ReactNode }) => {
         });
         player.addListener('player_state_changed', (state) => {
             if (!state) {
-                pause();
+                setIsPlaying(false);
                 return;
             }
             const sdkTrack = state.track_window.current_track;
@@ -264,7 +263,7 @@ export const SpotifyProvider = ({ children }: { children: ReactNode }) => {
             setTrack(trackInfo);
             setProgress(state.position / 1000);
             setDuration(state.duration / 1000);
-            state.paused ? pause() : play(trackInfo);
+            setIsPlaying(!state.paused);
         });
         await player.connect();
         playerRef.current = player;
@@ -275,7 +274,7 @@ export const SpotifyProvider = ({ children }: { children: ReactNode }) => {
     if (window.Spotify) {
       initializePlayer();
     }
-  }, [initializeDefaultPlaylist, pause, play, setProgress, setDuration, setTrack]);
+  }, [initializeDefaultPlaylist, setTrack, setProgress, setDuration]);
 
   // ✨ 2. 新增此 useEffect 來管理進度更新的計時器
   useEffect(() => {
@@ -305,10 +304,15 @@ export const SpotifyProvider = ({ children }: { children: ReactNode }) => {
     };
   }, [isPlaying, setProgress]);
 
+  // 組合所有 loading 狀態
+  const isAnyLoading = isPlayLoading || isPauseLoading || isNextLoading || 
+                      isPreviousLoading || isVolumeLoading || isSeekLoading;
+
   return (
     <SpotifyContext.Provider value={{
       playTrack, pauseTrack, nextTrack, previousTrack, setVolume, seek,
-      loading, isReady, isPlaying, currentTrack, volume, progress, duration, resumeTrack
+      loading: loading || isAnyLoading, isReady, isPlaying, currentTrack, 
+      volume, progress, duration, resumeTrack
     }}>
       {children}
     </SpotifyContext.Provider>

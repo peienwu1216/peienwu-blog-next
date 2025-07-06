@@ -1,27 +1,26 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { getAccessToken, SEEK_ENDPOINT } from '@/lib/spotify';
+import { NextRequest } from 'next/server';
+import { seekToPosition } from '@/lib/spotifyService';
+import { createSuccessResponse, createErrorResponse, createSpotifyErrorResponse } from '@/lib/apiUtils';
 
 export const dynamic = 'force-dynamic';
 
 export async function PUT(req: NextRequest) {
   try {
-    const { position_ms } = await req.json();
-    const accessToken = await getAccessToken();
-    const url = new URL(SEEK_ENDPOINT);
-    url.searchParams.append('position_ms', position_ms);
-
-    const response = await fetch(url.toString(), {
-      method: 'PUT',
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    });
-
-    if (response.ok) {
-      return NextResponse.json({ success: true });
+    const { position } = await req.json();
+    
+    if (typeof position !== 'number' || position < 0) {
+      return createErrorResponse('Position must be a positive number', 400);
     }
-    return new NextResponse('Failed to seek track', { status: response.status });
+
+    const result = await seekToPosition(position);
+    
+    if (!result.success) {
+      return createSpotifyErrorResponse(result.error, 'Failed to seek to position');
+    }
+
+    return createSuccessResponse({ success: true });
   } catch (error) {
-    return new NextResponse('Internal Server Error', { status: 500 });
+    console.error('Error in /api/spotify/seek:', error);
+    return createErrorResponse('Invalid request body', 400);
   }
 }

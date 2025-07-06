@@ -1,14 +1,7 @@
 import { create } from 'zustand';
+import { TrackInfo } from '@/types/spotify';
 
-export interface TrackInfo {
-  title: string;
-  artist: string;
-  album: string;
-  albumImageUrl: string;
-  songUrl: string;
-  trackId: string;
-  duration?: number;
-}
+export type { TrackInfo };
 
 interface MusicState {
   // 播放器狀態

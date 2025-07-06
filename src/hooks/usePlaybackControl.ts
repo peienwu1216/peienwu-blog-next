@@ -1,0 +1,249 @@
+import { useCallback, useRef } from 'react';
+import { useMusicStore } from '@/store/music';
+import { spotifyApiService } from '@/services/spotifyApiService';
+import { showHtmlToast } from '@/lib/notify';
+import { shuffleArray } from '@/lib/utils';
+import { TrackInfo } from '@/types/spotify';
+
+interface UsePlaybackControlProps {
+  player: Spotify.Player | null;
+  deviceId: string | null;
+  isReady: boolean;
+  defaultPlaylistId: string;
+  hasPermissions: () => Promise<boolean>;
+  claimMasterDevice: () => Promise<boolean>;
+}
+
+interface UsePlaybackControlReturn {
+  playTrack: (track: TrackInfo, isInterrupt?: boolean) => Promise<void>;
+  handlePlay: () => Promise<void>;
+  handlePlayRandom: () => Promise<void>;
+  pauseTrack: () => Promise<void>;
+  resumeTrack: () => Promise<void>;
+  nextTrack: () => Promise<void>;
+  previousTrack: () => Promise<void>;
+  handleSetVolume: (volume: number) => Promise<void>;
+  seek: (position: number) => Promise<void>;
+}
+
+export function usePlaybackControl({
+  player,
+  deviceId,
+  isReady,
+  defaultPlaylistId,
+  hasPermissions,
+  claimMasterDevice,
+}: UsePlaybackControlProps): UsePlaybackControlReturn {
+  
+  const { 
+    setTrack, 
+    setQueue, 
+    insertTrack, 
+    setIsPlaying, 
+    setProgress, 
+    setVolume: setVolumeState 
+  } = useMusicStore();
+  
+  const get = useMusicStore.getState;
+  
+  // Throttling control
+  const isThrottledRef = useRef(false);
+  const hasPlaybackInitiatedRef = useRef(false);
+
+  // Create throttled action wrapper
+  const createThrottledAction = useCallback(<T extends any[]>(
+    action: (...args: T) => Promise<void>,
+    delay: number = 500
+  ) => {
+    return async (...args: T) => {
+      if (isThrottledRef.current) return;
+      
+      isThrottledRef.current = true;
+      setTimeout(() => { isThrottledRef.current = false; }, delay);
+      
+      await action(...args);
+    };
+  }, []);
+
+  // Permission-checked action wrapper
+  const createPermissionCheckedAction = useCallback(<T extends any[]>(
+    action: (...args: T) => Promise<void>,
+    errorMessage: string = "目前由其他裝置控制中，無法執行操作。"
+  ) => {
+    return async (...args: T) => {
+      if (!isReady || !deviceId) {
+        showHtmlToast('播放器尚未準備好', { type: 'error' });
+        return;
+      }
+
+      const hasPermission = await hasPermissions();
+      if (!hasPermission) {
+        showHtmlToast(errorMessage, { type: 'error' });
+        return;
+      }
+
+      await action(...args);
+    };
+  }, [isReady, deviceId, hasPermissions]);
+
+  // Play playlist with optional track URIs
+  const playPlaylist = useCallback(async (playlistId: string, options: { uris?: string[] } = {}) => {
+    if (!deviceId) return;
+    
+    try {
+      await spotifyApiService.playPlaylist(deviceId, playlistId, options);
+    } catch (error) {
+      console.error('Failed to play playlist:', error);
+      showHtmlToast('播放清單失敗', { type: 'error' });
+    }
+  }, [deviceId]);
+
+  // Resume playback
+  const resumeTrack = useCallback(async () => {
+    if (!player) return;
+    
+    try {
+      await player.resume();
+    } catch (error) {
+      console.error('Failed to resume playback:', error);
+    }
+  }, [player]);
+
+  // Main play function
+  const handlePlay = useCallback(createPermissionCheckedAction(async () => {
+    // Try to claim master device if no master exists
+    const hasClaimed = await claimMasterDevice();
+    if (!hasClaimed) return;
+
+    if (hasPlaybackInitiatedRef.current) {
+      await resumeTrack();
+    } else {
+      await playPlaylist(defaultPlaylistId);
+      hasPlaybackInitiatedRef.current = true;
+    }
+  }, "目前由其他裝置控制中，無法播放。"), [claimMasterDevice, resumeTrack, playPlaylist, defaultPlaylistId]);
+
+  // Play specific track
+  const playTrack = useCallback(createPermissionCheckedAction(async (track: TrackInfo, isInterrupt = false) => {
+    // Try to claim master device if no master exists
+    const hasClaimed = await claimMasterDevice();
+    if (!hasClaimed) return;
+
+    const trackUri = spotifyApiService.createTrackUri(track.trackId);
+
+    try {
+      if (isInterrupt) {
+        // Add to queue and skip to it
+        insertTrack(track);
+        await spotifyApiService.addToQueue(trackUri);
+        await spotifyApiService.nextTrack(deviceId!);
+      } else {
+        // Replace current playback
+        await spotifyApiService.playTrackUris(deviceId!, [trackUri]);
+      }
+      
+      hasPlaybackInitiatedRef.current = true;
+    } catch (error) {
+      console.error('Failed to play track:', error);
+      showHtmlToast(`播放歌曲失敗: ${error instanceof Error ? error.message : '未知錯誤'}`, { type: 'error' });
+    }
+  }, "目前由其他裝置控制中，無法播放。"), [claimMasterDevice, insertTrack, deviceId]);
+
+  // Random playback
+  const handlePlayRandom = useCallback(createPermissionCheckedAction(async () => {
+    // Try to claim master device if no master exists
+    const hasClaimed = await claimMasterDevice();
+    if (!hasClaimed) return;
+
+    const currentQueue = get().queue;
+    if (!currentQueue.length) {
+      showHtmlToast('播放清單為空，無法隨機播放', { type: 'error' });
+      return;
+    }
+    
+    try {
+      const shuffledQueue = shuffleArray(currentQueue);
+      const trackUris = shuffledQueue.map(track => spotifyApiService.createTrackUri(track.trackId));
+      
+      await playPlaylist(defaultPlaylistId, { uris: trackUris });
+      setQueue(shuffledQueue);
+      setTrack(shuffledQueue[0]);
+      setIsPlaying(true);
+      hasPlaybackInitiatedRef.current = true;
+      
+      showHtmlToast("已開始隨機播放！");
+    } catch (error) {
+      console.error('Failed to start random playback:', error);
+      showHtmlToast(`隨機播放失敗: ${error instanceof Error ? error.message : '未知錯誤'}`, { type: 'error' });
+    }
+  }, "目前由其他裝置控制中，無法播放。"), [claimMasterDevice, get, setQueue, setTrack, setIsPlaying, playPlaylist, defaultPlaylistId]);
+
+  // Pause playback
+  const pauseTrack = useCallback(createThrottledAction(createPermissionCheckedAction(async () => {
+    if (!player) return;
+    
+    try {
+      await player.pause();
+    } catch (error) {
+      console.error('Failed to pause track:', error);
+    }
+  }, "目前由其他裝置控制中，無法暫停播放。"), 300), [player, createPermissionCheckedAction]);
+
+  // Next track
+  const nextTrack = useCallback(createThrottledAction(createPermissionCheckedAction(async () => {
+    if (!player) return;
+    
+    try {
+      await player.nextTrack();
+    } catch (error) {
+      console.error('Failed to go to next track:', error);
+    }
+  }, "目前由其他裝置控制中，無法切換歌曲。")), [player, createPermissionCheckedAction]);
+
+  // Previous track
+  const previousTrack = useCallback(createThrottledAction(createPermissionCheckedAction(async () => {
+    if (!player) return;
+    
+    try {
+      await player.previousTrack();
+    } catch (error) {
+      console.error('Failed to go to previous track:', error);
+    }
+  }, "目前由其他裝置控制中，無法切換歌曲。")), [player, createPermissionCheckedAction]);
+
+  // Volume control
+  const handleSetVolume = useCallback(async (newVolume: number) => {
+    if (!player) return;
+    
+    try {
+      await player.setVolume(newVolume);
+      setVolumeState(newVolume);
+    } catch (error) {
+      console.error('Failed to set volume:', error);
+    }
+  }, [player, setVolumeState]);
+
+  // Seek position
+  const seek = useCallback(async (newPosition: number) => {
+    if (!player) return;
+    
+    try {
+      await player.seek(newPosition * 1000);
+      setProgress(newPosition);
+    } catch (error) {
+      console.error('Failed to seek:', error);
+    }
+  }, [player, setProgress]);
+
+  return {
+    playTrack: createThrottledAction(playTrack),
+    handlePlay: createThrottledAction(handlePlay),
+    handlePlayRandom: createThrottledAction(handlePlayRandom, 1000),
+    pauseTrack,
+    resumeTrack,
+    nextTrack,
+    previousTrack,
+    handleSetVolume,
+    seek,
+  };
+} 

@@ -1,4 +1,4 @@
-import { getAccessToken, NOW_PLAYING_ENDPOINT, PREVIOUS_ENDPOINT, NEXT_ENDPOINT, VOLUME_ENDPOINT, SEEK_ENDPOINT } from './spotify';
+import { getAccessToken, NOW_PLAYING_ENDPOINT, PREVIOUS_ENDPOINT, NEXT_ENDPOINT, VOLUME_ENDPOINT, SEEK_ENDPOINT, clearTokenCache } from './spotify';
 
 const SPOTIFY_API_BASE = 'https://api.spotify.com/v1';
 
@@ -16,7 +16,9 @@ const NO_CONTENT_ENDPOINTS = [
 // 封裝 fetch 邏輯，自動加入 Authorization header
 async function fetchFromSpotify(endpoint: string, options: RequestInit = {}) {
   try {
+    // ✨ 每次 API 呼叫都獲取最新的 token
     const accessToken = await getAccessToken();
+    
     const response = await fetch(`${SPOTIFY_API_BASE}/${endpoint}`, {
       ...options,
       headers: {
@@ -48,6 +50,8 @@ async function fetchFromSpotify(endpoint: string, options: RequestInit = {}) {
         userMessage = '此功能需要 Spotify Premium 會員資格';
       } else if (response.status === 401) {
         userMessage = 'Spotify 認證失敗，請重新登入';
+        // ✨ 如果是 401 錯誤，清除 token 快取
+        clearTokenCache();
       } else if (response.status === 403) {
         userMessage = '沒有權限執行此操作';
       } else if (response.status === 404) {

@@ -3,7 +3,7 @@
 import React, { useMemo, useState, useEffect, useCallback } from 'react';
 import { useSpotify } from './SpotifyProvider';
 import { Play, Pause, Loader2, Music4 } from 'lucide-react';
-import { toast } from 'sonner';
+import { notifyHtml } from '@/lib/notify';
 
 // 頻譜動畫元件（與文章音樂播放一致）
 const SpectrumIcon = ({ isPlaying }: { isPlaying: boolean }) => (
@@ -70,22 +70,13 @@ export default function AnthemCard({ className = '' }: { className?: string }) {
   const handlePlayClick = useCallback(async () => {
     // 冷啟動檢查
     if (!isReady || !hasPlaybackInitiated) {
-      toast.custom(() => <ActivationToast />, {
-        duration: 6000,
-        position: 'bottom-right',
-      });
+      notifyHtml('已啟動主題曲！');
       return;
     }
 
     // 權限檢查 - 友善的提示
     if (!isControllable) {
-      toast.info(
-        `🎵 目前由其他訪客控制播放中\n\n您可以等待 ${expirationText} 後重新取得控制權，或等待當前播放結束。`,
-        {
-          duration: 5000,
-          position: 'bottom-right',
-        }
-      );
+      notifyHtml('正在取得播放主控權...');
       return;
     }
 
@@ -100,7 +91,7 @@ export default function AnthemCard({ className = '' }: { className?: string }) {
       }
     } catch (error) {
       console.error('Failed to play anthem track:', error);
-      toast.error(`播放失敗: ${error instanceof Error ? error.message : '未知錯誤'}`);
+      notifyHtml(`播放失敗: ${error instanceof Error ? error.message : '未知錯誤'}`, { type: 'error' });
     } finally {
       setTimeout(() => setIsLoading(false), 400);
     }
@@ -113,7 +104,6 @@ export default function AnthemCard({ className = '' }: { className?: string }) {
     playTrack,
     pauseTrack,
     resumeTrack,
-    expirationText,
   ]);
 
   // loading 狀態自動歸零

@@ -8,11 +8,11 @@ import { getSearchSuggestions, highlightText, extractExcerpt } from '@/lib/searc
 import { searchDocs } from '@/lib/flexsearchClient';
 import { useRouter } from 'next/navigation';
 import { useTheme } from 'next-themes';
-import { toast } from 'sonner';
-import { CustomToast } from './ProTipToast';
+
 import { useLockBodyScroll } from '@/lib/use-lock-body-scroll';
 import { Sparkles } from 'lucide-react';
 import MusicControlPanel from './MusicControlPanel';
+import { notifyHtml } from '@/lib/notify';
 
 // SVG 圖示元件
 const SearchIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -339,12 +339,7 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
   };
 
   const copyToClipboard = useCallback(() => {
-    navigator.clipboard.writeText(window.location.href).then(() => {
-      toast.custom(() => <CustomToast message="網址已複製到剪貼簿" icon={<CopySuccessIcon />} />, {
-        position: 'bottom-right',
-        style: { marginRight: '6rem' },
-      });
-    });
+    notifyHtml('網址已複製到剪貼簿');
   }, []);
 
   const allCommands = useMemo<Command[]>(() => {

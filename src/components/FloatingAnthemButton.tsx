@@ -3,12 +3,15 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { Music2, Play } from 'lucide-react';
 import AnthemCard from './AnthemCard';
+import { usePathname } from 'next/navigation';
 
 export default function FloatingAnthemButton() {
   const [open, setOpen] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const popoverRef = useRef<HTMLDivElement>(null);
+  const pathname = usePathname();
+  const isAboutPage = pathname === '/about';
 
   // 點擊外部自動關閉
   useEffect(() => {
@@ -35,71 +38,60 @@ export default function FloatingAnthemButton() {
   return (
     <>
       {/* 懸浮徽章 - 重新設計 */}
-      <div className="fixed z-50 bottom-28 right-6 md:bottom-32 md:right-10">
+      <div className="fixed z-50 bottom-28 right-8 md:bottom-24 md:right-8 lg:bottom-28 lg:right-8">
         {/* 背景光暈效果 */}
-        <div 
-          className={`absolute inset-0 rounded-full transition-all duration-500 ${
-            isHovered 
-              ? 'bg-gradient-to-r from-sky-400/20 to-blue-500/20 blur-xl scale-125' 
-              : 'bg-gradient-to-r from-sky-400/10 to-blue-500/10 blur-lg scale-100'
-          }`}
-        />
+        {!isAboutPage && (
+          <div 
+            className={`absolute inset-0 rounded-full transition-all duration-500 ${
+              isHovered 
+                ? 'bg-gradient-to-r from-sky-400/20 to-blue-500/20 blur-xl scale-125' 
+                : 'bg-gradient-to-r from-sky-400/10 to-blue-500/10 blur-lg scale-100'
+            }`}
+          />
+        )}
         
-        {/* 主按鈕 */}
+        {/* 主按鈕 - 與 AI 按鈕保持一致 */}
         <button
           ref={buttonRef}
           onClick={() => setOpen((v) => !v)}
           onMouseEnter={() => setIsHovered(true)}
           onMouseLeave={() => setIsHovered(false)}
           className={`
-            relative w-14 h-14 rounded-full 
-            bg-gradient-to-br from-sky-500 via-blue-500 to-sky-600
-            hover:from-sky-400 hover:via-blue-400 hover:to-sky-500
-            backdrop-blur-sm border border-white/20 dark:border-slate-700/30
-            shadow-2xl hover:shadow-sky-500/25
-            flex items-center justify-center text-white
-            transition-all duration-300 ease-out
-            focus:outline-none focus:ring-2 focus:ring-sky-400/50 focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-slate-900
-            transform hover:scale-110 active:scale-95
-            ${open ? 'ring-2 ring-sky-400/50 shadow-sky-500/30' : ''}
+            relative rounded-full 
+            bg-gradient-to-br from-sky-500 to-blue-600
+            p-5 text-white shadow-2xl 
+            ring-4 ring-sky-300 dark:ring-sky-800
+            transition-transform focus:outline-none
+            transform active:scale-95
+            ${open ? 'ring-sky-400/50 shadow-sky-500/30' : ''}
+            ${!isAboutPage ? 'hover:scale-110' : ''}
           `}
           title="我的主題曲"
           aria-label="我的主題曲"
         >
-          {/* 內部光暈 */}
-          <div className="absolute inset-0 rounded-full bg-gradient-to-br from-white/20 to-transparent opacity-0 hover:opacity-100 transition-opacity duration-300" />
-          
           {/* 圖標容器 */}
           <div className="relative z-10 flex items-center justify-center">
             {open ? (
-              <Play className="w-6 h-6 transition-all duration-300 transform rotate-0" />
+              <Play className="h-7 w-7 transition-all duration-300 transform rotate-0" />
             ) : (
-              <Music2 className="w-6 h-6 transition-all duration-300" />
+              <Music2 className="h-7 w-7 transition-all duration-300" />
             )}
           </div>
           
           {/* 脈動效果 */}
-          {isHovered && (
+          {!isAboutPage && isHovered && (
             <div className="absolute inset-0 rounded-full bg-sky-400/30 animate-ping" />
           )}
         </button>
-        
-        {/* 標籤提示 */}
-        {isHovered && (
-          <div className="absolute right-full mr-3 top-1/2 -translate-y-1/2 bg-slate-900/90 dark:bg-slate-100/90 text-white dark:text-slate-900 px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap backdrop-blur-sm border border-white/20 dark:border-slate-700/30 shadow-lg">
-            我的主題曲
-            <div className="absolute left-full top-1/2 -translate-y-1/2 w-0 h-0 border-l-4 border-r-0 border-b-4 border-t-4 border-l-slate-900/90 dark:border-l-slate-100/90 border-r-transparent border-b-transparent border-t-transparent" />
-          </div>
-        )}
       </div>
 
-      {/* Popover 卡片 - 增強動畫 */}
+      {/* Popover 卡片 - 調整位置適應右側 */}
       {open && (
         <div
           ref={popoverRef}
-          className="fixed z-50 bottom-52 right-6 md:bottom-56 md:right-10"
+          className="fixed z-50 bottom-36 right-8 md:bottom-48 md:right-8 lg:bottom-52 lg:right-8"
         >
-          {/* 箭頭 - 重新設計 */}
+          {/* 箭頭 - 調整方向適應右側 */}
           <div className="flex justify-end pr-6 mb-1">
             <div className="relative">
               <div className="w-0 h-0 border-l-8 border-r-8 border-b-8 border-l-transparent border-r-transparent border-b-white/80 dark:border-b-slate-800/80 backdrop-blur-sm" />

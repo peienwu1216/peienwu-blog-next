@@ -3,7 +3,7 @@
 import React, { useCallback, useState } from 'react';
 import { useSpotify } from './SpotifyProvider';
 import { Play, Pause, Loader, Music4 } from 'lucide-react';
-import { toast } from 'sonner';
+import { notifyHtml } from '@/lib/notify';
 import { useApi } from '@/hooks/useApi';
 import { TrackInfo } from '@/store/music';
 
@@ -67,21 +67,15 @@ export default function ArticlePlayButton({ trackId, trackTitle }: ArticlePlayBu
 
     // 冷啟動檢查
     if (!isReady || !hasPlaybackInitiated) {
-      toast.custom(() => <ActivationToast />, {
-        duration: 6000,
-        position: 'bottom-right',
-      });
+      notifyHtml('請先啟動音樂播放器', { duration: 3000 });
       return;
     }
 
     // 權限檢查 - 友善的提示
     if (!isControllable) {
-      toast.info(
-        `🎵 目前由其他訪客控制播放中\n\n您可以等待 ${expirationText} 後重新取得控制權，或等待當前播放結束。`,
-        {
-          duration: 5000,
-          position: 'bottom-right',
-        }
+      notifyHtml(
+        `🎵 目前由其他訪客控制播放中<br><br>您可以等待 ${expirationText} 後重新取得控制權，或等待當前播放結束。`,
+        { duration: 3000 }
       );
       return;
     }
@@ -99,11 +93,11 @@ export default function ArticlePlayButton({ trackId, trackTitle }: ArticlePlayBu
       if (trackToPlay) {
         await playTrack(trackToPlay, true); 
       } else {
-        toast.error('無法載入歌曲資訊');
+        notifyHtml('無法載入歌曲資訊', { type: 'error' });
       }
     } catch (error) {
       console.error('Failed to play track from article:', error);
-      toast.error(`播放失敗: ${error instanceof Error ? error.message : '未知錯誤'}`);
+      notifyHtml(`播放失敗: ${error instanceof Error ? error.message : '未知錯誤'}`, { type: 'error' });
     }
   }, [
     isReady,

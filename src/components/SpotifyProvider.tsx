@@ -138,17 +138,19 @@ export const SpotifyProvider = ({ children }: { children: ReactNode }) => {
     try {
       const trackUri = `spotify:track:${track.trackId}`;
       
-      // 1. 先把插播歌加到 Spotify queue
-      await queueApi({ trackUri, deviceId });
+      // 樂觀更新：立即設定播放狀態
+      setIsPlaying(true);
       
-      // 2. 跳到這首歌
-      await nextApi({ deviceId });
+      // 直接播放這首歌，會中斷當前播放並開始播放新歌
+      await playApi({ trackUri, deviceId });
       
       console.log(`Interrupted with track: ${track.title}`);
     } catch (error) {
       console.error('Failed to interrupt play:', error);
+      // 如果失敗，回滾播放狀態
+      setIsPlaying(false);
     }
-  }, [queueApi, nextApi]);
+  }, [playApi]);
 
   // ✨ 修改：playTrack 函式，使用 useApi
   const playTrack = useCallback(async (track: TrackInfo, isInterrupt = false) => {
@@ -156,6 +158,9 @@ export const SpotifyProvider = ({ children }: { children: ReactNode }) => {
       alert("Spotify 播放器尚未準備就緒。");
       return;
     }
+    
+    // 樂觀更新：立即設定播放狀態
+    setIsPlaying(true);
     
     if (isInterrupt) {
       // 插播：同步到 Spotify queue
@@ -169,6 +174,9 @@ export const SpotifyProvider = ({ children }: { children: ReactNode }) => {
       
       if (result) {
         setTrack(track);
+      } else {
+        // 如果失敗，回滾播放狀態
+        setIsPlaying(false);
       }
     }
   }, [isReady, playApi, insertTrack, setTrack, interruptPlay]);

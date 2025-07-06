@@ -32,7 +32,8 @@ export default function ArticlePlayButton({ trackId, trackTitle }: ArticlePlayBu
     currentTrack,
     isReady,
     hasPlaybackInitiated,
-    isControllable // ✨ 取得是否可控制的狀態
+    isControllable, // ✨ 取得是否可控制的狀態
+    expirationText // ✨ 取得動態過期時間
   } = useSpotify();
   
   const { exec: getTrackApi, isLoading: isTrackInfoLoading } = useApi<TrackInfo>('GET', `/api/spotify/track/${trackId}`);
@@ -55,7 +56,7 @@ export default function ArticlePlayButton({ trackId, trackTitle }: ArticlePlayBu
     // ✨ 權限檢查 - 友善的提示
     if (!isControllable) {
       toast.info(
-        "🎵 目前由其他訪客控制播放中\n\n您可以等待 5 分鐘後重新取得控制權，或等待當前播放結束。",
+        `🎵 目前由其他訪客控制播放中\n\n您可以等待 ${expirationText} 後重新取得控制權，或等待當前播放結束。`,
         {
           duration: 5000,
           position: 'bottom-right',

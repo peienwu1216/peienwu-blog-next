@@ -3,6 +3,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { allPosts, Post } from 'contentlayer/generated'; // 確保 Post 型別已從 Contentlayer 正確匯出或定義
 import { compareDesc, format, parseISO } from 'date-fns'; // 確保已安裝 date-fns
+import NowPlayingCard from '@/components/NowPlayingCard'; // 1. 匯入 NowPlayingCard
 
 // 作者資訊可以保留，因為側邊欄會用到
 const authorInfo = {
@@ -121,6 +122,11 @@ export default function HomePage() {
                 關於我 &rarr;
               </Link>
             </div>
+          </section>
+
+          {/* 2. 在此處加入我們的音樂探索卡片 */}
+          <section>
+            <NowPlayingCard />
           </section>
 
           {/* 搜尋文章卡片 */}

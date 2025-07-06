@@ -9,6 +9,8 @@ import { ThemeProvider } from '@/components/ThemeProvider'; // 引入 ThemeProvi
 import { Toaster } from 'sonner'; // 引入 sonner
 import { ProTipToast } from '@/components/ProTipToast'; // 引入 ProTipToast
 import ConditionalAiButton from '@/components/ConditionalAiButton'; // 引入新的 AI 按鈕元件
+import { SpotifyProvider } from '@/components/SpotifyProvider'; // 1. 匯入 SpotifyProvider
+import Script from 'next/script'; // 1. 匯入 Script 元件
 
 // 載入 Inter (主要內文)
 const inter = Inter({
@@ -65,23 +67,40 @@ export default function RootLayout({
             enableSystem
             disableTransitionOnChange
         >
-          <SiteHeader /> {/* 使用新的、可動態縮放的 Header */}
+          {/* 2. 將 SpotifyProvider 包裹在主要內容外層 */}
+          <SpotifyProvider>
+            <SiteHeader /> {/* 使用新的、可動態縮放的 Header */}
 
-          <main className="flex-grow w-full">
-            {children}
-          </main>
+            <main className="flex-grow w-full">
+              {children}
+            </main>
 
-          <footer className="py-6 px-4 sm:px-6 text-center bg-slate-200 dark:bg-slate-800 border-t border-slate-300 dark:border-slate-700 mt-auto">
-            <p className="text-slate-600 dark:text-slate-400 text-xs sm:text-sm">&copy; {new Date().getFullYear()} {blogTitle}. 保留所有權利.</p>
-            <p className="mt-1 text-xs text-slate-500 dark:text-slate-500">
-              Powered by Next.js & Contentlayer. Deployed on Vercel.
-            </p>
-          </footer>
-          <Analytics />
-          <SpeedInsights />
-          <Toaster theme="system" expand={true} />
-          <ProTipToast />
-          <ConditionalAiButton />
+            <footer className="py-6 px-4 sm:px-6 text-center bg-slate-200 dark:bg-slate-800 border-t border-slate-300 dark:border-slate-700 mt-auto">
+              <p className="text-slate-600 dark:text-slate-400 text-xs sm:text-sm">&copy; {new Date().getFullYear()} {blogTitle}. 保留所有權利.</p>
+              <p className="mt-1 text-xs text-slate-500 dark:text-slate-500">
+                Powered by Next.js & Contentlayer. Deployed on Vercel.
+              </p>
+            </footer>
+            <Analytics />
+            <SpeedInsights />
+            
+            {/* Unified Notification System with Glassmorphism */}
+            <Toaster
+              position="bottom-right"
+              closeButton={false}
+              expand={false}
+              richColors={false}
+              toastOptions={{
+                unstyled: true,
+                duration: 3000,
+              }}
+              className="z-[9999]"
+            />
+
+            <ProTipToast />
+            <ConditionalAiButton />
+          </SpotifyProvider>
+          <Script src="https://sdk.scdn.co/spotify-player.js" />
         </ThemeProvider>
       </body>
     </html>

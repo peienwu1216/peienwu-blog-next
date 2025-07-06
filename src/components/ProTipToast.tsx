@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { toast } from 'sonner';
+import { notifyHtml } from '@/lib/notify';
 import { useMediaQuery } from '@/lib/use-media-query';
 
 // 自訂的提示框樣式
@@ -41,11 +41,7 @@ export function ProTipToast() {
       
       const message = isDesktop ? desktopMessage : mobileMessage;
 
-      toast.custom(() => <CustomToast icon={<ProTipIcon />} message={message} />, {
-        duration: 10000, // 10秒後自動消失
-        position: 'bottom-right',
-        style: { marginRight: '6rem' },
-      });
+      notifyHtml(message);
 
       // 標記已顯示
       sessionStorage.setItem('proTipShown', 'true');

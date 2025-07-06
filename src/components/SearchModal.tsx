@@ -8,10 +8,11 @@ import { getSearchSuggestions, highlightText, extractExcerpt } from '@/lib/searc
 import { searchDocs } from '@/lib/flexsearchClient';
 import { useRouter } from 'next/navigation';
 import { useTheme } from 'next-themes';
-import { toast } from 'sonner';
-import { CustomToast } from './ProTipToast';
+
 import { useLockBodyScroll } from '@/lib/use-lock-body-scroll';
 import { Sparkles } from 'lucide-react';
+import MusicControlPanel from './MusicControlPanel';
+import { notifyHtml } from '@/lib/notify';
 
 // SVG 圖示元件
 const SearchIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -128,6 +129,11 @@ const CopySuccessIcon = () => (
   </div>
 );
 
+// Helper for MusicIcon
+const MusicIcon = (props: React.SVGProps<SVGSVGElement>) => (
+  <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}><path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/></svg>
+);
+
 // --- Type Definitions Update ---
 type View = 'main' | 'github';
 
@@ -135,7 +141,7 @@ interface Command {
   name: string;
   icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
   action: () => void;
-  section: 'AI 助理' | '導航' | '命令' | '外部連結';
+  section: 'AI 助理' | '音樂電台' | '導航' | '命令' | '外部連結';
   data?: any;
 }
 
@@ -333,12 +339,7 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
   };
 
   const copyToClipboard = useCallback(() => {
-    navigator.clipboard.writeText(window.location.href).then(() => {
-      toast.custom(() => <CustomToast message="網址已複製到剪貼簿" icon={<CopySuccessIcon />} />, {
-        position: 'bottom-right',
-        style: { marginRight: '6rem' },
-      });
-    });
+    notifyHtml('網址已複製到剪貼簿');
   }, []);
 
   const allCommands = useMemo<Command[]>(() => {
@@ -354,6 +355,15 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
           }
         },
         section: 'AI 助理',
+      },
+      {
+        name: '音樂電台',
+        icon: MusicIcon,
+        action: () => {
+          const musicPanel = document.getElementById('music-control-panel');
+          musicPanel?.focus();
+        },
+        section: '音樂電台',
       },
       { name: '首頁', icon: HomeIcon, action: () => router.push('/'), section: '導航' },
       { name: '關於我', icon: DocumentIcon, action: () => router.push('/about'), section: '導航' },
@@ -488,7 +498,7 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
     <div className="fixed inset-0 z-50 flex items-start justify-center pt-0 sm:pt-20" onClick={onClose}>
       <div className="absolute inset-0 bg-slate-900/50 backdrop-blur-lg animate-in fade-in" />
       <div 
-        className="relative flex flex-col w-full h-full overflow-hidden bg-white shadow-2xl dark:bg-slate-900 sm:h-auto sm:max-w-2xl sm:rounded-xl animate-in fade-in zoom-in-95 duration-300 sm:max-h-[calc(100vh-12rem)]"
+        className="relative flex flex-col w-full h-full overflow-hidden bg-white shadow-2xl dark:bg-slate-900 px-2 sm:h-auto sm:max-w-2xl sm:rounded-xl animate-in fade-in zoom-in-95 duration-300 sm:max-h-[calc(100vh-12rem)]"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex items-center gap-3 p-4 border-b border-slate-200 dark:border-slate-700">
@@ -533,33 +543,47 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
                     acc[section].push(command);
                     return acc;
                   }, {} as Record<string, Command[]>)
-                ).map(([section, commands]) => (
-                  <div key={section} className="mt-2">
-                    <div className="px-4 pt-2 pb-1 text-xs font-semibold text-slate-400 dark:text-slate-500">
-                      {section}
-                    </div>
-                    {commands.map((command) => {
-                      const overallIndex = allCommands.findIndex(c => c.name === command.name);
-                      const isSelected = selectedIndex === overallIndex;
-                      return (
-                        <div 
-                          key={command.name}
-                          className={`flex items-center gap-4 px-4 py-3 cursor-pointer ${isSelected ? 'bg-slate-100 dark:bg-slate-700/50' : ''}`}
-                          onClick={() => {
-                            command.action();
-                            if (command.name !== '查看開發計畫...') {
-                                onClose();
-                            }
-                          }}
-                          onMouseMove={() => setSelectedIndex(overallIndex)}
-                        >
-                          <command.icon className={`w-5 h-5 ${isSelected ? 'text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400'}`} />
-                          <span className={`font-medium ${isSelected ? 'text-slate-900 dark:text-white' : 'text-slate-600 dark:text-slate-300'}`}>{command.name}</span>
+                ).map(([section, commands]) => {
+                  // *** ✨✨✨ 主要修改點在這裡 ✨✨✨ ***
+                  if (section === '音樂電台') {
+                    return (
+                      <div key="music-section" className="mt-2" id="music-control-panel">
+                        <div className="px-4 pt-2 pb-1 text-xs font-semibold text-slate-400 dark:text-slate-500">
+                          音樂電台
                         </div>
-                      );
-                    })}
-                  </div>
-                ))}
+                        <MusicControlPanel />
+                      </div>
+                    );
+                  }
+                  // *** ✨✨✨ 修改結束 ✨✨✨ ***
+                  return (
+                    <div key={section} className="mt-2">
+                      <div className="px-4 pt-2 pb-1 text-xs font-semibold text-slate-400 dark:text-slate-500">
+                        {section}
+                      </div>
+                      {commands.map((command) => {
+                        const overallIndex = allCommands.findIndex(c => c.name === command.name);
+                        const isSelected = selectedIndex === overallIndex;
+                        return (
+                          <div 
+                            key={command.name}
+                            className={`flex items-center gap-4 px-4 py-3 cursor-pointer ${isSelected ? 'bg-slate-100 dark:bg-slate-700/50' : ''}`}
+                            onClick={() => {
+                              command.action();
+                              if (command.name !== '查看開發計畫...') {
+                                  onClose();
+                              }
+                            }}
+                            onMouseMove={() => setSelectedIndex(overallIndex)}
+                          >
+                            <command.icon className={`w-5 h-5 ${isSelected ? 'text-slate-900 dark:text-white' : 'text-slate-500 dark:text-slate-400'}`} />
+                            <span className={`font-medium ${isSelected ? 'text-slate-900 dark:text-white' : 'text-slate-600 dark:text-slate-300'}`}>{command.name}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })}
               </div>
             ) : (
               // Search Results

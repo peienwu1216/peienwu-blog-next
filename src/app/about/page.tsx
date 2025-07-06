@@ -5,6 +5,7 @@ import Link from 'next/link';
 import IconLink from '@/components/IconLink';
 import { Book, Mail } from 'lucide-react';
 import TableOfContents from '@/components/TableOfContents';
+import FloatingAnthemButton from '@/components/FloatingAnthemButton';
 import Slugger from 'github-slugger';
 
 export default function AboutPage() {
@@ -67,6 +68,11 @@ export default function AboutPage() {
             className="bg-red-100 text-red-800 hover:bg-red-200 dark:bg-red-900 dark:text-red-200 dark:hover:bg-red-800"
           />
         </div>
+
+        {/* The Anthem Card */}
+        {/* <div className="my-8">
+          <AnthemCard />
+        </div> */}
 
             <h2 id={headings[0].slug}>我是誰？ (About Me)</h2>
 
@@ -231,6 +237,7 @@ export default function AboutPage() {
       </article>
         </div>
       </div>{/* end content */}
+      <FloatingAnthemButton />
     </div>
   );
 }

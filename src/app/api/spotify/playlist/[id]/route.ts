@@ -16,16 +16,29 @@ export async function GET(
     return createErrorResponse('Playlist ID is required', 400);
   }
 
+  console.log(`Fetching playlist: ${playlistId}`);
   const result = await getPlaylist(playlistId);
   
   if (!result.success) {
+    console.error('Failed to get playlist:', result.error);
     return createSpotifyErrorResponse(result.error, 'Failed to get playlist');
   }
 
   const playlistData = result.data;
+  console.log(`Playlist data received, tracks count: ${playlistData.tracks?.items?.length || 0}`);
+
+  // 檢查是否有 tracks 資料
+  if (!playlistData.tracks || !playlistData.tracks.items) {
+    console.error('No tracks found in playlist data');
+    return createErrorResponse('No tracks found in playlist', 404);
+  }
+
+  // 過濾掉 null 的 track（有些 playlist 可能包含已刪除的歌曲）
+  const validTracks = playlistData.tracks.items.filter((item: any) => item.track !== null);
+  console.log(`Valid tracks count: ${validTracks.length}`);
 
   // 將回傳的資料結構簡化，只留下我們需要的 TrackInfo[]
-  const tracks = playlistData.tracks.items.map((item: any) => ({
+  const tracks = validTracks.map((item: any) => ({
       title: item.track.name,
       artist: item.track.artists.map((a: any) => a.name).join(', '),
       album: item.track.album.name,
@@ -38,5 +51,6 @@ export async function GET(
       duration: item.track.duration_ms / 1000,
   }));
 
+  console.log(`Processed ${tracks.length} tracks from playlist`);
   return createSuccessResponse(tracks);
 }

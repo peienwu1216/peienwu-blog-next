@@ -160,20 +160,82 @@ export const SpotifyProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
-  // ✨ 修改：playTrack 函式，使用原生 fetch
+  // ✨ 新增：將 playlist 同步到 Spotify queue
+  const syncPlaylistToSpotify = useCallback(async (tracks: TrackInfo[], deviceId: string) => {
+    if (!tracks.length || !deviceId) return;
+    try {
+      // 1. 先播放第一首
+      const firstTrackUri = `spotify:track:${tracks[0].trackId}`;
+      const playResponse = await fetch(`/api/spotify/play?deviceId=${deviceId}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ trackUri: firstTrackUri }),
+      });
+      if (!playResponse.ok) {
+        throw new Error('Failed to play first track');
+      }
+      // 2. 依序把剩下的歌加到 Spotify queue
+      for (let i = 1; i < tracks.length; i++) {
+        const trackUri = `spotify:track:${tracks[i].trackId}`;
+        const queueResponse = await fetch(`/api/spotify/queue?deviceId=${deviceId}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ trackUri }),
+        });
+        if (!queueResponse.ok) {
+          console.warn(`Failed to add track ${i} to queue`);
+        }
+      }
+      console.log(`Synced ${tracks.length} tracks to Spotify queue`);
+    } catch (error) {
+      console.error('Failed to sync playlist to Spotify:', error);
+    }
+  }, []);
+
+  // ✨ 新增：記錄 queue 是否已同步到 Spotify
+  const queueSyncedRef = useRef(false);
+
+  // ✨ 修改：將 playlist 載入時只設置 queue，不自動播放
+  const initializeDefaultPlaylist = useCallback(async () => {
+    setLoading(true);
+    try {
+      const res = await fetch(`/api/spotify/playlist/${DEFAULT_PLAYLIST_ID}`);
+      if (res.ok) {
+        const tracks: TrackInfo[] = await res.json();
+        setQueue(tracks);
+        if (tracks.length > 0) {
+          const firstTrack = { ...tracks[0], duration: tracks[0].duration || 0 };
+          setTrack(firstTrack);
+          setDuration(firstTrack.duration);
+        }
+        queueSyncedRef.current = false; // 標記 queue 尚未同步
+      }
+    } catch (e) {
+      console.error("Failed to load default playlist", e);
+    } finally {
+      setLoading(false);
+    }
+  }, [setQueue, setTrack, setDuration]);
+
+  // ✨ 修改 playTrack：第一次播放時才同步 queue 並播放
   const playTrack = useCallback(async (track: TrackInfo, isInterrupt = false) => {
     if (!isReady || !deviceIdRef.current) {
       alert("Spotify 播放器尚未準備就緒。");
       return;
     }
-    
+    // 第一次播放時才同步 queue
+    if (!queueSyncedRef.current && queue.length > 0) {
+      await syncPlaylistToSpotify(queue, deviceIdRef.current);
+      queueSyncedRef.current = true;
+    }
     if (isInterrupt) {
-      // 插播：同步到 Spotify queue
       await interruptPlay(track, deviceIdRef.current);
-      // 本地 queue 也插入
       insertTrack(track);
     } else {
-      // 一般播放：直接播放這首歌
       const trackUri = `spotify:track:${track.trackId}`;
       try {
         const response = await fetch(`/api/spotify/play?deviceId=${deviceIdRef.current}`, {
@@ -192,7 +254,7 @@ export const SpotifyProvider = ({ children }: { children: ReactNode }) => {
         console.error('Failed to play track:', error);
       }
     }
-  }, [isReady, insertTrack, setTrack, interruptPlay]);
+  }, [isReady, insertTrack, setTrack, interruptPlay, queue, syncPlaylistToSpotify]);
 
   const nextTrack = useCallback(async () => {
     console.log('nextTrack called, deviceId:', deviceIdRef.current, 'isReady:', isReady);
@@ -309,69 +371,6 @@ export const SpotifyProvider = ({ children }: { children: ReactNode }) => {
       }
     }
   }, []);
-
-  // ✨ 新增：將 playlist 同步到 Spotify queue
-  const syncPlaylistToSpotify = useCallback(async (tracks: TrackInfo[], deviceId: string) => {
-    if (!tracks.length || !deviceId) return;
-    
-    try {
-      // 1. 先播放第一首
-      const firstTrackUri = `spotify:track:${tracks[0].trackId}`;
-      const playResponse = await fetch(`/api/spotify/play?deviceId=${deviceId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ trackUri: firstTrackUri }),
-      });
-      if (!playResponse.ok) {
-        throw new Error('Failed to play first track');
-      }
-      
-      // 2. 依序把剩下的歌加到 Spotify queue
-      for (let i = 1; i < tracks.length; i++) {
-        const trackUri = `spotify:track:${tracks[i].trackId}`;
-        const queueResponse = await fetch(`/api/spotify/queue?deviceId=${deviceId}`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ trackUri }),
-        });
-        if (!queueResponse.ok) {
-          console.warn(`Failed to add track ${i} to queue`);
-        }
-      }
-      
-      console.log(`Synced ${tracks.length} tracks to Spotify queue`);
-    } catch (error) {
-      console.error('Failed to sync playlist to Spotify:', error);
-    }
-  }, []);
-
-  const initializeDefaultPlaylist = useCallback(async () => {
-    setLoading(true);
-    try {
-      const res = await fetch(`/api/spotify/playlist/${DEFAULT_PLAYLIST_ID}`);
-      if (res.ok) {
-        const tracks: TrackInfo[] = await res.json();
-        setQueue(tracks);
-        
-        if (tracks.length > 0 && deviceIdRef.current) {
-          // 同步 playlist 到 Spotify queue
-          await syncPlaylistToSpotify(tracks, deviceIdRef.current);
-          
-          const firstTrack = { ...tracks[0], duration: tracks[0].duration || 0 };
-          setTrack(firstTrack);
-          setDuration(firstTrack.duration);
-        }
-      }
-    } catch (e) {
-      console.error("Failed to load default playlist", e);
-    } finally {
-      setLoading(false);
-    }
-  }, [setQueue, setTrack, setDuration, syncPlaylistToSpotify]);
 
   useEffect(() => {
     if (typeof window === 'undefined' || playerRef.current) return;

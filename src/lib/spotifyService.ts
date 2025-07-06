@@ -146,9 +146,11 @@ export const previousTrack = (deviceId?: string) => {
 
 // 設定音量
 export const setVolume = (volumePercent: number, deviceId?: string) => {
+  // 將音量值四捨五入到整數，避免浮點數精度問題
+  const roundedVolume = Math.round(volumePercent);
   const endpoint = deviceId 
-    ? `me/player/volume?volume_percent=${volumePercent}&device_id=${deviceId}` 
-    : `me/player/volume?volume_percent=${volumePercent}`;
+    ? `me/player/volume?volume_percent=${roundedVolume}&device_id=${deviceId}` 
+    : `me/player/volume?volume_percent=${roundedVolume}`;
   return fetchFromSpotify(endpoint, { method: 'PUT' });
 };
 
@@ -162,9 +164,8 @@ export const seekToPosition = (positionMs: number, deviceId?: string) => {
 
 // 取得播放列表內容
 export const getPlaylist = (playlistId: string) => {
-  // 使用 fields 參數只請求我們需要的資料，減少傳輸量
-  const fields = 'tracks.items(track(id,name,artists(name),album(name,images),duration_ms,external_urls))';
-  return fetchFromSpotify(`playlists/${playlistId}?fields=${fields}`);
+  // 移除 fields 參數限制，回傳完整的 playlist 資料
+  return fetchFromSpotify(`playlists/${playlistId}`);
 };
 
 // 取得單一歌曲資訊

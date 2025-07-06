@@ -1,31 +1,29 @@
 import { URLSearchParams } from 'url';
 import { validateServerConfig } from '@/config/spotify';
 
-// 宣告一個介面來定義 Token 物件的結構
 interface Token {
   access_token: string;
   expires_in: number;
-  expires_at?: number; // 我們將用這個屬性來記錄 token 的過期時間
+  expires_at?: number;
 }
 
-// 在記憶體中建立一個變數來快取 token
 let tokenCache: Token | null = null;
 
-// 使用新的設定驗證函式
-const { clientId, clientSecret, refreshToken } = validateServerConfig();
-
-const basic = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
 const TOKEN_ENDPOINT = `https://accounts.spotify.com/api/token`;
-const NOW_PLAYING_ENDPOINT = `https://api.spotify.com/v1/me/player/currently-playing`;
-// New Endpoints
+
+// 保持這些常數的匯出，因為 spotifyService.ts 有用到
+export const NOW_PLAYING_ENDPOINT = `https://api.spotify.com/v1/me/player/currently-playing`;
 const PLAYER_ENDPOINT = `https://api.spotify.com/v1/me/player`;
-const PREVIOUS_ENDPOINT = `${PLAYER_ENDPOINT}/previous`;
-const NEXT_ENDPOINT = `${PLAYER_ENDPOINT}/next`;
-const VOLUME_ENDPOINT = `${PLAYER_ENDPOINT}/volume`;
-const SEEK_ENDPOINT = `${PLAYER_ENDPOINT}/seek`;
+export const PREVIOUS_ENDPOINT = `${PLAYER_ENDPOINT}/previous`;
+export const NEXT_ENDPOINT = `${PLAYER_ENDPOINT}/next`;
+export const VOLUME_ENDPOINT = `${PLAYER_ENDPOINT}/volume`;
+export const SEEK_ENDPOINT = `${PLAYER_ENDPOINT}/seek`;
 
 export const getAccessToken = async () => {
-  // 檢查快取的 token 是否存在且尚未過期
+  // ✨ 將驗證和讀取變數的邏輯移到函式內部
+  const { clientId, clientSecret, refreshToken } = validateServerConfig();
+  const basic = Buffer.from(`${clientId}:${clientSecret}`).toString('base64');
+
   if (tokenCache && tokenCache.expires_at && Date.now() < tokenCache.expires_at) {
     return tokenCache.access_token;
   }
@@ -43,12 +41,14 @@ export const getAccessToken = async () => {
   });
 
   if (!response.ok) {
+    // 您可以增加更詳細的錯誤日誌
+    const errorBody = await response.text();
+    console.error('Failed to refresh access token:', errorBody);
     throw new Error('Failed to refresh access token');
   }
 
   const data = await response.json();
   
-  // 計算過期時間（提前 5 分鐘過期，確保安全邊際）
   const expiresAt = Date.now() + (data.expires_in - 300) * 1000;
   
   tokenCache = {
@@ -58,13 +58,4 @@ export const getAccessToken = async () => {
   };
 
   return data.access_token;
-};
-
-// 匯出常數供其他模組使用
-export {
-  NOW_PLAYING_ENDPOINT,
-  PREVIOUS_ENDPOINT,
-  NEXT_ENDPOINT,
-  VOLUME_ENDPOINT,
-  SEEK_ENDPOINT,
-};
+}; 

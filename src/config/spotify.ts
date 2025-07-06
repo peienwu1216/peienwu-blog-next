@@ -12,12 +12,15 @@ export const serverConfig = {
   refreshToken: process.env.SPOTIFY_REFRESH_TOKEN,
 };
 
-// 驗證伺服器端設定
+// 驗證並回傳伺服器端設定
 export function validateServerConfig() {
-  const { clientId, clientSecret, refreshToken } = serverConfig;
+  // ✨ 在函式內部直接讀取 process.env
+  const clientId = process.env.SPOTIFY_CLIENT_ID;
+  const clientSecret = process.env.SPOTIFY_CLIENT_SECRET;
+  const refreshToken = process.env.SPOTIFY_REFRESH_TOKEN;
   
   if (!clientId || !clientSecret || !refreshToken) {
-    throw new Error('Missing Spotify credentials on the server. Please check your .env.local file.');
+    throw new Error('Missing Spotify credentials on the server. Please check your .env.local and Vercel environment variables.');
   }
   
   return { clientId, clientSecret, refreshToken };

@@ -1,12 +1,12 @@
 import { kv } from '@vercel/kv';
 import { NextRequest, NextResponse } from 'next/server';
-import { getPlayerState, transferPlayback } from '@/lib/spotifyService';
+import { getPlayerState, playTrack } from '@/lib/spotifyService';
 
 const MASTER_DEVICE_KEY = 'spotify:master_device';
 
 // ✨ 可配置的主控裝置過期時間（秒）
 // 測試時可以設定為 20 秒，正式環境建議設定為 300 秒（5 分鐘）
-const MASTER_DEVICE_EXPIRATION_SECONDS = 60;
+const MASTER_DEVICE_EXPIRATION_SECONDS = 120; // 建議使用 120 秒
 
 /**
  * 取得目前的主控裝置 ID 及剩餘 TTL，並在非主控時回傳 Spotify 狀態
@@ -44,6 +44,7 @@ export async function GET(req: NextRequest) {
 
 /**
  * 設定一個新的主控裝置 ID - 使用原子操作避免競爭條件
+ * ✨ 升級為真正的「搶奪」能力
  */
 export async function POST(req: NextRequest) {
   try {
@@ -61,13 +62,29 @@ export async function POST(req: NextRequest) {
       // 成功搶佔！設定過期時間
       await kv.expire(MASTER_DEVICE_KEY, MASTER_DEVICE_EXPIRATION_SECONDS);
 
-      // ✨ 核心修改：在成功搶佔 KV 鎖後，立刻通知 Spotify 轉移播放裝置
-      const transferResult = await transferPlayback(deviceId, false);
+      // --- ✨ 全新的搶權後同步邏輯 ---
+      try {
+        // 1. 立即獲取當前的播放狀態
+        const stateResult = await getPlayerState();
 
-      if (!transferResult.success) {
-        // 即使轉移失敗，主控權仍在我們系統中，可以稍後再試
-        console.warn(`KV lock acquired, but Spotify playback transfer failed: ${transferResult.error}`);
+        // 2. 如果有音樂正在播放，就發起一個新的播放指令到新裝置
+        if (stateResult.success && stateResult.data && stateResult.data.is_playing) {
+          const { item, progress_ms, context } = stateResult.data;
+          
+          await playTrack({
+            // 優先使用 context_uri，如果沒有才用單曲 uri
+            context_uri: context?.uri, 
+            uris: context ? undefined : [item.uri],
+            position_ms: progress_ms,
+          }, deviceId);
+        }
+        // 如果沒有音樂播放，則不需要做任何事，因為控制權已轉移。
+        
+      } catch (syncError) {
+        console.warn(`搶權成功，但同步播放狀態失敗:`, syncError);
+        // 即使這一步失敗，KV 中的鎖已經成功設定，主控權仍在我們手中。
       }
+      // --- 邏輯結束 ---
 
       return NextResponse.json({ success: true, masterDeviceId: deviceId, ttl: MASTER_DEVICE_EXPIRATION_SECONDS });
     } else {

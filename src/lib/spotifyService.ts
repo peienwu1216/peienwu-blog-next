@@ -116,8 +116,18 @@ async function fetchFromSpotify(endpoint: string, options: RequestInit = {}) {
 export const getNowPlaying = () => fetchFromSpotify('me/player/currently-playing');
 
 // 播放指定歌曲、多首歌曲或播放清單
-export const playTrack = (playOptions: { uris?: string[]; context_uri?: string, trackUri?: string }, deviceId: string) => {
-  const body: { uris?: string[]; context_uri?: string, position_ms?: number } = {};
+export const playTrack = (playOptions: { 
+  uris?: string[]; 
+  context_uri?: string; 
+  trackUri?: string;
+  position_ms?: number;
+}, deviceId: string) => {
+  
+  const body: { 
+    uris?: string[]; 
+    context_uri?: string; 
+    position_ms?: number 
+  } = {};
 
   // 根據傳入的參數，建構送往 Spotify API 的 body
   if (playOptions.uris) {
@@ -135,6 +145,11 @@ export const playTrack = (playOptions: { uris?: string[]; context_uri?: string, 
     } else {
       body.uris = [uri];
     }
+  }
+
+  // 如果傳入了 position_ms，就將它加入到請求的 body 中
+  if (typeof playOptions.position_ms === 'number') {
+    body.position_ms = playOptions.position_ms;
   }
 
   return fetchFromSpotify(`me/player/play?device_id=${deviceId}`, {
@@ -204,10 +219,10 @@ export const addToQueue = (trackUri: string, deviceId?: string) => {
 /**
  * 將播放狀態明確轉移到指定的裝置。
  * @param deviceId 要轉移到的裝置 ID
- * @param play 是否在轉移後立即播放。通常設為 false，只轉移控制權。
+ * @param play 是否在轉移後立即播放。設為 true 可以強制讓指定裝置變為活躍裝置。
  * @returns 服務操作結果
  */
-export const transferPlayback = (deviceId: string, play: boolean = false) => {
+export const transferPlayback = (deviceId: string, play: boolean = true) => {
   return fetchFromSpotify('me/player', {
     method: 'PUT',
     body: JSON.stringify({

@@ -659,3 +659,26 @@ mark {
 .dj-stats-animation {
   animation: stats-fade-in 0.5s ease-out;
 }
+
+/* TOC 中的 KaTeX 數學公式樣式 */
+.katex-inline {
+  font-size: 0.875rem; /* 與 TOC 文字大小一致 */
+  line-height: 1;
+  vertical-align: baseline;
+}
+
+/* 確保 TOC 中的數學公式不會影響行高 */
+nav .katex-inline .katex {
+  font-size: inherit;
+}
+
+/* 調整 KaTeX 在小尺寸下的間距 */
+.katex-inline .katex .base {
+  line-height: 1.2;
+}
+
+/* 在 TOC 中優化數學公式的顯示 */
+.toc-truncate .katex-inline {
+  display: inline;
+  white-space: nowrap;
+}

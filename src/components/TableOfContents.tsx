@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useMemo } from 'react'
+import { renderMathInText } from '@/lib/math-renderer'
 
 type Heading = {
   level: number
@@ -110,7 +111,7 @@ export default function TableOfContents({
                           : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300'
                       }`}
                     >
-                      {h2.text}
+                      {renderMathInText(h2.text)}
                     </a>
                     {h2.children.length > 0 && (expandAll || activeParent === h2.slug) && (
                       <ul className="mt-2 space-y-2 border-l border-slate-200 dark:border-slate-700 ml-2">
@@ -132,7 +133,7 @@ export default function TableOfContents({
                               {activeId === h3.slug && (
                                 <span className="absolute left-[-1px] top-1/2 -translate-y-1/2 h-4 w-0.5 bg-sky-500 dark:bg-sky-400"></span>
                               )}
-                              {h3.text}
+                              {renderMathInText(h3.text)}
                             </a>
                           </li>
                         ))}

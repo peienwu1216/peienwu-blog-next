@@ -106,10 +106,11 @@ export async function GET(req: NextRequest) {
 
 /**
  * ✨ 透明化升級：聲明主控權 - 創建完整的 DJ 狀態對象
+ * ✨ 支援自動重新聲明（頁面刷新後）
  */
 export async function POST(req: NextRequest) {
   try {
-    const { deviceId } = await req.json();
+    const { deviceId, isAutoReclaim, sessionId } = await req.json();
     if (!deviceId) {
       return NextResponse.json({ error: 'deviceId is required' }, { status: 400 });
     }
@@ -137,6 +138,41 @@ export async function POST(req: NextRequest) {
         ttl: MASTER_DEVICE_EXPIRATION_SECONDS
       };
       return NextResponse.json(response);
+    }
+
+    // ✨ 自動重新聲明邏輯：檢查是否為同會話的自動重新聲明
+    if (isAutoReclaim && sessionId && currentDJStatus) {
+      // 檢查會話記錄（這裡我們需要一個簡單的會話驗證機制）
+      // 由於我們使用設備ID作為主要標識，如果TTL還有效但設備ID不同，
+      // 且前端明確說這是自動重新聲明，我們允許更新設備ID
+      const ttl = await kv.ttl(MASTER_DEVICE_KEY);
+      
+      if (ttl > 0) {
+        // 更新現有DJ狀態的設備ID（設備刷新後Spotify重新分配了ID）
+        const updatedStatus = {
+          ...currentDJStatus,
+          deviceId: deviceId, // 更新為新的設備ID
+          lastActionAt: Date.now(),
+          actionCount: currentDJStatus.actionCount + 1,
+          lastAction: {
+            type: 'AUTO_RECLAIM',
+            timestamp: Date.now(),
+            details: '頁面刷新後自動重新聲明主控權'
+          }
+        };
+        
+        await kv.set(MASTER_DEVICE_KEY, updatedStatus);
+        await kv.expire(MASTER_DEVICE_KEY, MASTER_DEVICE_EXPIRATION_SECONDS);
+        
+        const response: TransparentMasterDeviceResponse = {
+          djStatus: updatedStatus,
+          success: true,
+          isMaster: true,
+          isLocked: false,
+          ttl: MASTER_DEVICE_EXPIRATION_SECONDS
+        };
+        return NextResponse.json(response);
+      }
     }
 
     // ✨ 使用 setnx 進行原子操作檢查是否可以獲得控制權

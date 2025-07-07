@@ -121,6 +121,21 @@ class SpotifyApiService {
   }
 
   /**
+   * ✨ 新增：支援自動重新聲明的主控設備聲明
+   */
+  async claimMasterDeviceWithAutoReclaim(deviceId: string, sessionId: string): Promise<TransparentMasterDeviceResponse> {
+    return await this.makeApiCall<TransparentMasterDeviceResponse>('/api/spotify/master-device', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        deviceId, 
+        isAutoReclaim: true, 
+        sessionId 
+      }),
+    }, 2);
+  }
+
+  /**
    * ✨ 透明化升級：重置 DJ 狀態的 TTL
    * 現在支援傳遞操作類型和詳情，實現完全透明的狀態管理
    */

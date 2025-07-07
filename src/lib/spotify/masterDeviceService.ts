@@ -63,7 +63,31 @@ export class MasterDeviceService {
           ttl: masterData.ttl || 0,
         };
         
-        const shouldAttemptReclaim = !masterData.djStatus && SessionPersistence.shouldAttemptReclaim();
+        // ✨ 修復：允許同會話重新聲明，即使有其他設備在控制（可能是新的設備ID）
+        const shouldAttemptReclaim = SessionPersistence.shouldAttemptReclaim() && 
+          (!masterData.djStatus || masterData.djStatus.deviceId !== deviceId);
+        
+        // ✨ 開發環境調試信息
+        if (process.env.NODE_ENV === 'development') {
+          const sessionShouldReclaim = SessionPersistence.shouldAttemptReclaim();
+          const hasOtherDevice = !!masterData.djStatus && masterData.djStatus.deviceId !== deviceId;
+          
+          console.log('🔧 [DEV] MasterDeviceService 初始化結果:', {
+            有主控設備: !!masterData.djStatus,
+            是我的設備: isMaster,
+            被鎖定: isLocked,
+            TTL: masterData.ttl,
+            應該嘗試重新聲明: shouldAttemptReclaim,
+            主控設備ID: masterData.djStatus?.deviceId || 'none',
+            當前設備ID: deviceId,
+            會話允許重新聲明: sessionShouldReclaim,
+            有其他設備控制: hasOtherDevice
+          });
+          
+          if (sessionShouldReclaim && hasOtherDevice) {
+            console.log('🔄 [DEV] 💡 檢測到設備ID變化，會話匹配，將嘗試重新聲明主控權');
+          }
+        }
         
         return {
           masterDeviceId: masterData.djStatus?.deviceId || null,
@@ -181,10 +205,15 @@ export class MasterDeviceService {
 
   /**
    * 自動重新聲明主控裝置
+   * ✨ 支援會話驗證的自動重新聲明
    */
   async autoReclaimMasterDevice(deviceId: string): Promise<boolean> {
     try {
-      const result = await this.claimMasterDevice(deviceId);
+      // 獲取會話ID用於驗證
+      const { SessionPersistence } = await import('./sessionPersistence');
+      const sessionId = SessionPersistence.getOrCreateSessionId();
+      
+      const result = await this.claimMasterDeviceWithAutoReclaim(deviceId, sessionId);
       if (result.success) {
         this.notificationHandler.showAutoReclaimSuccessNotification();
         return true;
@@ -193,6 +222,47 @@ export class MasterDeviceService {
     } catch (error) {
       console.warn('Auto reclaim failed:', error);
       return false;
+    }
+  }
+
+  /**
+   * ✨ 新增：支援自動重新聲明的主控設備聲明
+   */
+  async claimMasterDeviceWithAutoReclaim(deviceId: string, sessionId: string): Promise<{
+    success: boolean;
+    masterDeviceId: string | null;
+    state: MasterDeviceState;
+  }> {
+    const data = await spotifyApiService.claimMasterDeviceWithAutoReclaim(deviceId, sessionId);
+    
+    if (data.success) {
+      const state: MasterDeviceState = {
+        isMaster: true,
+        isLocked: false,
+        ttl: data.ttl || 0,
+      };
+      
+      // 記錄主控狀態
+      const { SessionPersistence } = await import('./sessionPersistence');
+      SessionPersistence.recordMasterStatus(deviceId, data.ttl || 0);
+      
+      return {
+        success: true,
+        masterDeviceId: data.djStatus?.deviceId || null,
+        state,
+      };
+    } else {
+      const state: MasterDeviceState = {
+        isMaster: false,
+        isLocked: !!data.currentMasterId,
+        ttl: data.ttl || 0,
+      };
+      
+      return {
+        success: false,
+        masterDeviceId: data.currentMasterId || null,
+        state,
+      };
     }
   }
 

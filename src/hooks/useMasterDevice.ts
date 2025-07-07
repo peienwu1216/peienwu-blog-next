@@ -113,14 +113,30 @@ export function useMasterDevice({ deviceId }: UseMasterDeviceProps): UseMasterDe
         setCountdown(initResult.state.ttl);
         
         // ✨ 檢查是否需要自動重新聲明主控權
-        if (initResult.shouldAttemptReclaim && !initResult.masterDeviceId) {
+        if (initResult.shouldAttemptReclaim) {
           console.log('🔄 檢測到頁面刷新，嘗試自動重新聲明主控權...');
+          
+          // ✨ 開發環境：顯示詳細調試信息
+          if (process.env.NODE_ENV === 'development') {
+            const { SessionPersistence } = await import('@/lib/spotify/sessionPersistence');
+            SessionPersistence.debugInfo();
+            SessionPersistence.debugDeviceComparison(deviceId, initResult.masterDeviceId);
+          }
           
           // 短暫延遲確保 Spotify 連接穩定
           setTimeout(async () => {
             const reclaimSuccess = await masterDeviceService.current.autoReclaimMasterDevice(deviceId);
             if (reclaimSuccess) {
               console.log('✅ 自動重新聲明主控權成功');
+              
+              // ✨ 更新記錄中的設備ID
+              try {
+                const { SessionPersistence } = await import('@/lib/spotify/sessionPersistence');
+                SessionPersistence.updateRecordDeviceId(deviceId);
+              } catch (error) {
+                console.warn('Failed to update device ID in record:', error);
+              }
+              
               // 重新獲取最新狀態
               try {
                 const response = await fetch(`/api/spotify/master-device?deviceId=${deviceId}`);
@@ -147,6 +163,18 @@ export function useMasterDevice({ deviceId }: UseMasterDeviceProps): UseMasterDe
               console.log('❌ 自動重新聲明主控權失敗，可能被其他用戶搶先');
             }
           }, 1000);
+        } else {
+          // ✨ 開發環境：解釋為什麼沒有嘗試重新聲明
+          if (process.env.NODE_ENV === 'development') {
+            const { SessionPersistence } = await import('@/lib/spotify/sessionPersistence');
+            
+            console.log('ℹ️ [DEV] 不需要自動重新聲明主控權，原因：');
+            console.log('  - 會話條件不滿足或沒有有效的主控記錄');
+            console.log('  - 應該嘗試重新聲明:', initResult.shouldAttemptReclaim);
+            console.log('  - 當前主控設備ID:', initResult.masterDeviceId || 'none');
+            
+            SessionPersistence.debugDeviceComparison(deviceId, initResult.masterDeviceId);
+          }
         }
         
         // 獲取 DJ 狀態（如果存在）

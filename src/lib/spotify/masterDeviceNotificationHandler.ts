@@ -84,7 +84,7 @@ export class MasterDeviceNotificationHandler {
     // 只在非當前用戶的重置時顯示通知，避免干擾自己的操作
     if (djStatus.ownerName !== '您') {
       showHtmlToast(
-        `🎵 ${djStatus.ownerName} 進行了 ${actionName}，播放權延長 2 分鐘`, 
+        `🎵 ${djStatus.ownerName} ${actionName}<br/>播放權延長 2 分鐘`, 
         { type: 'info' }
       );
     }
@@ -100,7 +100,7 @@ export class MasterDeviceNotificationHandler {
   ): void {
     if (!this.notificationState.hasShownExpired) {
       if (wasMaster) {
-        showHtmlToast("🎭 您的 DJ 控制權已因閒置而釋放！");
+        showHtmlToast("🎭 您的 DJ 控制權已釋放<br/>因閒置超時");
       } else {
         const previousDJName = previousDJStatus?.ownerName || '前任 DJ';
         const sessionDuration = previousDJStatus 
@@ -108,7 +108,7 @@ export class MasterDeviceNotificationHandler {
           : 0;
         
         showHtmlToast(
-          `🎉 ${previousDJName} 已離開 DJ 台（時長 ${sessionDuration} 分鐘），現在開放搶奪主控權！`,
+          `🎉 ${previousDJName} 已離開 DJ 台<br/>播放了 ${sessionDuration} 分鐘，快來搶控制權！`,
           { type: 'success' }
         );
       }
@@ -127,7 +127,7 @@ export class MasterDeviceNotificationHandler {
       const actionCount = djStatus?.actionCount || 0;
       
       showHtmlToast(
-        `🔒 ${djName} 正在控制播放器 (已操作 ${actionCount} 次，最後: ${lastAction})`,
+        `🔒 ${djName} 正在控制播放<br/>已操作 ${actionCount} 次 • ${lastAction}`,
         { type: 'error' }
       );
       this.notificationState.hasShownLocked = true;
@@ -145,7 +145,7 @@ export class MasterDeviceNotificationHandler {
     if (djStatus) {
       const sessionTime = new Date(djStatus.sessionStartAt).toLocaleTimeString();
       showHtmlToast(
-        `👑 歡迎，DJ ${djStatus.ownerName}！您的控制開始於 ${sessionTime}`,
+        `👑 歡迎 DJ ${djStatus.ownerName}！<br/>控制開始於 ${sessionTime}`,
         { type: 'success' }
       );
     }
@@ -157,11 +157,11 @@ export class MasterDeviceNotificationHandler {
   showClaimSuccessNotification(djStatus?: DJStatus): void {
     if (djStatus) {
       showHtmlToast(
-        `🎉 已成為 DJ ${djStatus.ownerName}！點按播放鍵開始您的音樂控制`,
+        `🎉 已成為 DJ ${djStatus.ownerName}！<br/>點按播放鍵開始音樂控制`,
         { type: 'success' }
       );
     } else {
-      showHtmlToast("已取得播放主控權！點按播放鍵開始播放");
+      showHtmlToast("已取得播放主控權！<br/>點按播放鍵開始播放");
     }
     this.resetNotificationState();
   }
@@ -172,11 +172,11 @@ export class MasterDeviceNotificationHandler {
   showClaimFailedNotification(currentDJ?: DJStatus): void {
     if (currentDJ) {
       showHtmlToast(
-        `😅 ${currentDJ.ownerName} 搶先一步了！(已操作 ${currentDJ.actionCount} 次)`,
+        `😅 ${currentDJ.ownerName} 搶先一步了！<br/>已操作 ${currentDJ.actionCount} 次`,
         { type: 'warning' }
       );
     } else {
-      showHtmlToast("哎呀！就在您點擊的瞬間，其他人搶先一步了！");
+      showHtmlToast("😅 其他人搶先一步了！<br/>請稍後再試");
     }
   }
 
@@ -186,11 +186,11 @@ export class MasterDeviceNotificationHandler {
   showAutoReclaimSuccessNotification(djStatus?: DJStatus): void {
     if (djStatus) {
       showHtmlToast(
-        `🔄 頁面重新整理後已自動奪回 DJ 控制權！歡迎回到 DJ 台，${djStatus.ownerName}`,
+        `🔄 自動奪回 DJ 控制權<br/>歡迎回來，${djStatus.ownerName}！`,
         { type: 'success' }
       );
     } else {
-      showHtmlToast('🔄 頁面重新整理後已自動奪回播放主控權！可以繼續播放音樂', { type: 'success' });
+      showHtmlToast('🔄 自動奪回主控權<br/>可以繼續播放音樂', { type: 'success' });
     }
   }
 
@@ -220,10 +220,10 @@ export class MasterDeviceNotificationHandler {
    */
   showErrorNotification(error: Error, djStatus?: DJStatus): void {
     if (error.message.includes('401') || error.message.includes('Authentication expired')) {
-      showHtmlToast("🔑 Spotify 認證已過期，請重新整理頁面", { type: 'error' });
+      showHtmlToast("🔑 Spotify 認證已過期<br/>請重新整理頁面", { type: 'error' });
     } else {
-      const context = djStatus ? ` (當前 DJ: ${djStatus.ownerName})` : '';
-      showHtmlToast(`❌ 操作失敗: ${error.message}${context}`, { type: 'error' });
+      const context = djStatus ? `<br/>當前 DJ: ${djStatus.ownerName}` : '';
+      showHtmlToast(`❌ 操作失敗<br/>${error.message}${context}`, { type: 'error' });
     }
   }
 
@@ -231,7 +231,7 @@ export class MasterDeviceNotificationHandler {
    * ✨ 透明化升級：顯示通用錯誤通知
    */
   showGenericErrorNotification(message: string, djStatus?: DJStatus): void {
-    const context = djStatus ? ` (當前 DJ: ${djStatus.ownerName})` : '';
+    const context = djStatus ? `<br/>當前 DJ: ${djStatus.ownerName}` : '';
     showHtmlToast(`⚠️ ${message}${context}`, { type: 'error' });
   }
 
@@ -243,7 +243,7 @@ export class MasterDeviceNotificationHandler {
     const avgActionsPerMinute = sessionDuration > 0 ? Math.round(djStatus.actionCount / sessionDuration) : 0;
     
     showHtmlToast(
-              `📊 您的 DJ 統計：${djStatus.actionCount} 次操作，${sessionDuration} 分鐘，平均 ${avgActionsPerMinute} 操作/分鐘`,
+              `📊 您的 DJ 統計<br/>${djStatus.actionCount} 次操作，${sessionDuration} 分鐘，平均 ${avgActionsPerMinute}/分`,
       { type: 'info' }
     );
   }

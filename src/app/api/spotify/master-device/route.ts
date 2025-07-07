@@ -1,6 +1,6 @@
 import { kv } from '@vercel/kv';
 import { NextRequest, NextResponse } from 'next/server';
-import { getPlayerState, playTrack } from '@/lib/spotifyService';
+import { getPlayerState, playTrack, transferPlayback } from '@/lib/spotifyService';
 import { DJStatus, TransparentMasterDeviceResponse } from '@/types/spotify';
 
 const MASTER_DEVICE_KEY = 'spotify:master_device';
@@ -153,11 +153,28 @@ export async function POST(req: NextRequest) {
         if (stateResult.success && stateResult.data && stateResult.data.is_playing) {
           const { item, progress_ms, context } = stateResult.data;
           
-          await playTrack({
-            context_uri: context?.uri, 
-            uris: context ? undefined : [item.uri],
-            position_ms: progress_ms,
-          }, deviceId);
+          // 步驟 1: 先將播放權明確轉移到新設備
+          const transferResult = await transferPlayback(deviceId, false);
+          
+          if (transferResult.success) {
+            // 步驟 2: 等待播放權轉移完成
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            
+            // 步驟 3: 在新設備上從正確進度繼續播放
+            await playTrack({
+              context_uri: context?.uri, 
+              uris: context ? undefined : [item.uri],
+              position_ms: progress_ms,
+            }, deviceId);
+          } else {
+            console.warn('播放權轉移失敗，嘗試直接播放:', transferResult.error);
+            // 如果轉移失敗，仍嘗試直接播放
+            await playTrack({
+              context_uri: context?.uri, 
+              uris: context ? undefined : [item.uri],
+              position_ms: progress_ms,
+            }, deviceId);
+          }
         }
       } catch (syncError) {
         console.warn(`搶權成功，但同步播放狀態失敗:`, syncError);

@@ -286,28 +286,41 @@ export class MasterDeviceService {
    * 在每次有效操作後調用，實現活躍使用者的主控權延續
    * 包含防濫用機制，限制重置頻率
    */
-  async resetTTL(deviceId: string): Promise<boolean> {
+  async resetTTL(
+    deviceId: string,
+    actionType?: string,
+    actionDetails?: string
+  ): Promise<{ success: boolean; djStatus?: any; ttl?: number }> {
     const now = Date.now();
     
     // ✨ 防濫用檢查：檢查是否在冷卻時間內
     if (now - this.lastResetTime < MasterDeviceService.TTL_RESET_COOLDOWN) {
       console.log(`🛡️ TTL reset rate limited. Next reset available in ${Math.ceil((MasterDeviceService.TTL_RESET_COOLDOWN - (now - this.lastResetTime)) / 1000)}s`);
-      return false;
+      return { success: false };
     }
     
     try {
-      const result = await spotifyApiService.resetMasterDeviceTTL(deviceId);
+      const result = await spotifyApiService.resetMasterDeviceTTL(
+        deviceId,
+        actionType,
+        actionDetails
+      );
       
       // 只有成功重置時才更新冷卻時間
       if (result.success) {
         this.lastResetTime = now;
         console.log('✅ TTL reset successful with rate limiting');
+        return {
+          success: true,
+          djStatus: result.djStatus,
+          ttl: result.ttl
+        };
       }
       
-      return result.success || false;
+      return { success: false };
     } catch (error) {
       console.warn('Failed to reset master device TTL:', error);
-      return false;
+      return { success: false };
     }
   }
 
@@ -329,7 +342,7 @@ export class MasterDeviceService {
         // 如果操作成功且有 deviceId，嘗試重置 TTL
         if (deviceId) {
           const resetSuccess = await this.resetTTL(deviceId);
-          if (resetSuccess) {
+          if (resetSuccess.success) {
             console.log(`✨ TTL reset successful after ${actionName}`);
           } else {
             // 不是錯誤，可能只是被限制了

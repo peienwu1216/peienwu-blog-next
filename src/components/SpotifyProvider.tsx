@@ -45,12 +45,13 @@ export const SpotifyProvider = ({ children }: { children: ReactNode }) => {
     isControllable, 
     expirationText,
     claimMasterDevice,
-    checkPermissions 
+    checkPermissions,
+    createIdleResetAction 
   } = useMasterDevice({ 
     deviceId 
   });
 
-  // Playback Control
+  // ✨ Playback Control with Idle Reset
   const {
     playTrack,
     handlePlay,
@@ -68,6 +69,7 @@ export const SpotifyProvider = ({ children }: { children: ReactNode }) => {
     defaultPlaylistId: DEFAULT_PLAYLIST_ID,
     hasPermissions: checkPermissions,
     claimMasterDevice,
+    createIdleResetAction,
   });
 
   // Context value

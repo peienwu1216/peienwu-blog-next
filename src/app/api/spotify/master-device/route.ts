@@ -4,9 +4,9 @@ import { getPlayerState, playTrack } from '@/lib/spotifyService';
 
 const MASTER_DEVICE_KEY = 'spotify:master_device';
 
-// ✨ 可配置的主控裝置過期時間（秒）
-// 測試時可以設定為 20 秒，正式環境建議設定為 300 秒（5 分鐘）
-const MASTER_DEVICE_EXPIRATION_SECONDS = 120; // 建議使用 120 秒
+// ✨ 方案 B：閒置重置制配置
+// 主控權在無操作時的超時時間（秒）
+const MASTER_DEVICE_EXPIRATION_SECONDS = 120; // 2 分鐘閒置重置制
 
 /**
  * 取得目前的主控裝置 ID 及剩餘 TTL，並在非主控時回傳 Spotify 狀態
@@ -113,5 +113,55 @@ export async function POST(req: NextRequest) {
     }
   } catch (error) {
     return NextResponse.json({ error: 'Failed to set master device ID' }, { status: 500 });
+  }
+}
+
+/**
+ * ✨ 方案 B：閒置重置制 - 重置主控裝置的 TTL
+ * 在每次有效操作後調用，重新計算 2 分鐘倒數計時
+ */
+export async function PATCH(req: NextRequest) {
+  try {
+    const { deviceId } = await req.json();
+    if (!deviceId) {
+      return NextResponse.json({ error: 'deviceId is required' }, { status: 400 });
+    }
+
+    // 檢查當前的主控裝置
+    const currentMaster = await kv.get(MASTER_DEVICE_KEY);
+    
+    // 只有當前主控裝置才能重置 TTL
+    if (!currentMaster) {
+      return NextResponse.json({ 
+        success: false, 
+        message: 'No master device found, cannot reset TTL',
+        ttl: 0
+      }, { status: 404 });
+    }
+
+    if (currentMaster !== deviceId) {
+      return NextResponse.json({ 
+        success: false, 
+        message: 'Only the current master device can reset TTL',
+        currentMasterId: currentMaster,
+        ttl: await kv.ttl(MASTER_DEVICE_KEY)
+      }, { status: 403 }); // 403 Forbidden
+    }
+
+    // 重置 TTL - 這是核心的閒置重置邏輯
+    await kv.expire(MASTER_DEVICE_KEY, MASTER_DEVICE_EXPIRATION_SECONDS);
+    
+    return NextResponse.json({ 
+      success: true, 
+      masterDeviceId: deviceId, 
+      ttl: MASTER_DEVICE_EXPIRATION_SECONDS,
+      message: 'Master device TTL reset successfully'
+    });
+
+  } catch (error) {
+    console.error('Failed to reset master device TTL:', error);
+    return NextResponse.json({ 
+      error: 'Failed to reset master device TTL' 
+    }, { status: 500 });
   }
 } 

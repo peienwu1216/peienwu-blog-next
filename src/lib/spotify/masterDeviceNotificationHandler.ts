@@ -55,13 +55,14 @@ export class MasterDeviceNotificationHandler {
 
   /**
    * 處理主控裝置過期的通知
+   * ✨ 已優化為適配閒置重置制的通知邏輯
    */
   private handleMasterDeviceExpired(wasMaster: boolean, deviceId: string | null): void {
     if (!this.notificationState.hasShownExpired) {
       if (wasMaster) {
-        showHtmlToast("您的播放控制權已釋放！");
+        showHtmlToast("您的播放控制權已因閒置而釋放！");
       } else {
-        showHtmlToast("主控裝置已過期，現在可以播放了！");
+        showHtmlToast("主控裝置已閒置過期，現在可以播放了！");
       }
       this.notificationState.hasShownExpired = true;
       this.notificationState.hasShownLocked = false;

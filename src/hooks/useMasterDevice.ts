@@ -14,6 +14,10 @@ interface UseMasterDeviceReturn {
   claimMasterDevice: () => Promise<boolean>;
   checkPermissions: () => Promise<boolean>;
   updateMasterDeviceStatus: () => Promise<void>;
+  createIdleResetAction: <T extends any[]>(
+    action: (...args: T) => Promise<void>,
+    actionName?: string
+  ) => (...args: T) => Promise<void>;
 }
 
 export function useMasterDevice({ deviceId }: UseMasterDeviceProps): UseMasterDeviceReturn {
@@ -142,6 +146,18 @@ export function useMasterDevice({ deviceId }: UseMasterDeviceProps): UseMasterDe
     }
   }, [deviceId, masterDeviceId, setMasterInfo, setCountdown]);
 
+  // ✨ 方案 B：閒置重置制功能
+  const createIdleResetAction = useCallback(<T extends any[]>(
+    action: (...args: T) => Promise<void>,
+    actionName?: string
+  ) => {
+    return masterDeviceService.current.createIdleResetAction(
+      action,
+      deviceId,
+      actionName || 'User Action'
+    );
+  }, [deviceId]);
+
   return {
     masterDeviceId,
     isControllable,
@@ -149,5 +165,6 @@ export function useMasterDevice({ deviceId }: UseMasterDeviceProps): UseMasterDe
     claimMasterDevice,
     checkPermissions,
     updateMasterDeviceStatus,
+    createIdleResetAction,
   };
 } 

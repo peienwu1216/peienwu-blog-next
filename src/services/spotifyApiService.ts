@@ -120,6 +120,18 @@ class SpotifyApiService {
     }, 2);
   }
 
+  /**
+   * ✨ 方案 B：閒置重置制 - 重置主控裝置的 TTL
+   * 在每次有效操作後調用，實現活躍使用者的主控權延續
+   */
+  async resetMasterDeviceTTL(deviceId: string): Promise<MasterDeviceResponse> {
+    return await this.makeApiCall<MasterDeviceResponse>('/api/spotify/master-device', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ deviceId }),
+    }, 1); // 重置 TTL 不需要重試太多次
+  }
+
   async getMasterDeviceConfig(): Promise<MasterDeviceConfig> {
     return await this.makeApiCall<MasterDeviceConfig>('/api/spotify/master-device/config', {}, 1);
   }

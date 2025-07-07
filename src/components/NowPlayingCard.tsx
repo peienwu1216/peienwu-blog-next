@@ -7,7 +7,7 @@ export default function NowPlayingCard() {
 
   const handleClick = () => {
     // 藍圖的最終實現：模擬點擊 SearchButton 來觸發 ⌘+K。
-    const searchButton = document.querySelector('header .flex.items-center.gap-2 button[aria-label="搜尋文章"]') as HTMLButtonElement | null;
+    const searchButton = document.querySelector('header .flex.items-center.gap-2 button[aria-label="開啟指揮中心"]') as HTMLButtonElement | null;
     searchButton?.click();
   };
 

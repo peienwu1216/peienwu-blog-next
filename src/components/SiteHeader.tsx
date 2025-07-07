@@ -6,6 +6,7 @@ import { useState, useEffect, useRef } from 'react';
 import SearchButton from './SearchButton';
 import SearchModal from './SearchModal'; // 引入 SearchModal
 import { ThemeToggleButton } from './ThemeToggleButton';
+import MusicIndicator from './MusicIndicator';
 
 // SVG 圖示元件
 const MenuIcon = (props: React.SVGProps<SVGSVGElement>) => (
@@ -96,9 +97,12 @@ export default function SiteHeader() {
           `}
         >
           <div className="flex flex-col">
-            <Link href="/" className="text-xl font-bold text-slate-900 dark:text-slate-50" onClick={() => setIsMenuOpen(false)}>
-              Peienwu's Code Lab
-            </Link>
+            <div className="flex items-center">
+              <Link href="/" className="text-xl font-bold text-slate-900 dark:text-slate-50" onClick={() => setIsMenuOpen(false)}>
+                Peienwu's Code Lab
+              </Link>
+              <MusicIndicator />
+            </div>
             <p
               className={`
                 text-slate-600 dark:text-slate-400

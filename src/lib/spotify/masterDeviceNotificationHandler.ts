@@ -186,11 +186,11 @@ export class MasterDeviceNotificationHandler {
   showAutoReclaimSuccessNotification(djStatus?: DJStatus): void {
     if (djStatus) {
       showHtmlToast(
-        `🔄 已自動重新成為 DJ ${djStatus.ownerName}！歡迎回到 DJ 台`,
+        `🔄 頁面重新整理後已自動奪回 DJ 控制權！歡迎回到 DJ 台，${djStatus.ownerName}`,
         { type: 'success' }
       );
     } else {
-      showHtmlToast('已自動重新取得播放主控權！', { type: 'success' });
+      showHtmlToast('🔄 頁面重新整理後已自動奪回播放主控權！可以繼續播放音樂', { type: 'success' });
     }
   }
 

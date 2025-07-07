@@ -103,45 +103,107 @@ export function useMasterDevice({ deviceId }: UseMasterDeviceProps): UseMasterDe
       if (!deviceId) return;
 
       try {
-        // 直接調用透明化 API 獲取完整的 DJ 狀態
-        const response = await fetch(`/api/spotify/master-device?deviceId=${deviceId}`);
-        const result = await response.json();
+        // ✨ 使用 MasterDeviceService 的完整初始化邏輯
+        const initResult = await masterDeviceService.current.initializeMasterDevice(deviceId);
         
-        if (result.djStatus) {
-          setMasterDeviceId(result.djStatus.deviceId);
-          setDJStatus(result.djStatus);
+        // 設置基本狀態
+        setMasterDeviceId(initResult.masterDeviceId);
+        setExpirationText(initResult.expirationText);
+        setMasterInfo(initResult.state);
+        setCountdown(initResult.state.ttl);
+        
+        // ✨ 檢查是否需要自動重新聲明主控權
+        if (initResult.shouldAttemptReclaim && !initResult.masterDeviceId) {
+          console.log('🔄 檢測到頁面刷新，嘗試自動重新聲明主控權...');
           
-          // 檢測狀態變化
-          detectDJStatusChanges(result.djStatus, djStatus);
-        } else {
-          setMasterDeviceId(null);
-          setDJStatus(null);
+          // 短暫延遲確保 Spotify 連接穩定
+          setTimeout(async () => {
+            const reclaimSuccess = await masterDeviceService.current.autoReclaimMasterDevice(deviceId);
+            if (reclaimSuccess) {
+              console.log('✅ 自動重新聲明主控權成功');
+              // 重新獲取最新狀態
+              try {
+                const response = await fetch(`/api/spotify/master-device?deviceId=${deviceId}`);
+                const result = await response.json();
+                
+                if (result.djStatus) {
+                  setMasterDeviceId(result.djStatus.deviceId);
+                  setDJStatus(result.djStatus);
+                } else {
+                  setMasterDeviceId(null);
+                  setDJStatus(null);
+                }
+                
+                setMasterInfo({
+                  isMaster: result.isMaster || false,
+                  isLocked: result.isLocked || false,
+                  ttl: result.ttl || 0
+                });
+                setCountdown(result.ttl || 0);
+              } catch (error) {
+                console.warn('Failed to refresh status after auto reclaim:', error);
+              }
+            } else {
+              console.log('❌ 自動重新聲明主控權失敗，可能被其他用戶搶先');
+            }
+          }, 1000);
         }
         
-        setMasterInfo({
-          isMaster: result.isMaster || false,
-          isLocked: result.isLocked || false,
-          ttl: result.ttl || 0
-        });
-        setCountdown(result.ttl || 0);
-        
-        // 獲取配置信息
-        try {
-          const configResponse = await fetch('/api/spotify/master-device/config');
-          const config = await configResponse.json();
-          setExpirationText(config.expirationText || '2 分鐘');
-        } catch (configError) {
-          console.warn('Failed to load config:', configError);
-          setExpirationText('2 分鐘');
+        // 獲取 DJ 狀態（如果存在）
+        if (initResult.masterDeviceId) {
+          const response = await fetch(`/api/spotify/master-device?deviceId=${deviceId}`);
+          const result = await response.json();
+          
+          if (result.djStatus) {
+            setDJStatus(result.djStatus);
+            detectDJStatusChanges(result.djStatus, djStatus);
+          }
+        } else {
+          setDJStatus(null);
         }
         
       } catch (error) {
         console.error('Failed to initialize DJ status:', error);
-        // Fallback values
-        setMasterDeviceId(null);
-        setDJStatus(null);
-        setMasterInfo({ isMaster: false, isLocked: false, ttl: 0 });
-        setCountdown(0);
+        
+        // Fallback: 使用原有邏輯
+        try {
+          const response = await fetch(`/api/spotify/master-device?deviceId=${deviceId}`);
+          const result = await response.json();
+          
+          if (result.djStatus) {
+            setMasterDeviceId(result.djStatus.deviceId);
+            setDJStatus(result.djStatus);
+            detectDJStatusChanges(result.djStatus, djStatus);
+          } else {
+            setMasterDeviceId(null);
+            setDJStatus(null);
+          }
+          
+          setMasterInfo({
+            isMaster: result.isMaster || false,
+            isLocked: result.isLocked || false,
+            ttl: result.ttl || 0
+          });
+          setCountdown(result.ttl || 0);
+          
+          // 獲取配置信息
+          try {
+            const configResponse = await fetch('/api/spotify/master-device/config');
+            const config = await configResponse.json();
+            setExpirationText(config.expirationText || '2 分鐘');
+          } catch (configError) {
+            console.warn('Failed to load config:', configError);
+            setExpirationText('2 分鐘');
+          }
+          
+        } catch (fallbackError) {
+          console.error('Fallback initialization also failed:', fallbackError);
+          // 最終 fallback values
+          setMasterDeviceId(null);
+          setDJStatus(null);
+          setMasterInfo({ isMaster: false, isLocked: false, ttl: 0 });
+          setCountdown(0);
+        }
       }
     };
 
@@ -171,6 +233,14 @@ export function useMasterDevice({ deviceId }: UseMasterDeviceProps): UseMasterDe
         // 如果之前有 DJ 現在沒有，觸發離線動畫
         if (oldDJStatus) {
           detectDJStatusChanges(null, oldDJStatus);
+        }
+        
+        // ✨ 清除過期的會話記錄
+        try {
+          const SessionPersistence = (await import('@/lib/spotify/sessionPersistence')).SessionPersistence;
+          SessionPersistence.clearExpiredRecords();
+        } catch (error) {
+          console.warn('Failed to clear expired records:', error);
         }
       }
       
@@ -224,10 +294,42 @@ export function useMasterDevice({ deviceId }: UseMasterDeviceProps): UseMasterDe
         // 檢測並觸發 DJ 轉換動畫
         detectDJStatusChanges(result.djStatus, oldDJStatus);
       
-      // 立即更新其他設備的狀態
-      setTimeout(() => updateMasterDeviceStatus(), 500);
+        // ✨ 記錄主控狀態用於頁面刷新後的自動重新聲明
+        if (result.isMaster && deviceId) {
+          try {
+            const SessionPersistence = (await import('@/lib/spotify/sessionPersistence')).SessionPersistence;
+            SessionPersistence.recordMasterStatus(deviceId, result.ttl || 0);
+          } catch (error) {
+            console.warn('Failed to record master status:', error);
+          }
+        }
       
-      return result.success;
+        // 立即更新其他設備的狀態
+        setTimeout(async () => {
+          try {
+            const response = await fetch(`/api/spotify/master-device?deviceId=${deviceId}`);
+            const statusResult = await response.json();
+            
+            if (statusResult.djStatus) {
+              setMasterDeviceId(statusResult.djStatus.deviceId);
+              setDJStatus(statusResult.djStatus);
+            } else {
+              setMasterDeviceId(null);
+              setDJStatus(null);
+            }
+            
+            setMasterInfo({
+              isMaster: statusResult.isMaster || false,
+              isLocked: statusResult.isLocked || false,
+              ttl: statusResult.ttl || 0
+            });
+            setCountdown(statusResult.ttl || 0);
+          } catch (error) {
+            console.warn('Failed to update status after claim:', error);
+          }
+        }, 500);
+      
+        return result.success;
       }
       
       return false;
@@ -274,46 +376,63 @@ export function useMasterDevice({ deviceId }: UseMasterDeviceProps): UseMasterDe
     action: (...args: T) => Promise<void>,
     actionName?: string
   ) => {
+    // 使用 MasterDeviceService 的防濫用版本
+    return masterDeviceService.current.createIdleResetAction(
+      async (...args: T) => {
+        // 執行原始操作
+        await action(...args);
+      },
+      deviceId,
+      actionName || 'Unknown Action'
+    );
+  }, [deviceId]);
+
+  // ✨ 專門處理 TTL 重置和狀態更新的方法
+  const handleTTLResetWithStateUpdate = useCallback(async (
+    actionType: string,
+    actionDetails: string
+  ) => {
+    if (!deviceId) return;
+
+    const resetResult = await masterDeviceService.current.resetTTL(
+      deviceId,
+      actionType,
+      actionDetails
+    );
+
+    if (resetResult.success && resetResult.djStatus) {
+      const oldDJStatus = djStatus;
+      setDJStatus(resetResult.djStatus);
+      setCountdown(resetResult.ttl || 0);
+      
+      // 檢測並觸發 TTL 重置動畫
+      detectDJStatusChanges(resetResult.djStatus, oldDJStatus);
+      
+      console.log(`✨ TTL 重置成功: ${actionDetails}`);
+    }
+  }, [deviceId, djStatus, setDJStatus, setCountdown, detectDJStatusChanges]);
+
+  // ✨ 增強版的 createIdleResetAction，包含完整的狀態管理
+  const createIdleResetActionWithStateUpdate = useCallback(<T extends any[]>(
+    action: (...args: T) => Promise<void>,
+    actionName?: string
+  ) => {
     return async (...args: T) => {
       try {
         // 執行原始操作
         await action(...args);
         
-        // 如果操作成功且有 deviceId，重置 TTL 並記錄操作詳情
-        if (deviceId) {
-          try {
-            const response = await fetch('/api/spotify/master-device', {
-              method: 'PATCH',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ 
-                deviceId, 
-                actionType: actionName?.toUpperCase().replace(/\s+/g, '_') || 'USER_ACTION',
-                actionDetails: actionName || '用戶操作'
-              }),
-            });
-            
-            const result = await response.json();
-            
-            if (result.success && result.djStatus) {
-              const oldDJStatus = djStatus;
-              setDJStatus(result.djStatus);
-              setCountdown(result.ttl || 0);
-              
-              // 檢測並觸發 TTL 重置動畫
-              detectDJStatusChanges(result.djStatus, oldDJStatus);
-              
-              console.log(`✨ TTL 重置成功: ${actionName}`);
-            }
-          } catch (resetError) {
-            console.warn(`⚠️ TTL 重置失敗: ${actionName}`, resetError);
-          }
-        }
+        // 處理 TTL 重置和狀態更新
+        await handleTTLResetWithStateUpdate(
+          actionName?.toUpperCase().replace(/\s+/g, '_') || 'USER_ACTION',
+          actionName || '用戶操作'
+        );
       } catch (error) {
         console.error(`❌ 操作失敗: ${actionName}`, error);
         throw error;
       }
     };
-  }, [deviceId, djStatus, setDJStatus, setCountdown, detectDJStatusChanges]);
+  }, [handleTTLResetWithStateUpdate]);
 
   return {
     masterDeviceId,
@@ -322,7 +441,7 @@ export function useMasterDevice({ deviceId }: UseMasterDeviceProps): UseMasterDe
     claimMasterDevice,
     checkPermissions,
     updateMasterDeviceStatus,
-    createIdleResetAction,
+    createIdleResetAction: createIdleResetActionWithStateUpdate,
     currentDJ: djStatus,
     djName: djStatus?.ownerName || null,
   };

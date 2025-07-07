@@ -186,8 +186,8 @@ export function usePlaybackControl({
     }
   }, 'Start Playback'), "目前由其他裝置控制中，無法播放。"), [claimMasterDeviceWithRetry, player, playPlaylist, defaultPlaylistId, createIdleResetAction]);
 
-  // Play specific track
-  const playTrack = useCallback(createPermissionCheckedAction(async (track: TrackInfo, isInterrupt = false) => {
+  // ✨ Play specific track - 帶有閒置重置制
+  const playTrack = useCallback(createPermissionCheckedAction(createIdleResetAction(async (track: TrackInfo, isInterrupt = false) => {
     // Try to claim master device if no master exists
     const hasClaimed = await claimMasterDeviceWithRetry();
     if (!hasClaimed) return;
@@ -205,7 +205,7 @@ export function usePlaybackControl({
     }
     
     hasPlaybackInitiatedRef.current = true;
-  }, "目前由其他裝置控制中，無法播放。"), [claimMasterDeviceWithRetry, insertTrack, deviceId]);
+  }, 'Track Playback'), "目前由其他裝置控制中，無法播放。"), [claimMasterDeviceWithRetry, insertTrack, deviceId, createIdleResetAction]);
 
   // ✨ Random playback - 帶有閒置重置制
   const handlePlayRandom = useCallback(createPermissionCheckedAction(createIdleResetAction(async () => {

@@ -37,7 +37,7 @@ export function ProTipToast() {
 
     const timer = setTimeout(() => {
       const desktopMessage = '<strong>Pro Tip:</strong> 按下 <strong>⌘+K</strong>，搜尋文章或執行指令！';
-      const mobileMessage = '<strong>Pro Tip:</strong> 點擊頂部「搜尋」圖示，探索更多隱藏功能！';
+      const mobileMessage = '<strong>提示:</strong> 點擊頂部搜尋圖示，探索功能！';
       
       const message = isDesktop ? desktopMessage : mobileMessage;
 

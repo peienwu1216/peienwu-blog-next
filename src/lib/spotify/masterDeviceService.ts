@@ -1,6 +1,6 @@
 import { spotifyApiService } from '@/services/spotifyApiService';
 import { SessionPersistence } from './sessionPersistence';
-import { MasterDeviceNotificationHandler, MasterDeviceNotificationContext } from './masterDeviceNotificationHandler';
+import { MasterDeviceNotificationHandler, TransparentMasterDeviceNotificationContext } from './masterDeviceNotificationHandler';
 
 export interface MasterDeviceData {
   masterDeviceId: string | null;
@@ -54,8 +54,8 @@ export class MasterDeviceService {
           spotifyApiService.getMasterDeviceConfig()
         ]);
         
-        const isMaster = !!deviceId && masterData.masterDeviceId === deviceId;
-        const isLocked = !!masterData.masterDeviceId && masterData.masterDeviceId !== deviceId;
+        const isMaster = !!deviceId && masterData.isMaster;
+        const isLocked = masterData.isLocked;
         
         const state: MasterDeviceState = {
           isMaster,
@@ -63,10 +63,10 @@ export class MasterDeviceService {
           ttl: masterData.ttl || 0,
         };
         
-        const shouldAttemptReclaim = !masterData.masterDeviceId && SessionPersistence.shouldAttemptReclaim();
+        const shouldAttemptReclaim = !masterData.djStatus && SessionPersistence.shouldAttemptReclaim();
         
         return {
-          masterDeviceId: masterData.masterDeviceId,
+          masterDeviceId: masterData.djStatus?.deviceId || null,
           expirationText: configData.expirationText,
           state,
           shouldAttemptReclaim,
@@ -104,8 +104,8 @@ export class MasterDeviceService {
   }> {
     const data = await spotifyApiService.getMasterDevice();
     const wasMaster = currentMasterDeviceId === deviceId;
-    const isNowMaster = !!deviceId && data.masterDeviceId === deviceId;
-    const isNowLocked = !!data.masterDeviceId && data.masterDeviceId !== deviceId;
+    const isNowMaster = data.isMaster;
+    const isNowLocked = data.isLocked;
     
     const state: MasterDeviceState = {
       isMaster: isNowMaster,
@@ -114,20 +114,22 @@ export class MasterDeviceService {
     };
     
     // 處理通知
-    const notificationContext: MasterDeviceNotificationContext = {
+    const notificationContext: TransparentMasterDeviceNotificationContext = {
       wasMaster,
       isNowMaster,
       isNowLocked,
       deviceId,
-      masterDeviceId: data.masterDeviceId,
+      masterDeviceId: data.djStatus?.deviceId || null,
+      djStatus: data.djStatus,
+      previousDJStatus: null,
     };
     
     this.notificationHandler.handleMasterDeviceStatusChange(notificationContext);
     
     return {
-      masterDeviceId: data.masterDeviceId,
+      masterDeviceId: data.djStatus?.deviceId || null,
       state,
-      shouldClearRecords: !data.masterDeviceId,
+      shouldClearRecords: !data.djStatus,
     };
   }
 
@@ -156,7 +158,7 @@ export class MasterDeviceService {
       
       return {
         success: true,
-        masterDeviceId: data.masterDeviceId,
+        masterDeviceId: data.djStatus?.deviceId || null,
         state,
       };
     } else {
@@ -217,31 +219,35 @@ export class MasterDeviceService {
         try {
           const data = await spotifyApiService.getMasterDevice();
           
-          if (!data.masterDeviceId) {
+          if (!data.djStatus) {
             // 主控裝置已過期
             const state: MasterDeviceState = { isMaster: false, isLocked: false, ttl: 0 };
             
-            const notificationContext: MasterDeviceNotificationContext = {
+            const notificationContext: TransparentMasterDeviceNotificationContext = {
               wasMaster: deviceId === currentMasterDeviceId,
               isNowMaster: false,
               isNowLocked: false,
               deviceId,
               masterDeviceId: null,
+              djStatus: null,
+              previousDJStatus: null,
             };
             
             this.notificationHandler.handleMasterDeviceStatusChange(notificationContext);
             
             return { hasPermission: true, state };
-          } else if (data.masterDeviceId !== deviceId) {
+          } else if (data.djStatus.deviceId !== deviceId) {
             // 被其他裝置鎖定
             const state: MasterDeviceState = { isMaster: false, isLocked: true, ttl: data.ttl || 0 };
             
-            const notificationContext: MasterDeviceNotificationContext = {
+            const notificationContext: TransparentMasterDeviceNotificationContext = {
               wasMaster: false,
               isNowMaster: false,
               isNowLocked: true,
               deviceId,
-              masterDeviceId: data.masterDeviceId,
+              masterDeviceId: data.djStatus.deviceId,
+              djStatus: data.djStatus,
+              previousDJStatus: null,
             };
             
             this.notificationHandler.handleMasterDeviceStatusChange(notificationContext);

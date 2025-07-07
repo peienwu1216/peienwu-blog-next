@@ -12,6 +12,10 @@ interface UsePlaybackControlProps {
   defaultPlaylistId: string;
   hasPermissions: () => Promise<boolean>;
   claimMasterDevice: () => Promise<boolean>;
+  createIdleResetAction: <T extends any[]>(
+    action: (...args: T) => Promise<void>,
+    actionName?: string
+  ) => (...args: T) => Promise<void>;
 }
 
 interface UsePlaybackControlReturn {
@@ -33,6 +37,7 @@ export function usePlaybackControl({
   defaultPlaylistId,
   hasPermissions,
   claimMasterDevice,
+  createIdleResetAction,
 }: UsePlaybackControlProps): UsePlaybackControlReturn {
   
   const { 
@@ -117,8 +122,8 @@ export function usePlaybackControl({
     }
   }, [deviceId]);
 
-  // Resume playback
-  const resumeTrack = useCallback(async () => {
+  // ✨ Resume playback - 帶有閒置重置制
+  const resumeTrack = useCallback(createIdleResetAction(async () => {
     if (!player) return;
     
     try {
@@ -126,7 +131,7 @@ export function usePlaybackControl({
     } catch (error) {
       console.error('Failed to resume playback:', error);
     }
-  }, [player]);
+  }, 'Resume Playback'), [player, createIdleResetAction]);
 
   // Enhanced master device claiming with retry and smart checking
   const claimMasterDeviceWithRetry = useCallback(async (maxRetries = 2): Promise<boolean> => {
@@ -160,22 +165,29 @@ export function usePlaybackControl({
     return false;
   }, [claimMasterDevice]);
 
-  // Main play function
-  const handlePlay = useCallback(createPermissionCheckedAction(async () => {
+  // ✨ Main play function - 帶有閒置重置制
+  const handlePlay = useCallback(createPermissionCheckedAction(createIdleResetAction(async () => {
     // Try to claim master device if no master exists
     const hasClaimed = await claimMasterDeviceWithRetry();
     if (!hasClaimed) return;
 
     if (hasPlaybackInitiatedRef.current) {
-      await resumeTrack();
+      // 注意：這裡不再調用 resumeTrack，因為它已經有自己的 TTL 重置
+      // 直接調用原始的 resume 邏輯
+      if (!player) return;
+      try {
+        await player.resume();
+      } catch (error) {
+        console.error('Failed to resume playback:', error);
+      }
     } else {
       await playPlaylist(defaultPlaylistId);
       hasPlaybackInitiatedRef.current = true;
     }
-  }, "目前由其他裝置控制中，無法播放。"), [claimMasterDeviceWithRetry, resumeTrack, playPlaylist, defaultPlaylistId]);
+  }, 'Start Playback'), "目前由其他裝置控制中，無法播放。"), [claimMasterDeviceWithRetry, player, playPlaylist, defaultPlaylistId, createIdleResetAction]);
 
-  // Play specific track
-  const playTrack = useCallback(createPermissionCheckedAction(async (track: TrackInfo, isInterrupt = false) => {
+  // ✨ Play specific track - 帶有閒置重置制
+  const playTrack = useCallback(createPermissionCheckedAction(createIdleResetAction(async (track: TrackInfo, isInterrupt = false) => {
     // Try to claim master device if no master exists
     const hasClaimed = await claimMasterDeviceWithRetry();
     if (!hasClaimed) return;
@@ -193,10 +205,10 @@ export function usePlaybackControl({
     }
     
     hasPlaybackInitiatedRef.current = true;
-  }, "目前由其他裝置控制中，無法播放。"), [claimMasterDeviceWithRetry, insertTrack, deviceId]);
+  }, 'Track Playback'), "目前由其他裝置控制中，無法播放。"), [claimMasterDeviceWithRetry, insertTrack, deviceId, createIdleResetAction]);
 
-  // Random playback
-  const handlePlayRandom = useCallback(createPermissionCheckedAction(async () => {
+  // ✨ Random playback - 帶有閒置重置制
+  const handlePlayRandom = useCallback(createPermissionCheckedAction(createIdleResetAction(async () => {
     // Try to claim master device if no master exists
     const hasClaimed = await claimMasterDeviceWithRetry();
     if (!hasClaimed) return;
@@ -217,10 +229,10 @@ export function usePlaybackControl({
     hasPlaybackInitiatedRef.current = true;
     
     showHtmlToast("已開始隨機播放！");
-  }, "目前由其他裝置控制中，無法播放。"), [claimMasterDeviceWithRetry, get, setQueue, setTrack, setIsPlaying, playPlaylist, defaultPlaylistId]);
+  }, 'Random Playback'), "目前由其他裝置控制中，無法播放。"), [claimMasterDeviceWithRetry, get, setQueue, setTrack, setIsPlaying, playPlaylist, defaultPlaylistId, createIdleResetAction]);
 
-  // Pause playback
-  const pauseTrack = useCallback(createThrottledAction(createPermissionCheckedAction(async () => {
+  // ✨ Pause playback - 帶有閒置重置制
+  const pauseTrack = useCallback(createThrottledAction(createPermissionCheckedAction(createIdleResetAction(async () => {
     if (!player) return;
     
     try {
@@ -228,10 +240,10 @@ export function usePlaybackControl({
     } catch (error) {
       console.error('Failed to pause track:', error);
     }
-  }, "目前由其他裝置控制中，無法暫停播放。"), 300), [player, createPermissionCheckedAction]);
+  }, 'Pause Playback'), "目前由其他裝置控制中，無法暫停播放。"), 300), [player, createPermissionCheckedAction, createIdleResetAction]);
 
-  // Next track
-  const nextTrack = useCallback(createThrottledAction(createPermissionCheckedAction(async () => {
+  // ✨ Next track - 帶有閒置重置制
+  const nextTrack = useCallback(createThrottledAction(createPermissionCheckedAction(createIdleResetAction(async () => {
     if (!player) return;
     
     try {
@@ -239,10 +251,10 @@ export function usePlaybackControl({
     } catch (error) {
       console.error('Failed to go to next track:', error);
     }
-  }, "目前由其他裝置控制中，無法切換歌曲。")), [player, createPermissionCheckedAction]);
+  }, 'Next Track'), "目前由其他裝置控制中，無法切換歌曲。")), [player, createPermissionCheckedAction, createIdleResetAction]);
 
-  // Previous track
-  const previousTrack = useCallback(createThrottledAction(createPermissionCheckedAction(async () => {
+  // ✨ Previous track - 帶有閒置重置制
+  const previousTrack = useCallback(createThrottledAction(createPermissionCheckedAction(createIdleResetAction(async () => {
     if (!player) return;
     
     try {
@@ -250,10 +262,10 @@ export function usePlaybackControl({
     } catch (error) {
       console.error('Failed to go to previous track:', error);
     }
-  }, "目前由其他裝置控制中，無法切換歌曲。")), [player, createPermissionCheckedAction]);
+  }, 'Previous Track'), "目前由其他裝置控制中，無法切換歌曲。")), [player, createPermissionCheckedAction, createIdleResetAction]);
 
-  // Volume control
-  const handleSetVolume = useCallback(async (newVolume: number) => {
+  // ✨ Volume control - 帶有閒置重置制
+  const handleSetVolume = useCallback(createIdleResetAction(async (newVolume: number) => {
     if (!player) return;
     
     try {
@@ -262,10 +274,10 @@ export function usePlaybackControl({
     } catch (error) {
       console.error('Failed to set volume:', error);
     }
-  }, [player, setVolumeState]);
+  }, 'Volume Control'), [player, setVolumeState, createIdleResetAction]);
 
-  // Seek position
-  const seek = useCallback(async (newPosition: number) => {
+  // ✨ Seek position - 帶有閒置重置制
+  const seek = useCallback(createIdleResetAction(async (newPosition: number) => {
     if (!player) return;
     
     try {
@@ -274,7 +286,7 @@ export function usePlaybackControl({
     } catch (error) {
       console.error('Failed to seek:', error);
     }
-  }, [player, setProgress]);
+  }, 'Seek Position'), [player, setProgress, createIdleResetAction]);
 
   return {
     playTrack: createThrottledAction(playTrack),

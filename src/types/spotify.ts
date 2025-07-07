@@ -108,3 +108,42 @@ export type NotificationState = {
   hasShownLocked: boolean;
   hasShownExpired: boolean;
 }; 
+
+// ✨ 透明化升級：DJ 狀態管理
+export interface DJStatus {
+  deviceId: string;
+  ownerName: string;
+  avatarUrl?: string;
+  lastActionAt: number; // Unix timestamp
+  sessionStartAt: number; // Unix timestamp  
+  actionCount: number; // 操作計數
+  lastAction?: {
+    type: string;
+    timestamp: number;
+    details?: string;
+  };
+}
+
+export interface TransparentMasterDeviceResponse {
+  djStatus: DJStatus | null;
+  ttl: number;
+  success?: boolean;
+  currentMasterId?: string;
+  isLocked: boolean;
+  isMaster: boolean;
+}
+
+export interface TTLResetEvent {
+  newTTL: number;
+  resetBy: string; // DJ name
+  actionType: string;
+  timestamp: number;
+}
+
+export interface DJSessionTransition {
+  type: 'CLAIMED' | 'RELEASED' | 'EXPIRED' | 'TRANSFERRED';
+  previousDJ?: string;
+  newDJ?: string;
+  timestamp: number;
+  reason: string;
+} 

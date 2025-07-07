@@ -1,6 +1,6 @@
 import { spotifyApiService } from '@/services/spotifyApiService';
 import { SessionPersistence } from './sessionPersistence';
-import { MasterDeviceNotificationHandler, MasterDeviceNotificationContext } from './masterDeviceNotificationHandler';
+import { MasterDeviceNotificationHandler, TransparentMasterDeviceNotificationContext } from './masterDeviceNotificationHandler';
 
 export interface MasterDeviceData {
   masterDeviceId: string | null;
@@ -25,6 +25,11 @@ export interface MasterDeviceState {
  */
 export class MasterDeviceService {
   private notificationHandler: MasterDeviceNotificationHandler;
+  
+  // ✨ 防濫用機制：記錄上次 TTL 重置時間
+  private lastResetTime: number = 0;
+  // ✨ TTL 重置冷卻時間（毫秒）- 防止過於頻繁的重置請求
+  private static readonly TTL_RESET_COOLDOWN = 30000; // 30 秒
 
   constructor() {
     this.notificationHandler = new MasterDeviceNotificationHandler();
@@ -49,8 +54,8 @@ export class MasterDeviceService {
           spotifyApiService.getMasterDeviceConfig()
         ]);
         
-        const isMaster = !!deviceId && masterData.masterDeviceId === deviceId;
-        const isLocked = !!masterData.masterDeviceId && masterData.masterDeviceId !== deviceId;
+        const isMaster = !!deviceId && masterData.isMaster;
+        const isLocked = masterData.isLocked;
         
         const state: MasterDeviceState = {
           isMaster,
@@ -58,10 +63,10 @@ export class MasterDeviceService {
           ttl: masterData.ttl || 0,
         };
         
-        const shouldAttemptReclaim = !masterData.masterDeviceId && SessionPersistence.shouldAttemptReclaim();
+        const shouldAttemptReclaim = !masterData.djStatus && SessionPersistence.shouldAttemptReclaim();
         
         return {
-          masterDeviceId: masterData.masterDeviceId,
+          masterDeviceId: masterData.djStatus?.deviceId || null,
           expirationText: configData.expirationText,
           state,
           shouldAttemptReclaim,
@@ -99,8 +104,8 @@ export class MasterDeviceService {
   }> {
     const data = await spotifyApiService.getMasterDevice();
     const wasMaster = currentMasterDeviceId === deviceId;
-    const isNowMaster = !!deviceId && data.masterDeviceId === deviceId;
-    const isNowLocked = !!data.masterDeviceId && data.masterDeviceId !== deviceId;
+    const isNowMaster = data.isMaster;
+    const isNowLocked = data.isLocked;
     
     const state: MasterDeviceState = {
       isMaster: isNowMaster,
@@ -109,20 +114,22 @@ export class MasterDeviceService {
     };
     
     // 處理通知
-    const notificationContext: MasterDeviceNotificationContext = {
+    const notificationContext: TransparentMasterDeviceNotificationContext = {
       wasMaster,
       isNowMaster,
       isNowLocked,
       deviceId,
-      masterDeviceId: data.masterDeviceId,
+      masterDeviceId: data.djStatus?.deviceId || null,
+      djStatus: data.djStatus,
+      previousDJStatus: null,
     };
     
     this.notificationHandler.handleMasterDeviceStatusChange(notificationContext);
     
     return {
-      masterDeviceId: data.masterDeviceId,
+      masterDeviceId: data.djStatus?.deviceId || null,
       state,
-      shouldClearRecords: !data.masterDeviceId,
+      shouldClearRecords: !data.djStatus,
     };
   }
 
@@ -151,7 +158,7 @@ export class MasterDeviceService {
       
       return {
         success: true,
-        masterDeviceId: data.masterDeviceId,
+        masterDeviceId: data.djStatus?.deviceId || null,
         state,
       };
     } else {
@@ -212,31 +219,35 @@ export class MasterDeviceService {
         try {
           const data = await spotifyApiService.getMasterDevice();
           
-          if (!data.masterDeviceId) {
+          if (!data.djStatus) {
             // 主控裝置已過期
             const state: MasterDeviceState = { isMaster: false, isLocked: false, ttl: 0 };
             
-            const notificationContext: MasterDeviceNotificationContext = {
+            const notificationContext: TransparentMasterDeviceNotificationContext = {
               wasMaster: deviceId === currentMasterDeviceId,
               isNowMaster: false,
               isNowLocked: false,
               deviceId,
               masterDeviceId: null,
+              djStatus: null,
+              previousDJStatus: null,
             };
             
             this.notificationHandler.handleMasterDeviceStatusChange(notificationContext);
             
             return { hasPermission: true, state };
-          } else if (data.masterDeviceId !== deviceId) {
+          } else if (data.djStatus.deviceId !== deviceId) {
             // 被其他裝置鎖定
             const state: MasterDeviceState = { isMaster: false, isLocked: true, ttl: data.ttl || 0 };
             
-            const notificationContext: MasterDeviceNotificationContext = {
+            const notificationContext: TransparentMasterDeviceNotificationContext = {
               wasMaster: false,
               isNowMaster: false,
               isNowLocked: true,
               deviceId,
-              masterDeviceId: data.masterDeviceId,
+              masterDeviceId: data.djStatus.deviceId,
+              djStatus: data.djStatus,
+              previousDJStatus: null,
             };
             
             this.notificationHandler.handleMasterDeviceStatusChange(notificationContext);
@@ -268,6 +279,76 @@ export class MasterDeviceService {
 
     // 沒有主控裝置，權限可用
     return { hasPermission: true, state: { isMaster: false, isLocked: false, ttl: 0 } };
+  }
+
+  /**
+   * ✨ 方案 B：閒置重置制 - 重置主控裝置的 TTL
+   * 在每次有效操作後調用，實現活躍使用者的主控權延續
+   * 包含防濫用機制，限制重置頻率
+   */
+  async resetTTL(deviceId: string): Promise<boolean> {
+    const now = Date.now();
+    
+    // ✨ 防濫用檢查：檢查是否在冷卻時間內
+    if (now - this.lastResetTime < MasterDeviceService.TTL_RESET_COOLDOWN) {
+      console.log(`🛡️ TTL reset rate limited. Next reset available in ${Math.ceil((MasterDeviceService.TTL_RESET_COOLDOWN - (now - this.lastResetTime)) / 1000)}s`);
+      return false;
+    }
+    
+    try {
+      const result = await spotifyApiService.resetMasterDeviceTTL(deviceId);
+      
+      // 只有成功重置時才更新冷卻時間
+      if (result.success) {
+        this.lastResetTime = now;
+        console.log('✅ TTL reset successful with rate limiting');
+      }
+      
+      return result.success || false;
+    } catch (error) {
+      console.warn('Failed to reset master device TTL:', error);
+      return false;
+    }
+  }
+
+  /**
+   * ✨ 方案 B：閒置重置制 - 創建帶有自動 TTL 重置的操作包裝器
+   * 這是核心的攔截器，會在每次有效操作後自動重置計時器
+   * 包含智能的防濫用處理
+   */
+  createIdleResetAction<T extends any[]>(
+    action: (...args: T) => Promise<void>,
+    deviceId: string | null,
+    actionName: string = 'Unknown Action'
+  ): (...args: T) => Promise<void> {
+    return async (...args: T) => {
+      try {
+        // 執行原始操作
+        await action(...args);
+        
+        // 如果操作成功且有 deviceId，嘗試重置 TTL
+        if (deviceId) {
+          const resetSuccess = await this.resetTTL(deviceId);
+          if (resetSuccess) {
+            console.log(`✨ TTL reset successful after ${actionName}`);
+          } else {
+            // 不是錯誤，可能只是被限制了
+            const now = Date.now();
+            const timeSinceLastReset = now - this.lastResetTime;
+            
+            if (timeSinceLastReset < MasterDeviceService.TTL_RESET_COOLDOWN) {
+              console.log(`🛡️ TTL reset skipped due to rate limiting (${actionName})`);
+            } else {
+              console.warn(`⚠️ TTL reset failed after ${actionName}`);
+            }
+          }
+        }
+      } catch (error) {
+        // 如果原始操作失敗，不進行 TTL 重置
+        console.error(`❌ ${actionName} failed:`, error);
+        throw error; // 重新拋出錯誤以保持原有的錯誤處理邏輯
+      }
+    };
   }
 
   /**

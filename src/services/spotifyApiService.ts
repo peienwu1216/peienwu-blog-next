@@ -1,4 +1,4 @@
-import { NowPlayingResponse, MasterDeviceResponse, MasterDeviceConfig, TrackInfo, PlaybackError } from '@/types/spotify';
+import { NowPlayingResponse, MasterDeviceResponse, MasterDeviceConfig, TrackInfo, PlaybackError, TransparentMasterDeviceResponse } from '@/types/spotify';
 
 class SpotifyApiService {
   // Helper method for making API calls with retry logic
@@ -108,16 +108,36 @@ class SpotifyApiService {
   }
 
   // Master Device Management APIs
-  async getMasterDevice(): Promise<MasterDeviceResponse> {
-    return await this.makeApiCall<MasterDeviceResponse>('/api/spotify/master-device', {}, 2);
+  async getMasterDevice(): Promise<TransparentMasterDeviceResponse> {
+    return await this.makeApiCall<TransparentMasterDeviceResponse>('/api/spotify/master-device', {}, 2);
   }
 
-  async claimMasterDevice(deviceId: string): Promise<MasterDeviceResponse> {
-    return await this.makeApiCall<MasterDeviceResponse>('/api/spotify/master-device', {
+  async claimMasterDevice(deviceId: string): Promise<TransparentMasterDeviceResponse> {
+    return await this.makeApiCall<TransparentMasterDeviceResponse>('/api/spotify/master-device', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ deviceId }),
     }, 2);
+  }
+
+  /**
+   * ✨ 透明化升級：重置 DJ 狀態的 TTL
+   * 現在支援傳遞操作類型和詳情，實現完全透明的狀態管理
+   */
+  async resetMasterDeviceTTL(
+    deviceId: string, 
+    actionType?: string, 
+    actionDetails?: string
+  ): Promise<TransparentMasterDeviceResponse> {
+    return await this.makeApiCall<TransparentMasterDeviceResponse>('/api/spotify/master-device', {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ 
+        deviceId, 
+        actionType: actionType || 'USER_ACTION',
+        actionDetails: actionDetails || '用戶操作'
+      }),
+    }, 1); // 重置 TTL 不需要重試太多次
   }
 
   async getMasterDeviceConfig(): Promise<MasterDeviceConfig> {

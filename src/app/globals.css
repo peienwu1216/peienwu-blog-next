@@ -575,3 +575,87 @@ mark {
   96% { height: 40%; }
   100% { height: 30%; }
 }
+
+/* ✨ 透明化升級：TTL 重置動畫 */
+@keyframes ttl-reset-bounce {
+  0% {
+    transform: translateY(20px) scale(0.8);
+    opacity: 0;
+  }
+  30% {
+    transform: translateY(-8px) scale(1.1);
+    opacity: 1;
+  }
+  60% {
+    transform: translateY(3px) scale(0.95);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes ttl-reset-glow {
+  0%, 100% {
+    box-shadow: 0 0 5px rgba(16, 185, 129, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.8), 0 0 30px rgba(16, 185, 129, 0.4);
+  }
+}
+
+.ttl-reset-animation {
+  animation: ttl-reset-bounce 0.6s ease-out, ttl-reset-glow 1.5s ease-in-out;
+}
+
+/* ✨ DJ 轉換動畫 */
+@keyframes dj-transition-slide {
+  0% {
+    transform: translateY(-20px) scale(0.9);
+    opacity: 0;
+  }
+  20% {
+    transform: translateY(0) scale(1.05);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+  }
+}
+
+.dj-transition-animation {
+  animation: dj-transition-slide 0.8s ease-out;
+}
+
+/* ✨ Crown 閃爍效果增強 */
+.crown-glow {
+  filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.6));
+  animation: crown-pulse 2s ease-in-out infinite;
+}
+
+@keyframes crown-pulse {
+  0%, 100% {
+    filter: drop-shadow(0 0 8px rgba(251, 191, 36, 0.6));
+  }
+  50% {
+    filter: drop-shadow(0 0 15px rgba(251, 191, 36, 0.9));
+  }
+}
+
+/* ✨ 透明化升級：DJ 統計信息動畫 */
+@keyframes stats-fade-in {
+  0% {
+    opacity: 0;
+    transform: translateX(10px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.dj-stats-animation {
+  animation: stats-fade-in 0.5s ease-out;
+}

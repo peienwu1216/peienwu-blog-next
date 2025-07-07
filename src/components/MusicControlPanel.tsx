@@ -3,7 +3,100 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { useSpotify } from './SpotifyProvider';
 import { useMusicStore } from '@/store/music';
-import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Loader, Shuffle, Crown, Lock } from 'lucide-react';
+import { Play, Pause, SkipBack, SkipForward, Volume2, VolumeX, Loader, Shuffle, Crown, Lock, Zap, User } from 'lucide-react';
+
+// ✨ TTL 重置動畫組件
+const TTLResetAnimation = ({ event, onComplete }: { 
+  event: { newTTL: number; resetBy: string; actionType: string; timestamp: number } | null; 
+  onComplete: () => void;
+}) => {
+  useEffect(() => {
+    if (event) {
+      const timer = setTimeout(onComplete, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [event, onComplete]);
+
+  if (!event) return null;
+
+  return (
+    <div className="absolute -top-8 left-1/2 -translate-x-1/2 z-20">
+      <div className="bg-emerald-500 text-white px-3 py-1 rounded-full text-xs font-bold shadow-lg ttl-reset-animation flex items-center gap-1">
+        <Zap className="w-3 h-3" />
+        +{event.newTTL}s
+      </div>
+    </div>
+  );
+};
+
+// ✨ DJ 轉換動畫組件
+const DJTransitionAnimation = ({ 
+  animation, 
+  onComplete 
+}: { 
+  animation: { show: boolean; type: 'CLAIMED' | 'RELEASED' | 'EXPIRED' | null; djName?: string };
+  onComplete: () => void;
+}) => {
+  useEffect(() => {
+    if (animation.show) {
+      const timer = setTimeout(onComplete, 4000);
+      return () => clearTimeout(timer);
+    }
+  }, [animation.show, onComplete]);
+
+  if (!animation.show || !animation.type) return null;
+
+  const getMessage = () => {
+    switch (animation.type) {
+      case 'CLAIMED':
+        return (
+          <>
+            {/* 桌面版：完整顯示 */}
+            <span className="hidden sm:inline">🎉 {animation.djName} 成為新的 DJ！</span>
+            {/* 手機版：簡化顯示 */}
+            <span className="sm:hidden">🎉 {animation.djName} 接管</span>
+          </>
+        );
+      case 'RELEASED':
+        return (
+          <>
+            <span className="hidden sm:inline">👋 {animation.djName} 已離開 DJ 台</span>
+            <span className="sm:hidden">👋 {animation.djName} 離開</span>
+          </>
+        );
+      case 'EXPIRED':
+        return (
+          <>
+            <span className="hidden sm:inline">⏰ {animation.djName} 的控制權已過期</span>
+            <span className="sm:hidden">⏰ {animation.djName} 過期</span>
+          </>
+        );
+      default:
+        return '';
+    }
+  };
+
+  const getColor = () => {
+    switch (animation.type) {
+      case 'CLAIMED':
+        return 'bg-emerald-500';
+      case 'RELEASED':
+        return 'bg-blue-500';
+      case 'EXPIRED':
+        return 'bg-amber-500';
+      default:
+        return 'bg-slate-500';
+    }
+  };
+
+  return (
+    <div className="absolute -top-12 left-1/2 -translate-x-1/2 z-20">
+      <div className={`${getColor()} text-white px-4 py-2 rounded-full text-xs font-bold shadow-lg dj-transition-animation`}>
+        {getMessage()}
+      </div>
+    </div>
+  );
+};
 
 export default function MusicControlPanel() {
   // 記住靜音前的音量
@@ -14,6 +107,18 @@ export default function MusicControlPanel() {
   const volumeSliderTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   // 處理中狀態
   const [isTakingControl, setIsTakingControl] = useState(false);
+
+  // ✨ 透明化升級：獲取 DJ 狀態和動畫
+  const { 
+    isMaster, 
+    isLocked, 
+    countdown, 
+    djStatus,
+    lastTTLReset,
+    djTransitionAnimation,
+    clearTTLResetAnimation,
+    clearDJTransition
+  } = useMusicStore();
 
   // 清理 timeout 避免記憶體洩漏
   useEffect(() => {
@@ -39,7 +144,6 @@ export default function MusicControlPanel() {
     seek,
     isControllable,
   } = useSpotify();
-  const { isMaster, isLocked, countdown } = useMusicStore();
 
   // 同步 volumeRef 與當前音量
   React.useEffect(() => {
@@ -83,10 +187,13 @@ export default function MusicControlPanel() {
     );
   }
 
-  // 狀態 C: 無人主控，可以搶佔
+  // ✨ 狀態 C: 無人主控，可以搶佔
   if (!isMaster && !isLocked) {
     return (
-      <div className="flex items-center gap-4 p-2 w-full">
+      <div className="flex items-center gap-4 p-2 w-full relative">
+        {/* ✨ DJ 轉換動畫 */}
+        <DJTransitionAnimation animation={djTransitionAnimation} onComplete={clearDJTransition} />
+        
         <img
           src={currentTrack.albumImageUrl || '/images/placeholder.png'}
           alt={currentTrack.album}
@@ -124,7 +231,7 @@ export default function MusicControlPanel() {
         <div className="flex flex-col items-end gap-1 min-w-[140px]">
           <div className="flex items-center gap-2 mb-1">
             <span className="text-sky-600 text-xs font-bold flex items-center gap-1">
-              <span role="img" aria-label="party">🎧</span> 派對進行中...
+              <span role="img" aria-label="party">🎧</span> DJ 台空閒中
             </span>
           </div>
           <button
@@ -135,7 +242,8 @@ export default function MusicControlPanel() {
             {isTakingControl ? (
               <span className="flex items-center justify-center">
                 <Loader className="animate-spin w-4 h-4 mr-1" />
-                正在取得主控權...
+                <span className="hidden sm:inline">正在取得主控權...</span>
+                <span className="sm:hidden">取得中...</span>
               </span>
             ) : (
               <>
@@ -148,10 +256,15 @@ export default function MusicControlPanel() {
     );
   }
 
-  // 狀態 B: 他人主控，被鎖定
+  // ✨ 狀態 B: 他人主控，被鎖定
   if (isLocked) {
     return (
-      <div className="flex items-center gap-4 p-2 w-full">
+      <div className="flex items-center gap-4 p-2 w-full relative">
+        {/* ✨ TTL 重置動畫 */}
+        <TTLResetAnimation event={lastTTLReset} onComplete={clearTTLResetAnimation} />
+        {/* ✨ DJ 轉換動畫 */}
+        <DJTransitionAnimation animation={djTransitionAnimation} onComplete={clearDJTransition} />
+        
         <img
           src={currentTrack.albumImageUrl || '/images/placeholder.png'}
           alt={currentTrack.album}
@@ -188,32 +301,55 @@ export default function MusicControlPanel() {
           </div>
         </div>
         <div className="flex flex-col items-end gap-1 min-w-[140px]">
+          {/* ✨ 透明化：顯示當前 DJ */}
           <div className="flex items-center gap-2 mb-1">
-            <Lock className="w-4 h-4 text-amber-600" />
-            <span className="text-amber-600 text-xs font-bold">派對進行中...</span>
+            <User className="w-4 h-4 text-amber-600" />
+            <span className="text-amber-600 text-xs font-bold">
+              DJ: {djStatus?.ownerName || '未知用戶'}
+            </span>
           </div>
           <div className="flex flex-col items-end gap-1 text-slate-500 dark:text-slate-400 text-xs">
             {countdown > 0 && (
               <span className="text-amber-600 font-bold">({countdown} 秒後可接管)</span>
             )}
-            <span>由其他裝置控制中</span>
+            <div className="flex items-center gap-1">
+              <Lock className="w-3 h-3" />
+              <span>{`${djStatus?.ownerName?.split(' ')[1] || 'DJ'} 正在控制中`}</span>
+            </div>
+            {/* ✨ 顯示最後操作 */}
+            {djStatus?.lastAction && (
+              <span className="text-xs text-slate-400 italic">
+                最後操作: {djStatus.lastAction.details}
+              </span>
+            )}
           </div>
         </div>
       </div>
     );
   }
 
-  // 狀態 A: 你是主控
+  // ✨ 狀態 A: 你是主控
   return (
     <div className="flex items-center gap-4 p-2 w-full relative group">
-      {/* 👑 DJ 標記與微光特效 */}
+      {/* ✨ TTL 重置動畫 */}
+      <TTLResetAnimation event={lastTTLReset} onComplete={clearTTLResetAnimation} />
+      {/* ✨ DJ 轉換動畫 */}
+      <DJTransitionAnimation animation={djTransitionAnimation} onComplete={clearDJTransition} />
+      
+      {/* ✨ 透明化升級：DJ 標記與詳細資訊 */}
       <div className="absolute -top-3 left-1/2 -translate-x-1/2 flex items-center gap-1 z-10">
-        <Crown className="w-5 h-5 text-yellow-400 drop-shadow-glow animate-pulse" />
+        <Crown className="w-5 h-5 text-yellow-400 crown-glow" />
         <span className="text-xs font-bold text-yellow-500">
-          您是目前的派對DJ
-          {countdown > 0 && (
-            <span className="text-yellow-500"> ({countdown} 秒)</span>
-          )}
+          {/* 桌面版：完整顯示 */}
+          <span className="hidden sm:inline">
+            您是派對DJ ({djStatus?.ownerName})
+            {countdown > 0 && ` - ${countdown}秒`}
+          </span>
+          {/* 手機版：簡化顯示 */}
+          <span className="sm:hidden">
+            DJ {djStatus?.ownerName}
+            {countdown > 0 && ` -${countdown}s`}
+          </span>
         </span>
       </div>
       <img
@@ -251,6 +387,18 @@ export default function MusicControlPanel() {
         </div>
       </div>
       <div className="flex items-center gap-1 flex-shrink-0">
+        {/* ✨ 透明化：DJ 統計信息 */}
+        <div className="hidden lg:flex flex-col items-end text-xs text-yellow-600 dark:text-yellow-400 mr-2 dj-stats-animation">
+          {djStatus && (
+            <>
+              <span className="font-bold">操作: {djStatus.actionCount}次</span>
+              <span className="text-yellow-500">
+                時長: {Math.floor((Date.now() - djStatus.sessionStartAt) / 60000)}分鐘
+              </span>
+            </>
+          )}
+        </div>
+        
         {/* 桌面版：顯示音量控制 */}
         <div className="hidden xl:block relative">
           <button 

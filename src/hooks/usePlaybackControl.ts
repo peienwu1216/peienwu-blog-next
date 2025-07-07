@@ -242,16 +242,101 @@ export function usePlaybackControl({
     }
   }, 'Pause Playback'), "目前由其他裝置控制中，無法暫停播放。"), 300), [player, createPermissionCheckedAction, createIdleResetAction]);
 
-  // ✨ Next track - 帶有閒置重置制
+  // ✨ Enhanced Next track with intelligent fallback - 帶有閒置重置制
   const nextTrack = useCallback(createThrottledAction(createPermissionCheckedAction(createIdleResetAction(async () => {
     if (!player) return;
     
     try {
+      // ✨ 智能檢測：先嘗試正常的下一首
       await player.nextTrack();
+      
+      // 等待一下讓 Spotify 處理
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // 檢查播放狀態：如果沒有開始播放下一首，說明佇列可能為空
+      const playerState = await player.getCurrentState();
+      
+      if (!playerState || playerState.paused) {
+        console.log('🎵 檢測到佇列可能為空，啟動智能音樂續播...');
+        
+        // ✨ 策略 1：嘗試重新洗牌當前播放清單
+        const currentQueue = get().queue;
+        if (currentQueue.length > 1) {
+          console.log('🔀 重新洗牌當前播放清單');
+          
+          const shuffledQueue = shuffleArray(currentQueue);
+          const trackUris = shuffledQueue.map(track => spotifyApiService.createTrackUri(track.trackId));
+          
+          // 播放洗牌後的清單
+          await playPlaylist(defaultPlaylistId, { uris: trackUris });
+          setQueue(shuffledQueue);
+          setTrack(shuffledQueue[0]);
+          setIsPlaying(true);
+          
+          showHtmlToast("🎲 佇列已空，自動洗牌重新播放！", { type: 'success' });
+          return;
+        }
+        
+        // ✨ 策略 2：加載並播放預設播放清單
+        try {
+          console.log('📻 加載預設播放清單');
+          
+          const defaultTracks = await spotifyApiService.getPlaylist(defaultPlaylistId);
+          if (defaultTracks.length > 0) {
+            const shuffledTracks = shuffleArray(defaultTracks);
+            const trackUris = shuffledTracks.map(track => spotifyApiService.createTrackUri(track.trackId));
+            
+            await playPlaylist(defaultPlaylistId, { uris: trackUris });
+            setQueue(shuffledTracks);
+            setTrack(shuffledTracks[0]);
+            setIsPlaying(true);
+            
+            showHtmlToast("🎵 自動載入音樂清單，繼續您的音樂之旅！", { type: 'success' });
+            return;
+          }
+        } catch (playlistError) {
+          console.warn('載入預設播放清單失敗:', playlistError);
+        }
+        
+        // ✨ 策略 3：如果所有策略都失敗，暫停並友善提示
+        showHtmlToast("🎭 音樂庫已空，請手動選擇歌曲繼續播放", { type: 'warning' });
+      }
     } catch (error) {
       console.error('Failed to go to next track:', error);
+      
+      // ✨ 錯誤處理：如果是因為沒有下一首的錯誤，也嘗試智能續播
+      if (error instanceof Error && (
+        error.message.includes('No active device') ||
+        error.message.includes('Player command failed') ||
+        error.message.includes('The access token expired')
+      )) {
+        console.log('🔄 nextTrack 失敗，可能是佇列問題，嘗試智能續播...');
+        
+        // 重複上面的智能續播邏輯
+        const currentQueue = get().queue;
+        if (currentQueue.length > 1) {
+          try {
+            const shuffledQueue = shuffleArray(currentQueue);
+            const trackUris = shuffledQueue.map(track => spotifyApiService.createTrackUri(track.trackId));
+            
+            await playPlaylist(defaultPlaylistId, { uris: trackUris });
+            setQueue(shuffledQueue);
+            setTrack(shuffledQueue[0]);
+            setIsPlaying(true);
+            
+            showHtmlToast("🎲 自動重啟音樂播放！", { type: 'success' });
+            return;
+          } catch (fallbackError) {
+            console.warn('智能續播也失敗了:', fallbackError);
+          }
+        }
+        
+        showHtmlToast("⚠️ 無法切換到下一首，請檢查播放狀態", { type: 'error' });
+      } else {
+        showHtmlToast("⚠️ 切換歌曲失敗，請稍後再試", { type: 'error' });
+      }
     }
-  }, 'Next Track'), "目前由其他裝置控制中，無法切換歌曲。")), [player, createPermissionCheckedAction, createIdleResetAction]);
+  }, 'Next Track'), "目前由其他裝置控制中，無法切換歌曲。")), [player, createPermissionCheckedAction, createIdleResetAction, get, shuffleArray, playPlaylist, defaultPlaylistId, setQueue, setTrack, setIsPlaying]);
 
   // ✨ Previous track - 帶有閒置重置制
   const previousTrack = useCallback(createThrottledAction(createPermissionCheckedAction(createIdleResetAction(async () => {

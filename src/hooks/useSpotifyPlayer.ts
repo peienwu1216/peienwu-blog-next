@@ -53,46 +53,72 @@ export function useSpotifyPlayer({ defaultPlaylistId }: UseSpotifyPlayerProps): 
     }
   }, [defaultPlaylistId, setQueue, setTrack, setDuration]);
 
-  // Sync playback state with Spotify API
+  // Sync playback state with Spotify API - 檢測本地設備實際播放狀態
   const syncPlaybackState = useCallback(async () => {
-    // Don't sync if local player is playing
-    if (playerRef.current && (await playerRef.current.getCurrentState())?.paused === false) {
-      return;
-    }
-
     try {
-      const data = await spotifyApiService.getNowPlaying();
+      // 檢查本地 Player 的實際狀態
+      let localPlayerState = null;
+      if (playerRef.current) {
+        try {
+          localPlayerState = await playerRef.current.getCurrentState();
+        } catch (error) {
+          console.warn('Failed to get local player state:', error);
+        }
+      }
+
+      // 獲取 Spotify API 的全局播放狀態
+      const apiData = await spotifyApiService.getNowPlaying();
       
-      if (data && data.isPlaying && data.item) {
-        const track: TrackInfo = {
-          title: data.item.name,
-          artist: data.item.artists.map(a => a.name).join(', '),
-          album: data.item.album.name,
-          albumImageUrl: data.item.album.images[0]?.url || '/images/placeholder.png',
-          songUrl: data.item.external_urls.spotify,
-          trackId: data.item.id,
-          duration: data.item.duration_ms / 1000,
-        };
+      // 判斷本地設備是否正在播放音樂
+      const isLocallyPlaying = localPlayerState && 
+        !localPlayerState.paused && 
+        localPlayerState.track_window?.current_track?.id;
+
+      // 如果本地設備正在播放，更新狀態
+      if (isLocallyPlaying && localPlayerState) {
+        const sdkTrack = localPlayerState.track_window.current_track;
+        const trackInfo: TrackInfo = spotifyApiService.createTrackInfo(sdkTrack, localPlayerState);
         
-        // Only update if track changed
-        if (get().currentTrack?.trackId !== track.trackId) {
-          setTrack(track);
+        // 只在歌曲變更時更新
+        if (get().currentTrack?.trackId !== trackInfo.trackId) {
+          setTrack(trackInfo);
         }
         
-        setDuration(track.duration || 0);
-        setProgress(data.progress_ms / 1000);
+        setDuration(localPlayerState.duration / 1000);
+        setProgress(localPlayerState.position / 1000);
         
         if (!get().isPlaying) {
           setIsPlaying(true);
         }
       } else {
+        // 本地設備沒有播放，檢查是否有其他設備在播放
+        if (apiData && apiData.isPlaying && apiData.item) {
+          const track: TrackInfo = {
+            title: apiData.item.name,
+            artist: apiData.item.artists.map(a => a.name).join(', '),
+            album: apiData.item.album.name,
+            albumImageUrl: apiData.item.album.images[0]?.url || '/images/placeholder.png',
+            songUrl: apiData.item.external_urls.spotify,
+            trackId: apiData.item.id,
+            duration: apiData.item.duration_ms / 1000,
+          };
+          
+          // 只在歌曲變更時更新
+          if (get().currentTrack?.trackId !== track.trackId) {
+            setTrack(track);
+          }
+          
+          setDuration(track.duration || 0);
+          setProgress(apiData.progress_ms / 1000);
+        }
+        
+        // 本地設備沒有播放，設置為暫停狀態
         if (get().isPlaying) {
           setIsPlaying(false);
         }
       }
     } catch (error) {
       if (error instanceof Error && error.message.includes('401')) {
-        // Handle auth errors silently - the retry mechanism will handle this
         console.warn("Sync state failed due to auth error, will retry on next sync");
       } else {
         console.error("Sync state failed:", error);
@@ -204,13 +230,14 @@ export function useSpotifyPlayer({ defaultPlaylistId }: UseSpotifyPlayerProps): 
     };
   }, [get().isPlaying, setProgress, get]);
 
-  // Background sync
+  // Background sync - 檢測本地播放狀態變化，平衡響應速度與服務器負擔
   useEffect(() => {
     if (syncIntervalRef.current) {
       clearInterval(syncIntervalRef.current);
     }
 
-    syncIntervalRef.current = setInterval(syncPlaybackState, 5000);
+    // 3 秒同步間隔：在即時事件失效時能快速響應，但不會過度頻繁
+    syncIntervalRef.current = setInterval(syncPlaybackState, 3000);
     
     return () => {
       if (syncIntervalRef.current) {

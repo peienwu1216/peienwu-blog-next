@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import { useSpotify } from './SpotifyProvider';
 import { Play, Pause, Loader, Music4 } from 'lucide-react';
 import { notifyHtml } from '@/lib/notify';
@@ -56,6 +56,9 @@ export default function ArticlePlayButton({ trackId, trackTitle }: ArticlePlayBu
   
   const { exec: getTrackApi, isLoading: isTrackInfoLoading } = useApi<TrackInfo>('GET', `/api/spotify/track/${trackId}`);
 
+  // ✨ 新增一個處理中的狀態
+  const [isProcessing, setIsProcessing] = useState(false);
+
   const isThisTrackCurrentlyPlaying = isPlaying && currentTrack?.trackId === trackId;
   const isThisTrackCurrentlyPaused = !isPlaying && currentTrack?.trackId === trackId;
 
@@ -80,24 +83,30 @@ export default function ArticlePlayButton({ trackId, trackTitle }: ArticlePlayBu
       return;
     }
 
-    if (isThisTrackCurrentlyPlaying) {
-      pauseTrack();
-      return;
-    }
-    if (isThisTrackCurrentlyPaused) {
-      resumeTrack();
-      return;
-    }
+    // ✨ 開始處理，設定 loading 狀態
+    setIsProcessing(true);
+    
     try {
-      const trackToPlay = await getTrackApi();
-      if (trackToPlay) {
-        await playTrack(trackToPlay, true); 
+      if (isThisTrackCurrentlyPlaying) {
+        await pauseTrack();
+      } else if (isThisTrackCurrentlyPaused) {
+        await resumeTrack();
       } else {
-        notifyHtml('無法載入歌曲資訊', { type: 'error' });
+        const trackToPlay = await getTrackApi();
+        if (trackToPlay) {
+          // 現在的 playTrack 內部已經包含了完整的奪權和啟用邏輯
+          await playTrack(trackToPlay, true); 
+        } else {
+          notifyHtml('無法載入歌曲資訊', { type: 'error' });
+        }
       }
     } catch (error) {
       console.error('Failed to play track from article:', error);
       notifyHtml(`播放失敗: ${error instanceof Error ? error.message : '未知錯誤'}`, { type: 'error' });
+    } finally {
+      // ✨ 處理完畢，無論成功或失敗都取消 loading 狀態
+      // 稍微延遲一下，讓 Spotify 的狀態有時間同步回來
+      setTimeout(() => setIsProcessing(false), 500);
     }
   }, [
     isReady,
@@ -108,15 +117,24 @@ export default function ArticlePlayButton({ trackId, trackTitle }: ArticlePlayBu
     playTrack, 
     pauseTrack, 
     resumeTrack, 
-    getTrackApi
+    getTrackApi,
+    setIsProcessing
   ]);
+
+  // ✨ 當播放狀態改變時，也取消 loading
+  useEffect(() => {
+    if (isThisTrackCurrentlyPlaying) {
+      setIsProcessing(false);
+    }
+  }, [isThisTrackCurrentlyPlaying]);
 
   if (!trackId) return null;
 
   // 決定顯示的圖示和文字
   const getIconAndText = () => {
-    if (isTrackInfoLoading) {
-      return { icon: <Loader size={16} className="animate-spin" />, text: '載入中...' };
+    // ✨ 優先顯示處理中的狀態
+    if (isProcessing || isTrackInfoLoading) {
+      return { icon: <Loader size={16} className="animate-spin" />, text: '處理中...' };
     }
     
     if (!isControllable) {
@@ -155,7 +173,7 @@ export default function ArticlePlayButton({ trackId, trackTitle }: ArticlePlayBu
       onClick={handleClick}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      disabled={isTrackInfoLoading || !isControllable}
+      disabled={isProcessing || isTrackInfoLoading || !isControllable}
       className={`
         inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-sm font-medium
         transition-all duration-200 ease-in-out

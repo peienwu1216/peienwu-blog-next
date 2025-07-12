@@ -188,24 +188,47 @@ export function usePlaybackControl({
 
   // ✨ Play specific track - 帶有閒置重置制
   const playTrack = useCallback(createPermissionCheckedAction(createIdleResetAction(async (track: TrackInfo, isInterrupt = false) => {
-    // Try to claim master device if no master exists
-    const hasClaimed = await claimMasterDeviceWithRetry();
-    if (!hasClaimed) return;
+    // ✨ --- 以下是修改的核心邏輯 --- ✨
+    if (!player || !deviceId) {
+        showHtmlToast('播放器尚未準備好', { type: 'error' });
+        return;
+    }
 
+    // 1. 無論如何，先嘗試取得主控權，這是所有操作的前提
+    const hasClaimed = await claimMasterDeviceWithRetry();
+    if (!hasClaimed) {
+        showHtmlToast('無法取得播放主控權', { type: 'error' });
+        return;
+    }
+    
+    // 2. 為了確保裝置是活躍的，先執行一次靜默的播放權轉移
+    //    這會將目前瀏覽器設為活躍裝置，是解決冷啟動問題的關鍵
+    try {
+        await spotifyApiService.transferPlayback(deviceId, false);
+        // 短暫延遲，給 Spotify 一點反應時間
+        await new Promise(resolve => setTimeout(resolve, 500));
+    } catch (transferError) {
+        console.warn('播放權轉移失敗，但仍會嘗試播放:', transferError);
+        // 即使轉移失敗，有時直接播放也能成功，所以我們繼續嘗試
+    }
+
+    // 3. 現在裝置已準備就緒，執行播放
     const trackUri = spotifyApiService.createTrackUri(track.trackId);
 
     if (isInterrupt) {
-      // Add to queue and skip to it
+      // 插播邏輯：加入佇列並跳到下一首
       insertTrack(track);
       await spotifyApiService.addToQueue(trackUri);
       await spotifyApiService.nextTrack(deviceId!);
     } else {
-      // Replace current playback
+      // 正常替換播放
       await spotifyApiService.playTrackUris(deviceId!, [trackUri]);
     }
     
     hasPlaybackInitiatedRef.current = true;
-  }, 'Track Playback'), "目前由其他裝置控制中，無法播放。"), [claimMasterDeviceWithRetry, insertTrack, deviceId, createIdleResetAction]);
+    // ✨ --- 修改邏輯結束 --- ✨
+
+  }, 'Track Playback'), "目前由其他裝置控制中，無法播放。"), [claimMasterDeviceWithRetry, insertTrack, deviceId, createIdleResetAction, player]);
 
   // ✨ Random playback - 帶有閒置重置制
   const handlePlayRandom = useCallback(createPermissionCheckedAction(createIdleResetAction(async () => {

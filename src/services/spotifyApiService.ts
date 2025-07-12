@@ -97,6 +97,23 @@ class SpotifyApiService {
     }, 2);
   }
 
+  /**
+   * ✨ 新增：將播放狀態明確轉移到指定的裝置。
+   * @param deviceId 要轉移到的裝置 ID
+   * @param play 是否在轉移後立即播放。設為 false 可以「準備播放」而不打斷使用者。
+   * @returns 服務操作結果
+   */
+  async transferPlayback(deviceId: string, play: boolean = true) {
+    await this.makeApiCall(`/api/spotify/transfer-playback`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        device_ids: [deviceId],
+        play: play
+      }),
+    }, 2);
+  }
+
   // State Management APIs
   async getNowPlaying(): Promise<NowPlayingResponse> {
     return await this.makeApiCall<NowPlayingResponse>('/api/spotify/now-playing', {}, 2);

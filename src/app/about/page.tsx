@@ -114,7 +114,7 @@ export default function AboutPage() {
               我將個人網站視為一個完整的<strong>AI原生全端應用</strong>進行工程實踐。其核心是打造一個能代表我本人的<strong>AI數位分身</strong>，透過建立自動化的知識導入管線，讓AI能存取我所有的文章與專案資料，從而精準地回答關於我技術細節的複雜跨領域問題。
             </p>
             <p>
-            這個智慧系統，與我基於 <strong>FlexSearch.js</strong> 打造的<strong>專業級搜尋引擎</strong>、以及整合了智慧快取 (ISR) 的<strong>後端 API</strong>（用以安全地串接 <strong>GitHub API</strong> 並注入即時動態）無縫協作，並最終將所有互動體驗，匯集於一個應用程式級的 <strong>`⌘+K` 指揮中心</strong>，將網站從靜態的「頁面」提升為可互動的「智慧產品」。
+              此外，我架構<strong> Spotify 共享音樂體驗</strong>，融合音樂播放功能。其後端使用 <strong>Vercel KV</strong> 執行原子操作來處理 Race Condition，確保了多使用者在搶佔 DJ 控制權時的狀態一致性。這些功能，連同我基於 <strong>FlexSearch.js</strong> 打造的<strong>專業級搜尋引擎</strong>、以及整合了智慧快取 (ISR) 的<strong>後端 API</strong>，最終都匯集於一個應用程式級的 <strong>`⌘+K` 指揮中心</strong>，將網站從靜態的「頁面」提升為可互動的「智慧產品」。
             </p>
             <p>
               <strong>技術棧：</strong> Next.js, React, TypeScript, Tailwind CSS, Contentlayer, FlexSearch.js, Vercel
